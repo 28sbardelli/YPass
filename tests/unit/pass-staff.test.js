@@ -53,7 +53,7 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
-  it('limits approval to the teacher who owns a pass location and supports appointments', async () => {
+  it('limits pass actions to the origin teacher and supports appointments', async () => {
     ctx = await createTestApp();
     const teacherId = randomUUID();
     const otherUserId = randomUUID();
@@ -72,10 +72,12 @@ describe('staff pass controls', () => {
       .knex('locations')
       .where({ name: 'Counseling Office' })
       .first();
-    await ctx.container.db
-      .knex('locations')
-      .where({ id: counseling.id })
-      .update({ teacher_user_id: teacherId });
+    await ctx.container.db.knex('locations').where({ id: mainOffice.id }).update({
+      teacher_user_id: teacherId,
+    });
+    await ctx.container.db.knex('locations').where({ id: counseling.id }).update({
+      teacher_user_id: otherUserId,
+    });
 
     const unassignedLocation = {
       id: randomUUID(),
@@ -103,30 +105,42 @@ describe('staff pass controls', () => {
       ctx.container.passService.approvePass({ passId: requested.pass.id, userId: otherUserId }),
     ).rejects.toMatchObject({ status: 404 });
 
+    const unrelatedPass = await ctx.container.passService.requestPass({
+      kioskCode: 'unassigned-location',
+      studentNumber: '200001',
+      studentName: 'Avery Brooks',
+      destinationLocationId: counseling.id,
+    });
+    await expect(
+      ctx.container.passService.cancelPass({
+        passId: unrelatedPass.pass.id,
+        userId: otherUserId,
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
     const approved = await ctx.container.passService.approvePass({
       passId: requested.pass.id,
       userId: teacherId,
     });
     expect(approved.status).toBe('active');
     expect(approved.timeout_at).toBeTruthy();
+    const approvalEvent = await ctx.container.db
+      .knex('pass_events')
+      .where({ pass_id: requested.pass.id, event_type: 'approved' })
+      .first();
+    expect(approvalEvent.location_id).toBe(mainOffice.id);
 
     const appointment = await ctx.container.passService.createAppointment({
       userId: teacherId,
       studentNumber: '111111',
       studentName: 'Test Student 111111',
-      originLocationId: counseling.id,
-      destinationLocationId: mainOffice.id,
+      originLocationId: mainOffice.id,
+      destinationLocationId: counseling.id,
       scheduledAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       notes: 'Testing appointment',
     });
     expect(appointment.appointment.status).toBe('scheduled');
 
-    const unrelatedPass = await ctx.container.passService.requestPass({
-      kioskCode: 'main-office',
-      studentNumber: '200001',
-      studentName: 'Avery Brooks',
-      destinationLocationId: unassignedLocation.id,
-    });
     const student = await ctx.container.db
       .knex('students')
       .where({ student_number: '200001' })
@@ -136,7 +150,7 @@ describe('staff pass controls', () => {
       id: unrelatedAppointmentId,
       student_id: student.id,
       origin_location_id: unassignedLocation.id,
-      destination_location_id: mainOffice.id,
+      destination_location_id: counseling.id,
       destination_teacher_id: null,
       created_by: otherUserId,
       scheduled_at: new Date(Date.now() + 2 * 60 * 60 * 1000),
@@ -144,11 +158,16 @@ describe('staff pass controls', () => {
     });
 
     const dashboard = await ctx.container.passService.teacherDashboard(teacherId);
-    expect(dashboard.locations.map(({ id }) => id)).toContain(counseling.id);
+    expect(dashboard.locations.map(({ id }) => id)).toContain(mainOffice.id);
+    expect(dashboard.locations.map(({ id }) => id)).not.toContain(counseling.id);
     expect(dashboard.passes.map(({ id }) => id)).toContain(requested.pass.id);
     expect(dashboard.passes.map(({ id }) => id)).not.toContain(unrelatedPass.pass.id);
     expect(dashboard.appointments.map(({ id }) => id)).toContain(appointment.appointment.id);
     expect(dashboard.appointments.map(({ id }) => id)).not.toContain(unrelatedAppointmentId);
+
+    const destinationTeacherDashboard = await ctx.container.passService.teacherDashboard(otherUserId);
+    expect(destinationTeacherDashboard.passes.map(({ id }) => id)).not.toContain(requested.pass.id);
+    expect(destinationTeacherDashboard.passes.map(({ id }) => id)).not.toContain(unrelatedPass.pass.id);
 
     const manager = await ctx.container.passService.managerDashboard({ status: 'active' });
     expect(manager.passes).toHaveLength(1);
