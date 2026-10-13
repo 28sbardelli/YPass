@@ -1,8 +1,9 @@
 <section class="staff-page">
+  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js" defer></script>
   <div class="staff-heading">
     <div>
       <p class="kiosk-kicker">Staff workspace</p>
-      <h1>Teacher panel</h1>
+      <h1>Lehrerseite</h1>
       <p class="muted">Review passes connected to your classroom locations.</p>
     </div>
     <a class="button" href="/teacher/appointment">Create appointment</a>
@@ -10,13 +11,36 @@
 
   <% if (message) { %><p class="flash flash-success"><%= message %></p><% } %>
   <section class="staff-section">
+    <h2>Your locations</h2>
+    <% if (!locations.length) { %>
+      <p class="muted">No active locations are assigned to your account.</p>
+    <% } else { %>
+      <ul>
+        <% locations.forEach((location) => { %>
+          <li><%= location.name %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="staff-section">
     <h2>Passes involving your locations</h2>
     <% if (!passes.length) { %>
       <p class="muted">No passes are currently connected to your locations.</p>
     <% } else { %>
-      <div class="staff-list">
+      <div class="staff-sort">
+        <label for="pass-sort">Sort passes</label>
+        <select id="pass-sort" data-sort-control="passes">
+          <option value="default">Order shown</option>
+          <option value="status">Status (A-Z)</option>
+          <option value="student">Student (A-Z)</option>
+          <option value="date-desc">Newest first</option>
+          <option value="date-asc">Oldest first</option>
+        </select>
+      </div>
+      <div class="staff-list" data-sort-list="passes">
         <% passes.forEach((pass) => { %>
-          <article class="staff-row">
+          <article class="staff-row" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
             <div>
               <strong><%= pass.student_name %></strong>
               <span class="muted">ID <%= pass.student_number %></span>
@@ -38,9 +62,27 @@
 
   <section class="staff-section">
     <h2>Your appointments</h2>
-    <% if (!appointments.length) { %><p class="muted">No appointments.</p><% } %>
-    <% appointments.forEach((appointment) => { %>
-      <article class="staff-row"><div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.scheduled_at %></p></div><span class="status-label"><%= appointment.status %></span></article>
-    <% }) %>
+    <% if (!appointments.length) { %>
+      <p class="muted">No appointments.</p>
+    <% } else { %>
+      <div class="staff-sort">
+        <label for="appointment-sort">Sort appointments</label>
+        <select id="appointment-sort" data-sort-control="appointments">
+          <option value="default">Order shown</option>
+          <option value="status">Status (A-Z)</option>
+          <option value="student">Student (A-Z)</option>
+          <option value="date-asc">Soonest first</option>
+          <option value="date-desc">Latest first</option>
+        </select>
+      </div>
+      <div class="staff-list" data-sort-list="appointments">
+        <% appointments.forEach((appointment) => { %>
+          <article class="staff-row" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
+            <div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.scheduled_at %></p></div>
+            <span class="status-label"><%= appointment.status %></span>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
   </section>
 </section>

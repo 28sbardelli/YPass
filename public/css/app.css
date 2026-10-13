@@ -328,6 +328,18 @@ button,
   font: inherit;
   padding: 0.4rem;
 }
+.staff-list { display: grid; gap: 0.6rem; }
+.staff-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 1rem; background: var(--card); border: 1px solid #d6d3d1; }
+.staff-row p { margin: 0.35rem 0 0; color: #57534e; }
+.staff-row time, .status-label { color: #57534e; font-size: 0.9rem; }
+.staff-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.staff-actions form { margin: 0; }
+.danger-button { background: var(--danger); }
+.staff-form { display: grid; gap: 0.7rem; padding: 1.25rem; background: var(--card); border: 1px solid #d6d3d1; }
+.staff-form input, .staff-form select, .staff-form textarea { width: 100%; font: inherit; padding: 0.55rem; }
+.filter-bar { display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: end; padding: 1rem; background: var(--card); border: 1px solid #d6d3d1; }
+.filter-bar label { margin: 0; }
+.filter-bar input, .filter-bar select { display: block; min-height: 2.4rem; font: inherit; padding: 0.4rem; }
 @media (max-width: 700px) {
   .staff-heading,
   .staff-row {
