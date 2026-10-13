@@ -75,29 +75,30 @@ kioskMachine/                 Separate kiosk UI, local proxy, and kiosk-client t
 
 ## Task router
 
-| If you need to…                                           | Open first                                                                               | Then usually                                                                                                   |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Change an environment variable or feature flag            | `src/config/env.js`, `src/config/features.js`                                            | `.env.example`, `wiki/system/feature-flags.md`, config tests                                                   |
-| Change startup, shutdown, health, or dependency wiring    | `src/server.js`, `src/bootstrap.js`, `src/container.js`                                  | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests                                                          |
-| Add or change an HTTP endpoint                            | `src/routes/`                                                                            | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml`                                     |
-| Change HTML pages or form behavior                        | Matching `src/routes/` and controller                                                    | `views/`, `public/`, CSRF/auth middleware, e2e tests                                                           |
-| Change API behavior                                       | `src/routes/api.v1.js`                                                                   | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests                                             |
-| Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/`                                        | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests        |
-| Change Formbar OAuth or account linking                   | `src/integrations/formbar/`, `src/services/user-service.js`                              | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |
-| Change Entra authentication                               | `src/integrations/entra/`                                                                | Auth controller/routes, config dependencies, auth tests                                                        |
-| Change roles or permissions                               | `src/authorization/rbac.js`, `src/repositories/index.js`                                 | Auth middleware, service checks, seed permissions, security tests                                              |
-| Change passwords or token security                        | `src/auth/password.js`, `src/auth/tokens.js`                                             | Local auth service, redaction/audit logging, security tests                                                    |
-| Change database schema                                    | `src/database/migrations/`                                                               | Repository queries, seeds, integration tests, `npm run db:status`                                              |
-| Change database connection/provider behavior              | `src/database/`, `knexfile.js`                                                           | `scripts/db-*.js`, config tests, database integration tests                                                    |
-| Change realtime behavior                                  | `src/realtime/index.js`                                                                  | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external                                   |
-| Change email delivery                                     | `src/integrations/email/`                                                                | Local auth service, feature flags, email views, tests                                                          |
-| Change Redis, rate limits, or distributed sessions        | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests                                                           |
-| Change request validation                                 | `src/validators/`                                                                        | Controller, route, error mapping, focused tests                                                                |
-| Change error responses                                    | `src/errors/`, `src/middleware/error.js`                                                 | Controllers, HTML error views, API/e2e tests                                                                   |
-| Change logging or audit events                            | `src/logging/`                                                                           | Services/controllers, redaction tests, deployment config                                                       |
-| Change deployment or process management                   | `Dockerfile`, `docker-compose*.yml`, `deploy/`, `ecosystem.config.cjs`                   | `README.md`, `deploy/ubuntu/setup.md`, health endpoints                                                        |
-| Change kiosk enrollment, credentials, or kiosk transport  | `src/services/kiosk-service.js`, `src/routes/api.v1.js`                                  | `src/controllers/api-controller.js`, `src/routes/web.js`, `kioskMachine/`, kiosk e2e/unit tests                |
-| Change documentation or operator guidance                 | `wiki/`                                                                                  | Keep `README.md`, OpenAPI, and affected source behavior consistent                                             |
+| If you need to… | Open first | Then usually |
+| --- | --- | --- |
+| Change an environment variable or feature flag | `src/config/env.js`, `src/config/features.js` | `.env.example`, `wiki/system/feature-flags.md`, config tests |
+| Change startup, shutdown, health, or dependency wiring | `src/server.js`, `src/bootstrap.js`, `src/container.js` | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests |
+| Add or change an HTTP endpoint | `src/routes/` | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml` |
+| Change HTML pages or form behavior | Matching `src/routes/` and controller | `views/`, `public/`, CSRF/auth middleware, e2e tests |
+| Change the teacher panel or its location-scoped data | `src/routes/web.js`, `src/controllers/web-controller.js` | `src/services/pass-service.js`, `src/repositories/index.js`, `views/pages/teacher.ejs`, `tests/unit/pass-staff.test.js` |
+| Change API behavior | `src/routes/api.v1.js` | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests |
+| Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/` | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests |
+| Change Formbar OAuth or account linking | `src/integrations/formbar/`, `src/services/user-service.js` | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |
+| Change Entra authentication | `src/integrations/entra/` | Auth controller/routes, config dependencies, auth tests |
+| Change roles or permissions | `src/authorization/rbac.js`, `src/repositories/index.js` | Auth middleware, service checks, seed permissions, security tests |
+| Change passwords or token security | `src/auth/password.js`, `src/auth/tokens.js` | Local auth service, redaction/audit logging, security tests |
+| Change database schema | `src/database/migrations/` | Repository queries, seeds, integration tests, `npm run db:status` |
+| Change database connection/provider behavior | `src/database/`, `knexfile.js` | `scripts/db-*.js`, config tests, database integration tests |
+| Change realtime behavior | `src/realtime/index.js` | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external |
+| Change email delivery | `src/integrations/email/` | Local auth service, feature flags, email views, tests |
+| Change Redis, rate limits, or distributed sessions | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests |
+| Change request validation | `src/validators/` | Controller, route, error mapping, focused tests |
+| Change error responses | `src/errors/`, `src/middleware/error.js` | Controllers, HTML error views, API/e2e tests |
+| Change logging or audit events | `src/logging/` | Services/controllers, redaction tests, deployment config |
+| Change deployment or process management | `Dockerfile`, `docker-compose*.yml`, `deploy/`, `ecosystem.config.cjs` | `README.md`, `deploy/ubuntu/setup.md`, health endpoints |
+| Change kiosk enrollment, credentials, or kiosk transport | `src/services/kiosk-service.js`, `src/routes/api.v1.js` | `src/controllers/api-controller.js`, `src/routes/web.js`, `kioskMachine/`, kiosk e2e/unit tests |
+| Change documentation or operator guidance | `wiki/` | Keep `README.md`, OpenAPI, and affected source behavior consistent |
 
 ## Request and startup flow
 
