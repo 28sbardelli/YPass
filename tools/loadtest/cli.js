@@ -11,7 +11,9 @@ import { printReport } from './report.js';
 
 const args = parseArgs(process.argv.slice(2));
 const allowed = parseList(process.env.LOADTEST_ALLOWED_HOSTS || '127.0.0.1,localhost');
-const allowProduction = ['1', 'true', 'yes'].includes(String(process.env.LOADTEST_ALLOW_PRODUCTION || '').toLowerCase());
+const allowProduction = ['1', 'true', 'yes'].includes(
+  String(process.env.LOADTEST_ALLOW_PRODUCTION || '').toLowerCase(),
+);
 
 if (process.env.NODE_ENV === 'production' && !allowProduction) {
   console.error('Refusing to run load tests because NODE_ENV=production');
@@ -33,20 +35,38 @@ const command = args._[0] || 'http';
 const sockets = [];
 
 if (command === 'connect') {
-  const result = await runSockets({ target, users, eventsPerSecond: 0, durationSeconds: 1, sockets });
+  const result = await runSockets({
+    target,
+    users,
+    eventsPerSecond: 0,
+    durationSeconds: 1,
+    sockets,
+  });
   printReport('connect', result);
 } else if (command === 'disconnect') {
   const percent = Number(args.percent || 100);
   printReport('disconnect', disconnectMany(sockets, percent));
 } else if (command === 'socket') {
-  printReport('socket', await runSockets({ target, users, eventsPerSecond: rps, durationSeconds: duration, sockets }));
+  printReport(
+    'socket',
+    await runSockets({ target, users, eventsPerSecond: rps, durationSeconds: duration, sockets }),
+  );
 } else if (command === 'combined') {
   const http = await runHttp({ target, path: args.path || '/', rps, durationSeconds: duration });
-  const socket = await runSockets({ target, users, eventsPerSecond: rps, durationSeconds: duration, sockets });
+  const socket = await runSockets({
+    target,
+    users,
+    eventsPerSecond: rps,
+    durationSeconds: duration,
+    sockets,
+  });
   printReport('http', http);
   printReport('socket', socket);
 } else {
-  printReport('http', await runHttp({ target, path: args.path || '/', rps, durationSeconds: duration }));
+  printReport(
+    'http',
+    await runHttp({ target, path: args.path || '/', rps, durationSeconds: duration }),
+  );
 }
 
 function parseArgs(argv) {

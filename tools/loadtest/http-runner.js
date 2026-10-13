@@ -31,7 +31,8 @@ export async function runHttp({ target, path, rps, durationSeconds }) {
 
 export function summarize(success, failure, latencies, durationSeconds) {
   const sorted = [...latencies].sort((a, b) => a - b);
-  const pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))] || 0;
+  const pct = (p) =>
+    sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))] || 0;
   return {
     success,
     failure,

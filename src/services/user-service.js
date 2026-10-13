@@ -43,7 +43,10 @@ export function createUserService({
       return users.findById(id).then(withAuthz);
     },
 
-    async loginWithExternalIdentity({ provider, subject, email, displayName, profile }, reqLike = {}) {
+    async loginWithExternalIdentity(
+      { provider, subject, email, displayName, profile },
+      reqLike = {},
+    ) {
       const existing = await identities.findByProviderSubject(provider, subject);
       if (existing) {
         let user = await users.findById(existing.user_id);

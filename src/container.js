@@ -21,10 +21,16 @@ import { createTokenService } from '#auth/tokens.js';
 import { systemClock } from '#utils/clock.js';
 import { createUserService } from '#services/user-service.js';
 import { createLocalAuthService } from '#services/local-auth-service.js';
-import { createFormbarOAuth, createFormbarHttpClient, createFormbarWsManager, createFormbarWsExample } from '#integrations/formbar/index.js';
+import {
+  createFormbarOAuth,
+  createFormbarHttpClient,
+  createFormbarWsManager,
+  createFormbarWsExample,
+} from '#integrations/formbar/index.js';
 import { createFormbarHttpExample } from '#integrations/formbar/examples/http-example.js';
 import { createEntraProvider } from '#integrations/entra/index.js';
 import { createPassService } from '#services/pass-service.js';
+import { createKioskService } from '#services/kiosk-service.js';
 
 export async function createContainer({ config, logger }) {
   const auditLogger = createAuditLogger(logger);
@@ -76,6 +82,12 @@ export async function createContainer({ config, logger }) {
     : null;
 
   const passService = createPassService({ db, passes: passRepository, clock });
+  const kioskService = createKioskService({
+    db,
+    kiosks: passRepository,
+    clock,
+    audit: auditRepo,
+  });
 
   const formbarOAuth = config.features.formbarAuth ? createFormbarOAuth({ config, logger }) : null;
   const formbarHttp = config.formbar.baseUrl ? createFormbarHttpClient({ config, logger }) : null;
@@ -115,6 +127,7 @@ export async function createContainer({ config, logger }) {
     localAuth,
     passRepository,
     passService,
+    kioskService,
     formbarOAuth,
     formbarHttp,
     formbarHttpExample,

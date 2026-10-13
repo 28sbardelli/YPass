@@ -47,16 +47,35 @@ describe('account linking', () => {
           identities.push(identity);
         },
         async findByProviderSubject(provider, subject) {
-          return identities.find((item) => item.provider === provider && item.subject === subject) || null;
+          return (
+            identities.find((item) => item.provider === provider && item.subject === subject) ||
+            null
+          );
         },
         async listByUser(userId) {
           return identities.filter((item) => item.user_id === userId);
         },
         async deleteById() {},
       },
-      credentials: { async findByUserId() { return null; } },
-      rbacRepository: { async findRoleByName() { return { id: 'role' }; }, async assignRole() {} },
-      rbac: { async getRoles() { return ['user']; }, async getPermissions() { return []; } },
+      credentials: {
+        async findByUserId() {
+          return null;
+        },
+      },
+      rbacRepository: {
+        async findRoleByName() {
+          return { id: 'role' };
+        },
+        async assignRole() {},
+      },
+      rbac: {
+        async getRoles() {
+          return ['user'];
+        },
+        async getPermissions() {
+          return [];
+        },
+      },
       tokens: createTokenService(memoryChallenges(), systemClock()),
       audit: { async write() {} },
     });
@@ -81,17 +100,49 @@ describe('account linking', () => {
     const challenges = memoryChallenges();
     const tokens = createTokenService(challenges, systemClock());
     const service = createUserService({
-      db: { async transaction(fn) { return fn({}); } },
-      users: { async create() {}, async findById() { return { id: 'user-1' }; } },
+      db: {
+        async transaction(fn) {
+          return fn({});
+        },
+      },
+      users: {
+        async create() {},
+        async findById() {
+          return { id: 'user-1' };
+        },
+      },
       identities: {
         async create() {},
-        async findByProviderSubject() { return null; },
-        async listByUser() { return identities; },
-        async deleteById() { throw new Error('should not delete'); },
+        async findByProviderSubject() {
+          return null;
+        },
+        async listByUser() {
+          return identities;
+        },
+        async deleteById() {
+          throw new Error('should not delete');
+        },
       },
-      credentials: { async findByUserId() { return null; }, async deleteByUserId() {} },
-      rbacRepository: { async findRoleByName() { return null; }, async assignRole() {} },
-      rbac: { async getRoles() { return []; }, async getPermissions() { return []; } },
+      credentials: {
+        async findByUserId() {
+          return null;
+        },
+        async deleteByUserId() {},
+      },
+      rbacRepository: {
+        async findRoleByName() {
+          return null;
+        },
+        async assignRole() {},
+      },
+      rbac: {
+        async getRoles() {
+          return [];
+        },
+        async getPermissions() {
+          return [];
+        },
+      },
       tokens,
       audit: { async write() {} },
     });
@@ -106,16 +157,47 @@ describe('account linking', () => {
     const tokens = createTokenService(challenges, systemClock());
     const identities = [];
     const service = createUserService({
-      db: { async transaction(fn) { return fn({}); } },
-      users: { async create() {}, async findById() { return { id: 'user-1' }; } },
-      identities: {
-        async create(row) { identities.push(row); },
-        async findByProviderSubject() { return null; },
-        async listByUser() { return identities; },
+      db: {
+        async transaction(fn) {
+          return fn({});
+        },
       },
-      credentials: { async findByUserId() { return null; } },
-      rbacRepository: { async findRoleByName() { return null; }, async assignRole() {} },
-      rbac: { async getRoles() { return []; }, async getPermissions() { return []; } },
+      users: {
+        async create() {},
+        async findById() {
+          return { id: 'user-1' };
+        },
+      },
+      identities: {
+        async create(row) {
+          identities.push(row);
+        },
+        async findByProviderSubject() {
+          return null;
+        },
+        async listByUser() {
+          return identities;
+        },
+      },
+      credentials: {
+        async findByUserId() {
+          return null;
+        },
+      },
+      rbacRepository: {
+        async findRoleByName() {
+          return null;
+        },
+        async assignRole() {},
+      },
+      rbac: {
+        async getRoles() {
+          return [];
+        },
+        async getPermissions() {
+          return [];
+        },
+      },
       tokens,
       audit: { async write() {} },
     });

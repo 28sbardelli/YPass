@@ -53,8 +53,7 @@ export function createEntraProvider({ config, logger }) {
           throw new AuthenticationError('Entra nonce mismatch');
         }
         const issuerOk =
-          typeof claims.iss === 'string' &&
-          claims.iss.includes(`/${config.entra.tenantId}/`);
+          typeof claims.iss === 'string' && claims.iss.includes(`/${config.entra.tenantId}/`);
         if (config.entra.tenantId !== 'common' && !issuerOk) {
           throw new AuthenticationError('Entra issuer mismatch');
         }

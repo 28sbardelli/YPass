@@ -43,6 +43,7 @@
     "db:migrate": "node scripts/db-migrate.js",
     "db:rollback": "node scripts/db-rollback.js",
     "db:seed": "node scripts/db-seed.js",
+    "db:clear-pass-data": "node scripts/db-clear-pass-data.js",
     "db:status": "node scripts/db-status.js",
     "db:init:sqlite": "node scripts/db-init.js --provider=sqlite",
     "db:init:postgres": "node scripts/db-init.js --provider=postgres",

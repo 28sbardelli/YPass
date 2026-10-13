@@ -11,11 +11,15 @@ try {
   const [completed, pending] = await knex.migrate.list();
   console.log('Completed migrations:');
   for (const item of completed) {
-    console.log(`  - ${typeof item === 'string' ? item : item.name || item.file || JSON.stringify(item)}`);
+    console.log(
+      `  - ${typeof item === 'string' ? item : item.name || item.file || JSON.stringify(item)}`,
+    );
   }
   console.log('Pending migrations:');
   for (const item of pending) {
-    console.log(`  - ${typeof item === 'string' ? item : item.file || item.name || JSON.stringify(item)}`);
+    console.log(
+      `  - ${typeof item === 'string' ? item : item.file || item.name || JSON.stringify(item)}`,
+    );
   }
 } finally {
   await knex.destroy();

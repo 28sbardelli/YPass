@@ -1,5 +1,5 @@
 export function createWebController(container) {
-  const { passService } = container;
+  const { passService, kioskService } = container;
 
   return {
     home(req, res) {
@@ -16,15 +16,26 @@ export function createWebController(container) {
     },
     teacher(req, res) {
       return passService.teacherDashboard(req.currentUser.id).then((dashboard) =>
-        res.render('pages/teacher', { title: 'Teacher panel', currentUser: req.currentUser, ...dashboard, message: null }),
+        res.render('pages/teacher', {
+          title: 'Teacher panel',
+          currentUser: req.currentUser,
+          ...dashboard,
+          message: null,
+        }),
       );
     },
     async teacherAction(req, res, next) {
       try {
-        const action = req.body.action === 'approve' ? passService.approvePass : passService.cancelPass;
+        const action =
+          req.body.action === 'approve' ? passService.approvePass : passService.cancelPass;
         await action({ passId: req.body.passId, userId: req.currentUser.id });
         const dashboard = await passService.teacherDashboard(req.currentUser.id);
-        res.render('pages/teacher', { title: 'Teacher panel', currentUser: req.currentUser, ...dashboard, message: req.body.action === 'approve' ? 'Pass approved.' : 'Pass cancelled.' });
+        res.render('pages/teacher', {
+          title: 'Teacher panel',
+          currentUser: req.currentUser,
+          ...dashboard,
+          message: req.body.action === 'approve' ? 'Pass approved.' : 'Pass cancelled.',
+        });
       } catch (error) {
         next(error);
       }
@@ -32,7 +43,13 @@ export function createWebController(container) {
     async appointment(req, res, next) {
       try {
         const options = await passService.appointmentOptions(req.currentUser.id);
-        res.render('pages/appointment', { title: 'Create appointment', currentUser: req.currentUser, ...options, form: {}, message: null });
+        res.render('pages/appointment', {
+          title: 'Create appointment',
+          currentUser: req.currentUser,
+          ...options,
+          form: {},
+          message: null,
+        });
       } catch (error) {
         next(error);
       }
@@ -41,14 +58,26 @@ export function createWebController(container) {
       try {
         await passService.createAppointment({ userId: req.currentUser.id, ...req.body });
         const options = await passService.appointmentOptions(req.currentUser.id);
-        res.render('pages/appointment', { title: 'Create appointment', currentUser: req.currentUser, ...options, form: {}, message: 'Appointment created.' });
+        res.render('pages/appointment', {
+          title: 'Create appointment',
+          currentUser: req.currentUser,
+          ...options,
+          form: {},
+          message: 'Appointment created.',
+        });
       } catch (error) {
         if (!error.expose) {
           next(error);
           return;
         }
         const options = await passService.appointmentOptions(req.currentUser.id);
-        res.status(error.status).render('pages/appointment', { title: 'Create appointment', currentUser: req.currentUser, ...options, form: req.body, message: error.message });
+        res.status(error.status).render('pages/appointment', {
+          title: 'Create appointment',
+          currentUser: req.currentUser,
+          ...options,
+          form: req.body,
+          message: error.message,
+        });
       }
     },
     async kiosk(req, res, next) {
@@ -67,8 +96,25 @@ export function createWebController(container) {
         next(error);
       }
     },
+    async kioskPass(req, res, next) {
+      try {
+        const options = await passService.kioskOptions(req.kiosk.kiosk_code);
+        renderKiosk(res, {
+          view: 'pages/pass',
+          kioskSession: true,
+          kioskCode: req.kiosk.kiosk_code,
+          ...options,
+          action: null,
+          student: null,
+          form: {},
+          message: null,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
     async scanKiosk(req, res, next) {
-      const kioskCode = req.body.kioskCode;
+      const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
       try {
         const result = await passService.scanStudent({
           kioskCode,
@@ -76,7 +122,13 @@ export function createWebController(container) {
           actorUserId: req.currentUser?.id,
         });
         const message = scanMessage(result);
-        renderKiosk(res, { ...result, kioskCode, form: {}, message });
+        renderKiosk(res, {
+          ...result,
+          kioskCode,
+          kioskSession: Boolean(req.kiosk),
+          form: {},
+          message,
+        });
       } catch (error) {
         if (!error.expose) {
           next(error);
@@ -84,19 +136,24 @@ export function createWebController(container) {
         }
         try {
           const options = await passService.kioskOptions(kioskCode);
-          renderKiosk(res, {
-            ...options,
-            kioskCode,
-            form: req.body,
-            message: { type: 'error', text: error.message },
-          }, error.status);
+          renderKiosk(
+            res,
+            {
+              ...options,
+              kioskCode,
+              kioskSession: Boolean(req.kiosk),
+              form: req.body,
+              message: { type: 'error', text: error.message },
+            },
+            error.status,
+          );
         } catch (renderError) {
           next(renderError);
         }
       }
     },
     async createKioskPass(req, res, next) {
-      const kioskCode = req.body.kioskCode;
+      const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
       try {
         const result = await passService.requestPass({
           kioskCode,
@@ -108,6 +165,7 @@ export function createWebController(container) {
         renderKiosk(res, {
           ...result,
           kioskCode,
+          kioskSession: Boolean(req.kiosk),
           form: {},
           message: {
             type: 'success',
@@ -121,13 +179,18 @@ export function createWebController(container) {
         }
         try {
           const options = await passService.kioskOptions(kioskCode);
-          renderKiosk(res, {
-            ...options,
-            kioskCode,
-            student: { display_name: req.body.studentName },
-            form: req.body,
-            message: { type: 'error', text: error.message },
-          }, error.status);
+          renderKiosk(
+            res,
+            {
+              ...options,
+              kioskCode,
+              kioskSession: Boolean(req.kiosk),
+              student: { display_name: req.body.studentName },
+              form: req.body,
+              message: { type: 'error', text: error.message },
+            },
+            error.status,
+          );
         } catch (renderError) {
           next(renderError);
         }
@@ -136,15 +199,82 @@ export function createWebController(container) {
     async manager(req, res, next) {
       try {
         const manager = await passService.managerDashboard(req.query);
-        res.render('pages/manager', { title: 'Manager panel', currentUser: req.currentUser, ...manager });
+        const enrollmentCodes = await kioskService.listEnrollmentCodes();
+        res.render('pages/manager', {
+          title: 'Manager panel',
+          currentUser: req.currentUser,
+          ...manager,
+          enrollmentCodes,
+          enrollmentCode: req.query.enrollmentCode || null,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+    async createManagerStudent(req, res, next) {
+      return managerMutation(req, res, next, () => passService.createManagerStudent(req.body));
+    },
+    async updateManagerStudent(req, res, next) {
+      return managerMutation(req, res, next, () => passService.updateManagerStudent(req.body));
+    },
+    async createManagerLocation(req, res, next) {
+      return managerMutation(req, res, next, () => passService.createManagerLocation(req.body));
+    },
+    async updateManagerLocation(req, res, next) {
+      return managerMutation(req, res, next, () => passService.updateManagerLocation(req.body));
+    },
+    async createManagerKiosk(req, res, next) {
+      return managerMutation(req, res, next, () => passService.createManagerKiosk(req.body));
+    },
+    async updateManagerKiosk(req, res, next) {
+      return managerMutation(req, res, next, () => passService.updateManagerKiosk(req.body));
+    },
+    async createManagerEnrollmentCode(req, res, next) {
+      try {
+        const result = await kioskService.createEnrollmentCode({
+          createdBy: req.currentUser.id,
+          ...req.body,
+          reqLike: req,
+        });
+        res.redirect(`/manager?enrollmentCode=${encodeURIComponent(result.code)}`);
+      } catch (error) {
+        next(error);
+      }
+    },
+    async completeManagerEnrollment(req, res, next) {
+      try {
+        await kioskService.completeEnrollment({ ...req.body, reqLike: req });
+        res.redirect('/manager');
+      } catch (error) {
+        next(error);
+      }
+    },
+    async regenerateManagerKioskCredentials(req, res, next) {
+      try {
+        const result = await kioskService.createCredentialRegenerationCode({
+          createdBy: req.currentUser.id,
+          kioskId: req.body.kioskId,
+          reqLike: req,
+        });
+        res.redirect(`/manager?enrollmentCode=${encodeURIComponent(result.code)}`);
       } catch (error) {
         next(error);
       }
     },
   };
 
+  async function managerMutation(req, res, next, action) {
+    try {
+      await action();
+      res.redirect('/manager');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   function renderKiosk(res, data, status = 200) {
-    res.status(status).render('pages/kiosk', {
+    const { view = 'pages/kiosk', ...viewData } = data;
+    res.status(status).render(view, {
       title: 'Student Pass Kiosk',
       currentUser: res.req.currentUser || null,
       action: null,
@@ -153,7 +283,8 @@ export function createWebController(container) {
       kiosk: null,
       form: {},
       message: null,
-      ...data,
+      kioskSession: false,
+      ...viewData,
     });
   }
 }

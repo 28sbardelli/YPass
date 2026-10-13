@@ -64,7 +64,9 @@ export function validateFeatureDependencies(config) {
   }
 
   if (database.provider === 'sqlite' && webConcurrency > 1) {
-    errors.push('DATABASE_PROVIDER=sqlite cannot be used with WEB_CONCURRENCY>1. Use PostgreSQL for clustered workers.');
+    errors.push(
+      'DATABASE_PROVIDER=sqlite cannot be used with WEB_CONCURRENCY>1. Use PostgreSQL for clustered workers.',
+    );
   }
 
   if (env === 'production' && webConcurrency > 1 && database.provider !== 'postgres') {
@@ -72,7 +74,9 @@ export function validateFeatureDependencies(config) {
   }
 
   if (features.localAuth && env === 'production' && !features.email) {
-    errors.push('LOCAL_AUTH_ENABLED in production requires EMAIL_ENABLED for verification and password reset.');
+    errors.push(
+      'LOCAL_AUTH_ENABLED in production requires EMAIL_ENABLED for verification and password reset.',
+    );
   }
 
   if (features.localAuth && features.localAuthEmailFlow === 'required' && !features.email) {
@@ -143,7 +147,9 @@ export function validateFeatureDependencies(config) {
   }
 
   if (clustered && features.redis === false && env === 'production' && webConcurrency > 1) {
-    errors.push('Production multi-worker deployments require REDIS_ENABLED for shared sessions and rate limits.');
+    errors.push(
+      'Production multi-worker deployments require REDIS_ENABLED for shared sessions and rate limits.',
+    );
   }
 
   if (features.apiDocs && !features.api) {

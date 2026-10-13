@@ -23,20 +23,20 @@ This repository is a **boilerplate**: a starter app you copy and customize. It i
 
 ## Words you will see constantly
 
-| Term | Meaning here |
-| --- | --- |
-| **HTTP request** | A browser or client asking the server for a URL (`GET /auth/login`, `POST /auth/login`). |
-| **Route** | The URL + method mapping. Lives in `src/routes/`. Routes should not contain business rules. |
-| **Middleware** | A function that runs *before* (or around) the route: sessions, CSRF, “are you logged in?”, rate limits. |
-| **Controller** | Reads the request, calls a service, writes the response (HTML redirect or JSON). Lives in `src/controllers/`. |
-| **Service** | The use case: “register this user”, “link Formbar”. Services must not use `req` or `res`. |
-| **Repository** | SQL only, through Knex. No HTTP, no Formbar, no “if the user is an admin”. |
-| **Integration** | Talks to something outside this app (Formbar, Entra, Redis, SMTP). |
-| **Container** | `src/container.js` — the one place that *constructs* services. Disabled flags mean those objects are never created. |
-| **Session** | Server-side login state, stored in a cookie (`fbapp.sid`). Not a JWT the browser sends on every API call. |
-| **CSRF** | Cross-site request forgery protection. HTML forms include a hidden `_csrf` field so other sites cannot POST as you. |
-| **RBAC** | Role-based access control. Roles (`user`, `admin`) grant permissions (`account.self`). The client cannot “send” a role to become admin. |
-| **Feature flag** | An explicit `true`/`false` in `.env`. Do not infer “email is on because SMTP_HOST is set”. |
+| Term             | Meaning here                                                                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **HTTP request** | A browser or client asking the server for a URL (`GET /auth/login`, `POST /auth/login`).                                                |
+| **Route**        | The URL + method mapping. Lives in `src/routes/`. Routes should not contain business rules.                                             |
+| **Middleware**   | A function that runs _before_ (or around) the route: sessions, CSRF, “are you logged in?”, rate limits.                                 |
+| **Controller**   | Reads the request, calls a service, writes the response (HTML redirect or JSON). Lives in `src/controllers/`.                           |
+| **Service**      | The use case: “register this user”, “link Formbar”. Services must not use `req` or `res`.                                               |
+| **Repository**   | SQL only, through Knex. No HTTP, no Formbar, no “if the user is an admin”.                                                              |
+| **Integration**  | Talks to something outside this app (Formbar, Entra, Redis, SMTP).                                                                      |
+| **Container**    | `src/container.js` — the one place that _constructs_ services. Disabled flags mean those objects are never created.                     |
+| **Session**      | Server-side login state, stored in a cookie (`fbapp.sid`). Not a JWT the browser sends on every API call.                               |
+| **CSRF**         | Cross-site request forgery protection. HTML forms include a hidden `_csrf` field so other sites cannot POST as you.                     |
+| **RBAC**         | Role-based access control. Roles (`user`, `admin`) grant permissions (`account.self`). The client cannot “send” a role to become admin. |
+| **Feature flag** | An explicit `true`/`false` in `.env`. Do not infer “email is on because SMTP_HOST is set”.                                              |
 
 If a new feature needs a Formbar call, that call belongs in `src/integrations/formbar/`, used by a **service**, used by a **controller**. Do not `fetch` Formbar from a route file.
 
@@ -129,7 +129,7 @@ Example: you submit the login form.
 6. **Repositories** in `src/repositories/index.js` run Knex SQL against `users` / `local_credentials`.
 7. Failures become typed errors (`ValidationError`, `AuthenticationError`) and **`src/middleware/error.js`** renders an HTML page or JSON. Production responses never include stack traces.
 
-**Try it:** set a breakpoint or add a `console.log` in the controller *and* the service. Submit a bad password. Confirm the service throws and the controller/error handler turns that into the login page message — the service never called `res.render`.
+**Try it:** set a breakpoint or add a `console.log` in the controller _and_ the service. Submit a bad password. Confirm the service throws and the controller/error handler turns that into the login page message — the service never called `res.render`.
 
 The same layers apply to JSON: `GET /api/v1/me` is registered only if `API_ENABLED=true`. Unauthenticated browser navigations to that URL redirect to login; clients that ask for JSON get `401`.
 
@@ -165,34 +165,34 @@ Treat this as a ladder. Do not enable Redis, Entra, jobs, and Formbar WebSockets
 
 ### Layer A — always on for local exploration
 
-| Flag / setting | Why |
-| --- | --- |
-| `LOCAL_AUTH_ENABLED=true` | You can register a user without Formbar credentials. |
-| `DATABASE_PROVIDER=sqlite` | No Postgres install. |
-| `WEB_CONCURRENCY=1` | SQLite cannot run with multiple workers. |
-| `SOCKET_IO_ENABLED=true` | Realtime exists; with one worker it does not need Redis. |
-| `API_ENABLED=true` | `/api/v1/me` |
-| `API_DOCS_ENABLED=true` | Swagger UI at `/api/v1/docs` |
+| Flag / setting             | Why                                                      |
+| -------------------------- | -------------------------------------------------------- |
+| `LOCAL_AUTH_ENABLED=true`  | You can register a user without Formbar credentials.     |
+| `DATABASE_PROVIDER=sqlite` | No Postgres install.                                     |
+| `WEB_CONCURRENCY=1`        | SQLite cannot run with multiple workers.                 |
+| `SOCKET_IO_ENABLED=true`   | Realtime exists; with one worker it does not need Redis. |
+| `API_ENABLED=true`         | `/api/v1/me`                                             |
+| `API_DOCS_ENABLED=true`    | Swagger UI at `/api/v1/docs`                             |
 
 ### Layer B — after local login works
 
-| Flag | What you are testing |
-| --- | --- |
-| `FORMBAR_AUTH_ENABLED=true` | “Continue with Formbar” on `/auth/login`. Requires `FORMBAR_BASE_URL`, `FORMBAR_CLIENT_ID`, `FORMBAR_CLIENT_SECRET`, `FORMBAR_REDIRECT_URI`. For [formbar.yorktechapps.com](https://formbar.yorktechapps.com) use `FORMBAR_OAUTH_MODE=legacy_redirect`. See [formbar.md](formbar.md). |
-| `FORMBAR_HTTP_EXAMPLE_ENABLED=true` | Example HTTP call (development only; forced off in production). Needs Formbar base URL. |
+| Flag                                | What you are testing                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FORMBAR_AUTH_ENABLED=true`         | “Continue with Formbar” on `/auth/login`. Requires `FORMBAR_BASE_URL`, `FORMBAR_CLIENT_ID`, `FORMBAR_CLIENT_SECRET`, `FORMBAR_REDIRECT_URI`. For [formbar.yorktechapps.com](https://formbar.yorktechapps.com) use `FORMBAR_OAUTH_MODE=legacy_redirect`. See [formbar.md](formbar.md). |
+| `FORMBAR_HTTP_EXAMPLE_ENABLED=true` | Example HTTP call (development only; forced off in production). Needs Formbar base URL.                                                                                                                                                                                               |
 
 Leave `FORMBAR_WS_CLIENT_ENABLED` off until you have a reason to open a **server-to-server** Socket.IO connection to Formbar. Browsers must not use Formbar’s API key.
 
 ### Layer C — only when you need them
 
-| Flag | Requires | Skip until |
-| --- | --- | --- |
-| `REDIS_ENABLED` | Redis running | You run more than one Node process, share sessions across workers, or enable jobs. |
-| `BACKGROUND_JOBS_ENABLED` | Redis in production | You have a real queued job. |
-| `EMAIL_ENABLED` | SMTP host/from | You want verify/reset mail, or you deploy production local auth. |
-| `ENTRA_AUTH_ENABLED` | Tenant, client id/secret, redirect URIs | School Microsoft login is required. |
-| `SEQ_ENABLED` | Seq URL | You want structured logs in Seq. |
-| `LOAD_TEST_FEATURES_ENABLED` | Never in production | Forced off in production. Load tests are a **CLI** (`npm run loadtest`), not an HTTP route. |
+| Flag                         | Requires                                | Skip until                                                                                  |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `REDIS_ENABLED`              | Redis running                           | You run more than one Node process, share sessions across workers, or enable jobs.          |
+| `BACKGROUND_JOBS_ENABLED`    | Redis in production                     | You have a real queued job.                                                                 |
+| `EMAIL_ENABLED`              | SMTP host/from                          | You want verify/reset mail, or you deploy production local auth.                            |
+| `ENTRA_AUTH_ENABLED`         | Tenant, client id/secret, redirect URIs | School Microsoft login is required.                                                         |
+| `SEQ_ENABLED`                | Seq URL                                 | You want structured logs in Seq.                                                            |
+| `LOAD_TEST_FEATURES_ENABLED` | Never in production                     | Forced off in production. Load tests are a **CLI** (`npm run loadtest`), not an HTTP route. |
 
 **Production** (`NODE_ENV=production`) forces example/debug/load-test HTTP off and requires email when local auth is on. SQLite + clustering is rejected. You cannot “sneak” those on with extra env vars.
 
@@ -244,7 +244,7 @@ If Vitest hangs on OneDrive/Windows, retry; it is an environment quirk, not your
 1. Set `FORMBAR_AUTH_ENABLED=true` and the Formbar variables. Restart. Config must boot cleanly.
 2. Sign in with **Continue with Formbar**. You should hit Formbar’s `/oauth` login page, not a JSON error about `/api/v1/oauth/authorize`.
 3. After redirect, `/account` should list a **formbar** identity. If you also have local auth, you can link/unlink as long as one method remains.
-4. Do not paste access tokens into URLs in *your* new code. Legacy Formbar production still returns `?token=` to *this* app’s callback; this app verifies the JWT against Formbar `/certs`.
+4. Do not paste access tokens into URLs in _your_ new code. Legacy Formbar production still returns `?token=` to _this_ app’s callback; this app verifies the JWT against Formbar `/certs`.
 
 ---
 
@@ -268,12 +268,12 @@ If Vitest hangs on OneDrive/Windows, retry; it is an environment quirk, not your
 
 ## When something breaks
 
-| Symptom | Likely cause |
-| --- | --- |
-| Process exits listing config keys | `.env` incomplete; Formbar flag on without client id/secret |
-| `/health/ready` is 503 | SQLite file missing (run `db:init`) or Redis required but down |
-| CSRF 403 | Form posted from another origin, or missing `_csrf` |
-| SQLite + cluster error | `WEB_CONCURRENCY` > 1 |
+| Symptom                                | Likely cause                                                         |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| Process exits listing config keys      | `.env` incomplete; Formbar flag on without client id/secret          |
+| `/health/ready` is 503                 | SQLite file missing (run `db:init`) or Redis required but down       |
+| CSRF 403                               | Form posted from another origin, or missing `_csrf`                  |
+| SQLite + cluster error                 | `WEB_CONCURRENCY` > 1                                                |
 | Formbar JSON “endpoint does not exist” | Browser was sent to `/api/v1/oauth/authorize`; use `legacy_redirect` |
 
 Full list: [troubleshooting](troubleshooting.md).

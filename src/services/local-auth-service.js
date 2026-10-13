@@ -52,7 +52,8 @@ export function createLocalAuthService({
             id: userId,
             display_name: displayName,
             primary_email: email.toLowerCase(),
-            email_verified_at: config.features.localAuthEmailFlow === 'required' ? null : clock.now(),
+            email_verified_at:
+              config.features.localAuthEmailFlow === 'required' ? null : clock.now(),
             status: 'active',
           },
           trx,

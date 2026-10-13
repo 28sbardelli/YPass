@@ -9,11 +9,14 @@ import IORedis from 'ioredis';
 export async function createJobs(config, logger, { challengeRepository, clock }) {
   if (!config.features.backgroundJobs) {
     if (!config.isProduction && config.webConcurrency === 1 && challengeRepository) {
-      const timer = setInterval(() => {
-        challengeRepository.deleteExpired(clock.now()).catch((error) => {
-          logger.warn({ err: error }, 'challenge cleanup failed');
-        });
-      }, 60 * 60 * 1000);
+      const timer = setInterval(
+        () => {
+          challengeRepository.deleteExpired(clock.now()).catch((error) => {
+            logger.warn({ err: error }, 'challenge cleanup failed');
+          });
+        },
+        60 * 60 * 1000,
+      );
       timer.unref?.();
       return {
         async close() {

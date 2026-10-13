@@ -54,7 +54,9 @@ const rawSchema = z.object({
   BACKGROUND_JOBS_ENABLED: bool(false),
   LOAD_TEST_FEATURES_ENABLED: bool(false),
   LOCAL_AUTH_EMAIL_FLOW: z.enum(['required', 'disabled']).default('disabled'),
-  FORMBAR_OAUTH_MODE: z.enum(['authorization_code', 'legacy_redirect']).default('authorization_code'),
+  FORMBAR_OAUTH_MODE: z
+    .enum(['authorization_code', 'legacy_redirect'])
+    .default('authorization_code'),
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   SESSION_COOKIE_NAME: z.string().min(1).default('fbapp.sid'),
@@ -185,7 +187,8 @@ export function parseConfig(source) {
       formbarWsExample: env === 'production' ? false : raw.FORMBAR_WS_EXAMPLE_ENABLED,
       formbarHttpExample: env === 'production' ? false : raw.FORMBAR_HTTP_EXAMPLE_ENABLED,
       api: raw.API_ENABLED,
-      apiDocs: env === 'production' ? raw.API_DOCS_ENABLED && raw.API_ENABLED : raw.API_DOCS_ENABLED,
+      apiDocs:
+        env === 'production' ? raw.API_DOCS_ENABLED && raw.API_ENABLED : raw.API_DOCS_ENABLED,
       backgroundJobs: raw.BACKGROUND_JOBS_ENABLED,
       loadTestFeatures: env === 'production' ? false : raw.LOAD_TEST_FEATURES_ENABLED,
       formbarOauthMode: raw.FORMBAR_OAUTH_MODE,
@@ -195,8 +198,7 @@ export function parseConfig(source) {
     env,
   );
 
-  const redisPrefix =
-    raw.REDIS_KEY_PREFIX || `${raw.APP_NAME}:${env}:`;
+  const redisPrefix = raw.REDIS_KEY_PREFIX || `${raw.APP_NAME}:${env}:`;
 
   const trustProxy =
     raw.TRUST_PROXY === 'true' || raw.TRUST_PROXY === '1'
@@ -314,6 +316,8 @@ export function parseConfig(source) {
  * Load .env (if present) then parse process.env.
  */
 export function loadConfig() {
-  loadEnvFile();
+  if (process.env.NODE_ENV !== 'production') {
+    loadEnvFile();
+  }
   return parseConfig(process.env);
 }

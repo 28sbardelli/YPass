@@ -1,10 +1,10 @@
-# AGENTS.md — YPass
+# AGENTS.md - YPass
 
 Index for agents. Read this first, then open only the files listed for your task.
 
 ## What this is
 
-Production-grade Node.js 22+ ESM application built with Express 5, EJS, session authentication, optional Formbar and Entra identity providers, SQLite/PostgreSQL persistence, Socket.IO realtime support, and feature-gated background integrations.
+YPass is a production-grade Node.js 22+ ESM hall-pass application built with Express 5 and EJS. It provides local, Formbar, and optional Microsoft Entra authentication; SQLite/PostgreSQL persistence; server-side sessions; Socket.IO realtime support; manager workflows; appointments; and a separately deployed kiosk machine client.
 
 The application is layered deliberately:
 
@@ -14,26 +14,27 @@ The application is layered deliberately:
 - Repositories own Knex queries only.
 - Integrations talk to Formbar, Entra, Redis, or SMTP.
 - `src/container.js` constructs enabled dependencies.
+- `kioskMachine/` is a thin local kiosk UI and proxy. The central server remains authoritative for kiosk identity, pass decisions, and state transitions.
 
 Disabled features must not register routes, sockets, jobs, or external connections.
 
 ## Run
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the watch-mode server |
-| `npm start` | Start the production-style server |
-| `npm test` | Run all Vitest suites |
-| `npm run test:unit` | Run unit tests |
-| `npm run test:integration` | Run integration tests |
-| `npm run test:e2e` | Run HTTP end-to-end tests |
-| `npm run test:security` | Run security-focused tests |
-| `npm run lint` | Run ESLint |
-| `npm run format:check` | Check Prettier formatting |
-| `npm run audit` | Audit production dependencies |
-| `npm run loadtest` | Run the localhost-only load CLI |
+| Command                    | Purpose                           |
+| -------------------------- | --------------------------------- |
+| `npm run dev`              | Start the watch-mode server       |
+| `npm start`                | Start the production-style server |
+| `npm test`                 | Run all Vitest suites             |
+| `npm run test:unit`        | Run unit tests                    |
+| `npm run test:integration` | Run integration tests             |
+| `npm run test:e2e`         | Run HTTP end-to-end tests         |
+| `npm run test:security`    | Run security-focused tests        |
+| `npm run lint`             | Run ESLint                        |
+| `npm run format:check`     | Check Prettier formatting         |
+| `npm run audit`            | Audit production dependencies     |
+| `npm run loadtest`         | Run the localhost-only load CLI   |
 
-Local setup: copy `.env.example` to `.env`, run `npm install`, then `npm run db:init`. Do not commit `.env`, secrets, logs, or runtime database files under `data/`.
+Local setup: copy `.env.example` to `.env`, disable integrations you do not have credentials for, run `npm install`, then `npm run db:init`. For the simplest local run use local auth, SQLite, one worker, and disabled Formbar/Entra/email. Do not commit `.env`, secrets, `kiosk-config.json`, logs, or runtime database files under `data/`.
 
 ## Layout (start here)
 
@@ -69,32 +70,34 @@ tools/loadtest/               CLI load-test harness; not an HTTP route
 wiki/                         Operator and developer documentation
 docs/openapi/v1.yaml          API contract documentation
 deploy/                       Nginx, Docker, and Ubuntu/PM2 deployment files
+kioskMachine/                 Separate kiosk UI, local proxy, and kiosk-client tests
 ```
 
 ## Task router
 
-| If you need to… | Open first | Then usually |
-| --- | --- | --- |
-| Change an environment variable or feature flag | `src/config/env.js`, `src/config/features.js` | `.env.example`, `wiki/system/feature-flags.md`, config tests |
-| Change startup, shutdown, health, or dependency wiring | `src/server.js`, `src/bootstrap.js`, `src/container.js` | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests |
-| Add or change an HTTP endpoint | `src/routes/` | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml` |
-| Change HTML pages or form behavior | Matching `src/routes/` and controller | `views/`, `public/`, CSRF/auth middleware, e2e tests |
-| Change API behavior | `src/routes/api.v1.js` | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests |
-| Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/` | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests |
-| Change Formbar OAuth or account linking | `src/integrations/formbar/`, `src/services/user-service.js` | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |
-| Change Entra authentication | `src/integrations/entra/` | Auth controller/routes, config dependencies, auth tests |
-| Change roles or permissions | `src/authorization/rbac.js`, `src/repositories/index.js` | Auth middleware, service checks, seed permissions, security tests |
-| Change passwords or token security | `src/auth/password.js`, `src/auth/tokens.js` | Local auth service, redaction/audit logging, security tests |
-| Change database schema | `src/database/migrations/` | Repository queries, seeds, integration tests, `npm run db:status` |
-| Change database connection/provider behavior | `src/database/`, `knexfile.js` | `scripts/db-*.js`, config tests, database integration tests |
-| Change realtime behavior | `src/realtime/index.js` | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external |
-| Change email delivery | `src/integrations/email/` | Local auth service, feature flags, email views, tests |
-| Change Redis, rate limits, or distributed sessions | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests |
-| Change request validation | `src/validators/` | Controller, route, error mapping, focused tests |
-| Change error responses | `src/errors/`, `src/middleware/error.js` | Controllers, HTML error views, API/e2e tests |
-| Change logging or audit events | `src/logging/` | Services/controllers, redaction tests, deployment config |
-| Change deployment or process management | `Dockerfile`, `docker-compose*.yml`, `deploy/`, `ecosystem.config.cjs` | `README.md`, `deploy/ubuntu/setup.md`, health endpoints |
-| Change documentation or operator guidance | `wiki/` | Keep `README.md`, OpenAPI, and affected source behavior consistent |
+| If you need to…                                           | Open first                                                                               | Then usually                                                                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Change an environment variable or feature flag            | `src/config/env.js`, `src/config/features.js`                                            | `.env.example`, `wiki/system/feature-flags.md`, config tests                                                   |
+| Change startup, shutdown, health, or dependency wiring    | `src/server.js`, `src/bootstrap.js`, `src/container.js`                                  | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests                                                          |
+| Add or change an HTTP endpoint                            | `src/routes/`                                                                            | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml`                                     |
+| Change HTML pages or form behavior                        | Matching `src/routes/` and controller                                                    | `views/`, `public/`, CSRF/auth middleware, e2e tests                                                           |
+| Change API behavior                                       | `src/routes/api.v1.js`                                                                   | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests                                             |
+| Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/`                                        | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests        |
+| Change Formbar OAuth or account linking                   | `src/integrations/formbar/`, `src/services/user-service.js`                              | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |
+| Change Entra authentication                               | `src/integrations/entra/`                                                                | Auth controller/routes, config dependencies, auth tests                                                        |
+| Change roles or permissions                               | `src/authorization/rbac.js`, `src/repositories/index.js`                                 | Auth middleware, service checks, seed permissions, security tests                                              |
+| Change passwords or token security                        | `src/auth/password.js`, `src/auth/tokens.js`                                             | Local auth service, redaction/audit logging, security tests                                                    |
+| Change database schema                                    | `src/database/migrations/`                                                               | Repository queries, seeds, integration tests, `npm run db:status`                                              |
+| Change database connection/provider behavior              | `src/database/`, `knexfile.js`                                                           | `scripts/db-*.js`, config tests, database integration tests                                                    |
+| Change realtime behavior                                  | `src/realtime/index.js`                                                                  | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external                                   |
+| Change email delivery                                     | `src/integrations/email/`                                                                | Local auth service, feature flags, email views, tests                                                          |
+| Change Redis, rate limits, or distributed sessions        | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests                                                           |
+| Change request validation                                 | `src/validators/`                                                                        | Controller, route, error mapping, focused tests                                                                |
+| Change error responses                                    | `src/errors/`, `src/middleware/error.js`                                                 | Controllers, HTML error views, API/e2e tests                                                                   |
+| Change logging or audit events                            | `src/logging/`                                                                           | Services/controllers, redaction tests, deployment config                                                       |
+| Change deployment or process management                   | `Dockerfile`, `docker-compose*.yml`, `deploy/`, `ecosystem.config.cjs`                   | `README.md`, `deploy/ubuntu/setup.md`, health endpoints                                                        |
+| Change kiosk enrollment, credentials, or kiosk transport  | `src/services/kiosk-service.js`, `src/routes/api.v1.js`                                  | `src/controllers/api-controller.js`, `src/routes/web.js`, `kioskMachine/`, kiosk e2e/unit tests                |
+| Change documentation or operator guidance                 | `wiki/`                                                                                  | Keep `README.md`, OpenAPI, and affected source behavior consistent                                             |
 
 ## Request and startup flow
 
@@ -148,3 +151,16 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 5. Update `docs/openapi/v1.yaml`, `wiki/`, or `.env.example` when the public contract or setup changes.
 6. Run focused tests, then `npm run lint` and broader tests when the change warrants it.
 7. Update this index if you add a major module, command, route family, or ownership boundary.
+
+## Hall-pass and kiosk ownership
+
+- `src/services/pass-service.js` is the authoritative pass state machine. It enforces student identity, one active pass, destination-aware scans, round-trip transitions, appointment auto-approval, and server-clock expiry.
+- `src/repositories/index.js` owns hall-pass, appointment, location, kiosk, event, and heartbeat queries. The partial unique index `passes_one_active_per_student` is the database concurrency guard.
+- Migrations `002_pass_system.js` through `006_returning_pass_state.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, and the returning-state concurrency guard.
+- `/api/v1/kiosks/enroll` accepts a short-lived manager-generated enrollment code and returns the kiosk code plus one secret. Enrollment codes expire after 10 minutes and can be used once.
+- `/api/v1/kiosks/options`, `/heartbeat`, `/scan`, and `/request-pass` are authenticated with `x-kiosk-code` and `x-kiosk-secret`. Only the hash is persisted centrally; the secret is returned once during enrollment.
+- The manager panel at `/manager` creates enrollment codes and regenerates credentials. Credential regeneration disables the kiosk until the new code is used.
+- `kioskMachine/` stores the issued secret in local `kiosk-config.json` with restrictive file permissions. It must never send that secret to browser JavaScript or expose it in logs.
+- The kiosk UI may collect student details and destination selections, but it must display central responses and must not implement pass approval, completion, expiration, or state transitions.
+
+Focused hall-pass verification: `npx vitest run tests/unit/pass-staff.test.js tests/e2e/kiosk.test.js tests/e2e/kiosk-enrollment.test.js` and `npm --prefix kioskMachine test`.

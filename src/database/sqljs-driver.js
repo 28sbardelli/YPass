@@ -48,7 +48,9 @@ export function wrapSqlJsDatabase(sqlJsDb, { filename, persist } = {}) {
           }
         },
         run(bindings = []) {
-          const trimmed = String(sql).trim().replace(/;+\s*$/, '');
+          const trimmed = String(sql)
+            .trim()
+            .replace(/;+\s*$/, '');
           if (/^(BEGIN|COMMIT|ROLLBACK|END|SAVEPOINT|RELEASE)\b/i.test(trimmed)) {
             try {
               sqlJsDb.run(trimmed);

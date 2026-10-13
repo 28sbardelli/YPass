@@ -52,7 +52,9 @@ export function createLocalCredentialRepository(db) {
       await trx('local_credentials').insert(row);
     },
     async findByUsername(username, trx = knex) {
-      return trx('local_credentials').whereRaw('lower(username) = ?', [username.toLowerCase()]).first();
+      return trx('local_credentials')
+        .whereRaw('lower(username) = ?', [username.toLowerCase()])
+        .first();
     },
     async findByUserId(userId, trx = knex) {
       return trx('local_credentials').where({ user_id: userId }).first();
@@ -111,7 +113,10 @@ export function createRbacRepository(db) {
       return trx('roles').where({ name }).first();
     },
     async assignRole(userId, roleId, trx = knex) {
-      await trx('user_roles').insert({ user_id: userId, role_id: roleId }).onConflict(['user_id', 'role_id']).ignore();
+      await trx('user_roles')
+        .insert({ user_id: userId, role_id: roleId })
+        .onConflict(['user_id', 'role_id'])
+        .ignore();
     },
     async listRolesForUser(userId, trx = knex) {
       return trx('roles')
@@ -154,10 +159,57 @@ export function createPassRepository(db) {
         )
         .first();
     },
+    async findAuthenticatedKiosk(kioskCode, secretHash, trx = knex) {
+      return trx('kiosks')
+        .join('locations', 'kiosks.location_id', 'locations.id')
+        .where({
+          kiosk_code: kioskCode,
+          secret_hash: secretHash,
+          'kiosks.active': true,
+          'locations.active': true,
+        })
+        .select(
+          'kiosks.*',
+          'locations.name as location_name',
+          'locations.type as location_type',
+          'locations.teacher_user_id as location_teacher_id',
+        )
+        .first();
+    },
+    async touchKiosk(id, patch, trx = knex) {
+      await trx('kiosks').where({ id }).update(patch);
+    },
+    async createEnrollmentCode(row, trx = knex) {
+      await trx('kiosk_enrollment_codes').insert(row);
+      return row;
+    },
+    async findEnrollmentCode(codeHash, trx = knex) {
+      return trx('kiosk_enrollment_codes').where({ code_hash: codeHash }).first();
+    },
+    async claimEnrollmentCode(id, now, trx = knex) {
+      return trx('kiosk_enrollment_codes')
+        .where({ id })
+        .whereNull('used_at')
+        .where('expires_at', '>', now)
+        .update({ used_at: now });
+    },
+    async nextKioskCode(trx = knex) {
+      const row = await trx('kiosks').max({ value: 'kiosk_code' }).first();
+      const current = Number(String(row?.value || '').match(/(\d+)$/)?.[1] || 0);
+      return `KIOSK-${String(current + 1).padStart(3, '0')}`;
+    },
+    async listEnrollmentCodes(trx = knex) {
+      return trx('kiosk_enrollment_codes').orderBy('created_at', 'desc');
+    },
+    async findEnrollmentCodeById(id, trx = knex) {
+      return trx('kiosk_enrollment_codes').where({ id }).first();
+    },
     async listDestinations(originLocationId, trx = knex) {
       return trx('locations')
         .leftJoin('users', 'locations.teacher_user_id', 'users.id')
+        .join('kiosks', 'locations.id', 'kiosks.location_id')
         .where('locations.active', true)
+        .where('kiosks.active', true)
         .whereNot('locations.id', originLocationId)
         .select(
           'locations.id',
@@ -165,6 +217,8 @@ export function createPassRepository(db) {
           'locations.type',
           'locations.teacher_user_id',
           'users.display_name as teacher_name',
+          'kiosks.id as kiosk_id',
+          'kiosks.kiosk_code',
         )
         .orderBy('locations.name');
     },
@@ -174,9 +228,33 @@ export function createPassRepository(db) {
     async findCurrentPassForStudent(studentId, trx = knex) {
       return trx('passes')
         .where({ student_id: studentId })
-        .whereIn('status', ['pending_approval', 'active', 'arrived'])
+        .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning'])
         .orderBy('requested_at', 'desc')
         .first();
+    },
+    async findEligibleAppointment(
+      studentId,
+      originLocationId,
+      destinationLocationId,
+      now,
+      trx = knex,
+    ) {
+      const windowStart = new Date(now.getTime() - 5 * 60 * 1000);
+      return trx('appointments')
+        .where({
+          student_id: studentId,
+          origin_location_id: originLocationId,
+          destination_location_id: destinationLocationId,
+          status: 'scheduled',
+        })
+        .whereBetween('scheduled_at', [windowStart, now])
+        .orderBy('scheduled_at')
+        .first();
+    },
+    async markAppointmentUsed(id, usedAt, trx = knex) {
+      await trx('appointments')
+        .where({ id, status: 'scheduled' })
+        .update({ status: 'used', used_at: usedAt, updated_at: trx.fn.now() });
     },
     async createPass(pass, event, trx = knex) {
       await trx('passes').insert(pass);
@@ -197,8 +275,16 @@ export function createPassRepository(db) {
         .join('students', 'passes.student_id', 'students.id')
         .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .join('locations as destination', 'passes.destination_location_id', 'destination.id')
-        .leftJoin('users as destination_teacher', 'passes.destination_teacher_id', 'destination_teacher.id')
-        .where((query) => query.where('origin.teacher_user_id', userId).orWhere('destination.teacher_user_id', userId))
+        .leftJoin(
+          'users as destination_teacher',
+          'passes.destination_teacher_id',
+          'destination_teacher.id',
+        )
+        .where((query) =>
+          query
+            .where('origin.teacher_user_id', userId)
+            .orWhere('destination.teacher_user_id', userId),
+        )
         .select(
           'passes.*',
           'students.student_number',
@@ -214,8 +300,16 @@ export function createPassRepository(db) {
         .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .join('locations as destination', 'passes.destination_location_id', 'destination.id')
         .where('passes.id', passId)
-        .where((query) => query.where('origin.teacher_user_id', userId).orWhere('destination.teacher_user_id', userId))
-        .select('passes.*', 'origin.teacher_user_id as origin_teacher_id', 'destination.teacher_user_id as destination_teacher_id')
+        .where((query) =>
+          query
+            .where('origin.teacher_user_id', userId)
+            .orWhere('destination.teacher_user_id', userId),
+        )
+        .select(
+          'passes.*',
+          'origin.teacher_user_id as origin_teacher_id',
+          'destination.teacher_user_id as destination_teacher_id',
+        )
         .first();
     },
     async listLocations(trx = knex) {
@@ -237,8 +331,19 @@ export function createPassRepository(db) {
         .join('students', 'appointments.student_id', 'students.id')
         .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
         .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
-        .where((query) => query.where('appointments.created_by', userId).orWhere('origin.teacher_user_id', userId).orWhere('destination.teacher_user_id', userId))
-        .select('appointments.*', 'students.student_number', 'students.display_name as student_name', 'origin.name as origin_name', 'destination.name as destination_name')
+        .where((query) =>
+          query
+            .where('appointments.created_by', userId)
+            .orWhere('origin.teacher_user_id', userId)
+            .orWhere('destination.teacher_user_id', userId),
+        )
+        .select(
+          'appointments.*',
+          'students.student_number',
+          'students.display_name as student_name',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+        )
         .orderBy('appointments.scheduled_at');
     },
     async listManagerPasses(filters = {}, trx = knex) {
@@ -247,8 +352,22 @@ export function createPassRepository(db) {
         .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .join('locations as destination', 'passes.destination_location_id', 'destination.id')
         .leftJoin('appointments', 'passes.appointment_id', 'appointments.id')
-        .select('passes.*', 'students.student_number', 'students.display_name as student_name', 'origin.name as origin_name', 'destination.name as destination_name', 'appointments.scheduled_at as appointment_scheduled_at');
-      if (filters.status) query.where('passes.status', filters.status);
+        .select(
+          'passes.*',
+          'students.student_number',
+          'students.display_name as student_name',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+          'appointments.scheduled_at as appointment_scheduled_at',
+        );
+      if (filters.status === 'timedout') {
+        query
+          .whereIn('passes.status', ['active', 'arrived'])
+          .whereNotNull('passes.timeout_at')
+          .where('passes.timeout_at', '<=', filters.now);
+      } else if (filters.status) {
+        query.where('passes.status', filters.status);
+      }
       if (filters.studentNumber) query.where('students.student_number', filters.studentNumber);
       return query.orderBy('passes.requested_at', 'desc');
     },
@@ -257,10 +376,94 @@ export function createPassRepository(db) {
         .join('students', 'appointments.student_id', 'students.id')
         .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
         .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
-        .select('appointments.*', 'students.student_number', 'students.display_name as student_name', 'origin.name as origin_name', 'destination.name as destination_name');
+        .select(
+          'appointments.*',
+          'students.student_number',
+          'students.display_name as student_name',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+        );
       if (filters.appointmentStatus) query.where('appointments.status', filters.appointmentStatus);
       if (filters.studentNumber) query.where('students.student_number', filters.studentNumber);
       return query.orderBy('appointments.scheduled_at', 'desc');
+    },
+    async listManagerStudents(trx = knex) {
+      return trx('students').orderBy('display_name');
+    },
+    async findStudentById(id, trx = knex) {
+      return trx('students').where({ id }).first();
+    },
+    async createStudent(student, trx = knex) {
+      await trx('students').insert(student);
+      return student;
+    },
+    async updateStudent(id, patch, trx = knex) {
+      await trx('students')
+        .where({ id })
+        .update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async listManagerLocations(trx = knex) {
+      return trx('locations')
+        .leftJoin('users', 'locations.teacher_user_id', 'users.id')
+        .select('locations.*', 'users.display_name as teacher_name')
+        .orderBy('locations.name');
+    },
+    async findLocationById(id, trx = knex) {
+      return trx('locations').where({ id }).first();
+    },
+    async findLocationByName(name, trx = knex) {
+      return trx('locations').whereRaw('lower(name) = ?', [name.toLowerCase()]).first();
+    },
+    async createLocation(location, trx = knex) {
+      await trx('locations').insert(location);
+      return location;
+    },
+    async updateLocation(id, patch, trx = knex) {
+      await trx('locations')
+        .where({ id })
+        .update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async listManagerKiosks(trx = knex) {
+      return trx('kiosks')
+        .join('locations', 'kiosks.location_id', 'locations.id')
+        .select('kiosks.*', 'locations.name as location_name')
+        .orderBy('kiosks.name');
+    },
+    async findKioskById(id, trx = knex) {
+      return trx('kiosks').where({ id }).first();
+    },
+    async findKioskByNameAtLocation(name, locationId, trx = knex) {
+      return trx('kiosks').where({ name, location_id: locationId }).first();
+    },
+    async findActiveKioskById(id, trx = knex) {
+      return trx('kiosks')
+        .join('locations', 'kiosks.location_id', 'locations.id')
+        .where({ 'kiosks.id': id, 'kiosks.active': true, 'locations.active': true })
+        .select(
+          'kiosks.*',
+          'locations.name as location_name',
+          'locations.type as location_type',
+          'locations.teacher_user_id as location_teacher_id',
+        )
+        .first();
+    },
+    async findKioskByKioskCode(kioskCode, trx = knex) {
+      return trx('kiosks').where({ kiosk_code: kioskCode }).first();
+    },
+    async createKiosk(kiosk, trx = knex) {
+      await trx('kiosks').insert(kiosk);
+      return kiosk;
+    },
+    async updateKiosk(id, patch, trx = knex) {
+      await trx('kiosks')
+        .where({ id })
+        .update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async listManagerUsers(trx = knex) {
+      return trx('users')
+        .where({ status: 'active' })
+        .orderBy('display_name')
+        .select('id', 'display_name', 'primary_email');
     },
   };
 }

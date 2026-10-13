@@ -7,7 +7,10 @@ import { createLogger } from '#logging/logger.js';
 describe('formbar oauth', () => {
   it('rejects a state mismatch', async () => {
     const config = parseConfig(validTestEnv());
-    const oauth = createFormbarOAuth({ config, logger: createLogger({ level: 'silent', pretty: false }) });
+    const oauth = createFormbarOAuth({
+      config,
+      logger: createLogger({ level: 'silent', pretty: false }),
+    });
     expect(() => oauth.assertState('abc', 'xyz')).toThrow(/state mismatch/);
   });
 
@@ -24,7 +27,11 @@ describe('formbar oauth', () => {
           async json() {
             return {
               data: {
-                access_token: ['hdr', Buffer.from(JSON.stringify({ id: 7, displayName: 'Pat' })).toString('base64url'), 'sig'].join('.'),
+                access_token: [
+                  'hdr',
+                  Buffer.from(JSON.stringify({ id: 7, displayName: 'Pat' })).toString('base64url'),
+                  'sig',
+                ].join('.'),
                 refresh_token: 'refresh',
               },
             };
