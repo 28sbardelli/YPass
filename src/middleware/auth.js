@@ -1,5 +1,20 @@
 import { AuthenticationError, AuthorizationError } from '#errors';
 
+export function requireKioskSession(container) {
+  return async (req, _res, next) => {
+    try {
+      const kioskId = req.session?.kioskId;
+      if (!kioskId) throw new AuthenticationError('Kiosk session required');
+      const kiosk = await container.passRepository.findActiveKioskById(kioskId);
+      if (!kiosk) throw new AuthenticationError('Kiosk is disabled or unavailable');
+      req.kiosk = kiosk;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
 /**
  * Require an authenticated session.
  */
@@ -76,5 +91,7 @@ export function requireManager(managerEmails) {
 
 function wantsJson(req) {
   const path = req.originalUrl || req.path || '';
-  return path.startsWith('/api/') || req.xhr || /\bapplication\/json\b/i.test(req.get('accept') || '');
+  return (
+    path.startsWith('/api/') || req.xhr || /\bapplication\/json\b/i.test(req.get('accept') || '')
+  );
 }

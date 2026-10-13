@@ -194,14 +194,17 @@ export function createAuthController(container) {
 
   async function finishExternal(req, res, identity, pending) {
     if (pending?.link && req.session.userId) {
-      await userService.completeLink({
-        userId: req.session.userId,
-        provider: identity.provider,
-        subject: identity.subject,
-        email: identity.email,
-        profile: identity.profile,
-        linkNonce: pending.linkNonce,
-      }, req);
+      await userService.completeLink(
+        {
+          userId: req.session.userId,
+          provider: identity.provider,
+          subject: identity.subject,
+          email: identity.email,
+          profile: identity.profile,
+          linkNonce: pending.linkNonce,
+        },
+        req,
+      );
       req.session.oauth = null;
       res.redirect('/account');
       return;

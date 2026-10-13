@@ -41,7 +41,10 @@ export async function createDatabase(config, logger) {
         if (error instanceof AppError) {
           throw error;
         }
-        throw new DatabaseError('Transaction failed', error instanceof Error ? error.message : error);
+        throw new DatabaseError(
+          'Transaction failed',
+          error instanceof Error ? error.message : error,
+        );
       }
     },
     async destroy() {

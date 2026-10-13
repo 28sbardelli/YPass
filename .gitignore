@@ -5,6 +5,7 @@ logs/
 .env
 .env.local
 .env.*.local
+kioskMachine/kiosk-config.json
 coverage/
 .DS_Store
 Thumbs.db

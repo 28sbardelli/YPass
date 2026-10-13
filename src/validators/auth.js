@@ -5,7 +5,10 @@ export const usernameSchema = z
   .trim()
   .min(3)
   .max(64)
-  .regex(/^[a-zA-Z0-9._-]+$/, 'Username may contain letters, numbers, dots, underscores, and hyphens');
+  .regex(
+    /^[a-zA-Z0-9._-]+$/,
+    'Username may contain letters, numbers, dots, underscores, and hyphens',
+  );
 
 export const passwordSchema = z.string().min(12).max(200);
 

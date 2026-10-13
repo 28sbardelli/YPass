@@ -38,9 +38,9 @@ describe('formbar oauth callback', () => {
       privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
     });
     const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
-    const payload = Buffer.from(JSON.stringify({ id: 42, email: 'pat@example.test', displayName: 'Pat' })).toString(
-      'base64url',
-    );
+    const payload = Buffer.from(
+      JSON.stringify({ id: 42, email: 'pat@example.test', displayName: 'Pat' }),
+    ).toString('base64url');
     const signer = createSign('RSA-SHA256');
     signer.update(`${header}.${payload}`);
     signer.end();
@@ -52,7 +52,12 @@ describe('formbar oauth callback', () => {
       logger: createLogger({ level: 'silent', pretty: false }),
       fetchImpl: async (url) => {
         expect(String(url)).toBe('https://formbar.test/certs');
-        return { ok: true, async json() { return { publicKey }; } };
+        return {
+          ok: true,
+          async json() {
+            return { publicKey };
+          },
+        };
       },
     });
     const identity = await oauth.completeCallback({

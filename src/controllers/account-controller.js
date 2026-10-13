@@ -32,17 +32,21 @@ export function createAccountController(container) {
 
     async unlink(req, res, next) {
       try {
-        let hasReauthenticated = Boolean(req.session.reauthAt) && Date.now() - req.session.reauthAt < 5 * 60 * 1000;
+        let hasReauthenticated =
+          Boolean(req.session.reauthAt) && Date.now() - req.session.reauthAt < 5 * 60 * 1000;
         if (req.body.currentPassword && localAuth) {
           await localAuth.reauthenticate(req.session.userId, req.body.currentPassword);
           req.session.reauthAt = Date.now();
           hasReauthenticated = true;
         }
-        await userService.unlink({
-          userId: req.session.userId,
-          identityId: req.body.identityId,
-          hasReauthenticated,
-        }, req);
+        await userService.unlink(
+          {
+            userId: req.session.userId,
+            identityId: req.body.identityId,
+            hasReauthenticated,
+          },
+          req,
+        );
         res.redirect('/account');
       } catch (error) {
         if (error.expose) {

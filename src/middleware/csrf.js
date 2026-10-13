@@ -44,6 +44,10 @@ export function createCsrf(config) {
       next();
       return;
     }
+    if (req.path.startsWith('/api/v1/kiosks/')) {
+      next();
+      return;
+    }
     // OAuth provider callbacks are GET plus state; nothing to skip here for POST token.
     doubleCsrfProtection(req, res, (error) => csrfErrorHandler(error, req, res, next));
   }

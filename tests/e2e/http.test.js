@@ -15,7 +15,7 @@ describe('http skeleton', () => {
     ctx = await createTestApp();
     const res = await ctx.request.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Welcome');
+    expect(res.text).toContain('Elektronischer Hallenpass');
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers['content-security-policy']).toBeTruthy();
   });

@@ -22,7 +22,7 @@
       </div>
       <form method="post" action="/kiosk/scan" class="kiosk-form kiosk-scan-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="kioskCode" value="<%= kioskCode %>">
+        <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
         <label for="studentNumber">Student ID</label>
         <div class="scan-input-wrap">
           <span class="scan-icon" aria-hidden="true">#</span>
@@ -43,7 +43,7 @@
         </div>
         <form method="post" action="/kiosk/pass" class="kiosk-form">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <input type="hidden" name="kioskCode" value="<%= kioskCode %>">
+          <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
           <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
           <label for="studentName">Confirm full name</label>
           <input id="studentName" name="studentName" value="<%= student.display_name || form.studentName || '' %>" required autocomplete="off">

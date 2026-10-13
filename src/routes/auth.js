@@ -1,12 +1,7 @@
 import { Router } from 'express';
 import { createAuthController } from '#controllers/auth-controller.js';
 import { validate } from '#middleware/validate.js';
-import {
-  registerSchema,
-  loginSchema,
-  forgotSchema,
-  resetSchema,
-} from '#validators/auth.js';
+import { registerSchema, loginSchema, forgotSchema, resetSchema } from '#validators/auth.js';
 
 export function createAuthRouter(container) {
   const router = Router();

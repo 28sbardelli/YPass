@@ -23,6 +23,8 @@ export function createHealthController(container) {
 
 async function collectDetails(container) {
   const database = container.db ? await container.db.health() : { ok: false };
-  const redis = container.redis ? await container.redis.health() : { ok: !container.config.features.redis };
+  const redis = container.redis
+    ? await container.redis.health()
+    : { ok: !container.config.features.redis };
   return { database, redis };
 }
