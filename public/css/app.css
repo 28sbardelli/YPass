@@ -75,6 +75,21 @@ button, .button {
 .staff-heading h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.2rem); }
 .staff-section { margin-top: 1.5rem; }
 .staff-section h2 { border-bottom: 2px solid #d6d3d1; padding-bottom: 0.5rem; }
+.staff-sort {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.7rem;
+}
+.staff-sort label {
+  margin: 0;
+  font-weight: 600;
+}
+.staff-sort select {
+  min-height: 2.4rem;
+  font: inherit;
+  padding: 0.4rem;
+}
 .staff-list { display: grid; gap: 0.6rem; }
 .staff-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 1rem; background: var(--card); border: 1px solid #d6d3d1; }
 .staff-row p { margin: 0.35rem 0 0; color: #57534e; }
