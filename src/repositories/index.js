@@ -237,7 +237,7 @@ export function createPassRepository(db) {
         .join('students', 'appointments.student_id', 'students.id')
         .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
         .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
-        .where((query) => query.where('appointments.created_by', userId).orWhere('origin.teacher_user_id', userId).orWhere('destination.teacher_user_id', userId))
+        .where((query) => query.where('origin.teacher_user_id', userId).orWhere('destination.teacher_user_id', userId))
         .select('appointments.*', 'students.student_number', 'students.display_name as student_name', 'origin.name as origin_name', 'destination.name as destination_name')
         .orderBy('appointments.scheduled_at');
     },

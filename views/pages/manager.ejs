@@ -1,6 +1,7 @@
 <% const activeFilters = filters || {}; %>
 <section class="staff-page">
-  <div class="staff-heading"><div><p class="kiosk-kicker">Administration</p><h1>Manager panel</h1><p class="muted">System-wide pass and appointment history.</p></div></div>
+  <div class="staff-heading"><div><p class="kiosk-kicker">Administration</p><h1>
+Manager-Seite</h1><p class="muted">System-wide pass and appointment history.</p></div></div>
   <form method="get" action="/manager" class="filter-bar">
     <label>Pass status<select name="status"><option value="">All pass statuses</option><% ['pending_approval', 'active', 'arrived', 'completed', 'cancelled', 'expired'].forEach((status) => { %><option value="<%= status %>" <%= activeFilters.status === status ? 'selected' : '' %>><%= status %></option><% }) %></select></label>
     <label>Appointment status<select name="appointmentStatus"><option value="">All appointment statuses</option><% ['scheduled', 'cancelled', 'completed', 'no_show'].forEach((status) => { %><option value="<%= status %>" <%= activeFilters.appointmentStatus === status ? 'selected' : '' %>><%= status %></option><% }) %></select></label>

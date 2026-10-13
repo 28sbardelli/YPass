@@ -79,6 +79,7 @@ deploy/                       Nginx, Docker, and Ubuntu/PM2 deployment files
 | Change startup, shutdown, health, or dependency wiring | `src/server.js`, `src/bootstrap.js`, `src/container.js` | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests |
 | Add or change an HTTP endpoint | `src/routes/` | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml` |
 | Change HTML pages or form behavior | Matching `src/routes/` and controller | `views/`, `public/`, CSRF/auth middleware, e2e tests |
+| Change the teacher panel or its location-scoped data | `src/routes/web.js`, `src/controllers/web-controller.js` | `src/services/pass-service.js`, `src/repositories/index.js`, `views/pages/teacher.ejs`, `tests/unit/pass-staff.test.js` |
 | Change API behavior | `src/routes/api.v1.js` | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests |
 | Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/` | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests |
 | Change Formbar OAuth or account linking | `src/integrations/formbar/`, `src/services/user-service.js` | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |

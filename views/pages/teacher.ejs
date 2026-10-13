@@ -3,13 +3,26 @@
   <div class="staff-heading">
     <div>
       <p class="kiosk-kicker">Staff workspace</p>
-      <h1>Teacher panel</h1>
+      <h1>Lehrerseite</h1>
       <p class="muted">Review passes connected to your classroom locations.</p>
     </div>
     <a class="button" href="/teacher/appointment">Create appointment</a>
   </div>
 
   <% if (message) { %><p class="flash flash-success"><%= message %></p><% } %>
+  <section class="staff-section">
+    <h2>Your locations</h2>
+    <% if (!locations.length) { %>
+      <p class="muted">No active locations are assigned to your account.</p>
+    <% } else { %>
+      <ul>
+        <% locations.forEach((location) => { %>
+          <li><%= location.name %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
   <section class="staff-section">
     <h2>Passes involving your locations</h2>
     <% if (!passes.length) { %>
