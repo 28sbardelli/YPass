@@ -18,6 +18,16 @@ The application is layered deliberately:
 
 Disabled features must not register routes, sockets, jobs, or external connections.
 
+## Agent operating rules
+
+- Read this file first, then open only the files needed for the specific task.
+- Prefer the smallest possible fix and keep edits tightly scoped to the relevant module.
+- For any behavior change, add or update the closest failing Vitest test before implementing the fix.
+- Keep routes and controllers thin; business rules belong in services and repositories.
+- Treat `src/container.js` and the feature flags as the source of truth for enabled integrations and startup wiring.
+- Do not introduce a second browser auth mechanism, a client-trusted roles model, or raw `process.env` reads in business logic.
+- Production-only safeguards remain mandatory: no SQLite in multi-worker deployment, no clustered realtime/jobs without Redis, and no feature activation based on env-var presence alone.
+
 ## Run
 
 | Command                    | Purpose                           |

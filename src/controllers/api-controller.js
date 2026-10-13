@@ -49,7 +49,7 @@ export function createApiController(container) {
               code: req.kiosk.kiosk_code,
               name: req.kiosk.name,
               location: req.kiosk.location_name,
-              type: req.kiosk.type,
+              type: req.kiosk.location_type,
             },
           },
         });

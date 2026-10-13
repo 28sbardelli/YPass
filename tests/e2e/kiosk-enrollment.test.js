@@ -26,7 +26,6 @@ describe('kiosk enrollment', () => {
       createdBy: managerId,
       name: 'Library Kiosk',
       locationId: location.id,
-      type: 'ROUND_TRIP',
     });
 
     const enrolled = await ctx.request.post('/api/v1/kiosks/enroll').send({
@@ -43,6 +42,7 @@ describe('kiosk enrollment', () => {
       .first();
     expect(kiosk.secret_hash).not.toBe(enrolled.body.credentials.secret);
     expect(kiosk.software_version).toBe('1.2.3');
+    expect(kiosk.type).toBeUndefined();
 
     const replay = await ctx.request.post('/api/v1/kiosks/enroll').send({
       enrollmentCode: created.code,
@@ -65,7 +65,6 @@ describe('kiosk enrollment', () => {
       enrollmentCode: started.body.enrollmentCode,
       name: 'Automatic Kiosk',
       locationId: location.id,
-      type: 'ROUND_TRIP',
       reqLike: { requestId: 'test', serverUrl: 'http://central.test' },
     });
     expect(completed.kiosk.code).toMatch(/^KIOSK-/);
@@ -94,7 +93,6 @@ describe('kiosk enrollment', () => {
         enrollmentCode: started.enrollmentCode,
         name: existingKiosk.name,
         locationId: location.id,
-        type: 'ROUND_TRIP',
       }),
     ).rejects.toThrow('A kiosk with that name already exists at this location');
   });
