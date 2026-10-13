@@ -14,6 +14,36 @@ const LOCATIONS = [
     kioskName: 'Main Office kiosk',
     kioskCode: 'main-office',
   },
+  {
+    name: 'Lost & Found Time Portal',
+    type: 'round_trip',
+    kioskName: 'Time Portal kiosk',
+    kioskCode: 'lost-found-time-portal',
+  },
+  {
+    name: 'Indoor Recess Weather Station',
+    type: 'one_way',
+    kioskName: 'Weather Station kiosk',
+    kioskCode: 'indoor-weather-station',
+  },
+  {
+    name: 'Library Secret Book Nook',
+    type: 'round_trip',
+    kioskName: 'Secret Book Nook kiosk',
+    kioskCode: 'library-book-nook',
+  },
+  {
+    name: 'Bathroom of Infinite Echoes',
+    type: 'bathroom',
+    kioskName: 'Infinite Echoes kiosk',
+    kioskCode: 'infinite-echoes-bathroom',
+  },
+  {
+    name: 'Custodians Mop Closet Museum',
+    type: 'one_way',
+    kioskName: 'Mop Closet Museum kiosk',
+    kioskCode: 'mop-closet-museum',
+  },
 ];
 
 const TEST_STUDENT = {

@@ -158,6 +158,7 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 - `src/services/pass-service.js` is the authoritative pass state machine. It enforces student identity, one active pass, destination-aware scans, round-trip transitions, appointment auto-approval, and server-clock expiry.
 - `src/repositories/index.js` owns hall-pass, appointment, location, kiosk, event, and heartbeat queries. The partial unique index `passes_one_active_per_student` is the database concurrency guard.
 - Migrations `002_pass_system.js` through `006_returning_pass_state.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, and the returning-state concurrency guard.
+- `src/database/seeds/002_pass_system.js` creates the standard and sample hall-pass locations with their demo kiosks; rerun `npm run db:seed` to apply seed additions safely.
 - `/api/v1/kiosks/enroll` accepts a short-lived manager-generated enrollment code and returns the kiosk code plus one secret. Enrollment codes expire after 10 minutes and can be used once.
 - `/api/v1/kiosks/options`, `/heartbeat`, `/scan`, and `/request-pass` are authenticated with `x-kiosk-code` and `x-kiosk-secret`. Only the hash is persisted centrally; the secret is returned once during enrollment.
 - The manager panel at `/manager` creates enrollment codes and regenerates credentials. Credential regeneration disables the kiosk until the new code is used.
