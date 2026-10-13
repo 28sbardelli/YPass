@@ -12,6 +12,47 @@ describe('staff pass controls', () => {
     }
   });
 
+  it('seeds five active odd locations with a kiosk for each', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    await knex.seed.run();
+
+    const locations = await knex('locations')
+      .whereIn('name', [
+        'Lost & Found Time Portal',
+        'Indoor Recess Weather Station',
+        'Library Secret Book Nook',
+        'Bathroom of Infinite Echoes',
+        'Custodians Mop Closet Museum',
+      ])
+      .orderBy('name');
+
+    expect(locations).toHaveLength(5);
+    expect(locations.every((location) => location.active)).toBe(true);
+    expect(Object.fromEntries(locations.map(({ name, type }) => [name, type]))).toEqual({
+      'Bathroom of Infinite Echoes': 'bathroom',
+      'Custodians Mop Closet Museum': 'one_way',
+      'Indoor Recess Weather Station': 'one_way',
+      'Library Secret Book Nook': 'round_trip',
+      'Lost & Found Time Portal': 'round_trip',
+    });
+
+    const kiosks = await knex('kiosks')
+      .whereIn(
+        'location_id',
+        locations.map(({ id }) => id),
+      )
+      .whereIn('kiosk_code', [
+        'lost-found-time-portal',
+        'indoor-weather-station',
+        'library-book-nook',
+        'infinite-echoes-bathroom',
+        'mop-closet-museum',
+      ]);
+    expect(kiosks).toHaveLength(5);
+    expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
+  });
+
   it('limits approval to the teacher who owns a pass location and supports appointments', async () => {
     ctx = await createTestApp();
     const teacherId = randomUUID();
@@ -44,6 +85,13 @@ describe('staff pass controls', () => {
       active: true,
     };
     await ctx.container.db.knex('locations').insert(unassignedLocation);
+    await ctx.container.db.knex('kiosks').insert({
+      id: randomUUID(),
+      location_id: unassignedLocation.id,
+      name: 'Unassigned Location kiosk',
+      kiosk_code: 'unassigned-location',
+      active: true,
+    });
 
     const requested = await ctx.container.passService.requestPass({
       kioskCode: 'main-office',
@@ -79,7 +127,10 @@ describe('staff pass controls', () => {
       studentName: 'Avery Brooks',
       destinationLocationId: unassignedLocation.id,
     });
-    const student = await ctx.container.db.knex('students').where({ student_number: '200001' }).first();
+    const student = await ctx.container.db
+      .knex('students')
+      .where({ student_number: '200001' })
+      .first();
     const unrelatedAppointmentId = randomUUID();
     await ctx.container.db.knex('appointments').insert({
       id: unrelatedAppointmentId,
@@ -87,7 +138,7 @@ describe('staff pass controls', () => {
       origin_location_id: unassignedLocation.id,
       destination_location_id: mainOffice.id,
       destination_teacher_id: null,
-      created_by: teacherId,
+      created_by: otherUserId,
       scheduled_at: new Date(Date.now() + 2 * 60 * 60 * 1000),
       status: 'scheduled',
     });
