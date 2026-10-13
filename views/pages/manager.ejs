@@ -25,7 +25,7 @@
   <section class="staff-section"><h2>Locations</h2>
     <form method="post" action="/manager/locations/create" class="staff-form manager-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>"><strong>Add location</strong>
-      <label>Name<input name="name" required maxlength="120"></label><label>Type<select name="type"><option value="round_trip">Round trip</option><option value="one_way">One way</option><option value="bathroom">Bathroom</option></select></label>
+      <label>Name<input name="name" required maxlength="120"></label><label>Type<select name="type"><option value="round_trip">Round trip</option><option value="one_way">One way</option></select></label>
       <label>Teacher<select name="teacherUserId"><option value="">Unassigned</option><% users.forEach((user) => { %><option value="<%= user.id %>"><%= user.display_name %></option><% }) %></select></label><label>Active<select name="active"><option value="true">Active</option><option value="false">Inactive</option></select></label><button type="submit">Add location</button>
     </form>
     <div class="staff-list"><% locations.forEach((location) => { %><form method="post" action="/manager/locations/update" class="staff-row manager-form">
