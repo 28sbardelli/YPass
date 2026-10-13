@@ -19,7 +19,6 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       created_by: null,
       name: null,
       location_id: null,
-      type: 'ROUND_TRIP',
       software_version: softwareVersion || null,
     };
     await kiosks.createEnrollmentCode(row);
@@ -30,7 +29,6 @@ export function createKioskService({ db, kiosks, clock, audit }) {
     enrollmentCode,
     name,
     locationId,
-    type,
     softwareVersion,
     reqLike,
   }) {
@@ -57,7 +55,6 @@ export function createKioskService({ db, kiosks, clock, audit }) {
           location_id: locationId,
           name,
           kiosk_code: await kiosks.nextKioskCode(trx),
-          type,
           secret_hash: sha256(secret),
           active: true,
           software_version: softwareVersion || code.software_version || null,
@@ -94,7 +91,7 @@ export function createKioskService({ db, kiosks, clock, audit }) {
     pendingCredentials.delete(code.id);
     return { status: 'complete', ...credentials };
   }
-  async function createEnrollmentCode({ createdBy, name, locationId, type, kioskId, reqLike }) {
+  async function createEnrollmentCode({ createdBy, name, locationId, kioskId, reqLike }) {
     const location = await kiosks.findLocationById(locationId);
     if (!location || !location.active) throw new ValidationError('Choose a valid active location');
 
@@ -107,14 +104,12 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       created_by: createdBy,
       name,
       location_id: locationId,
-      type,
       kiosk_id: kioskId || null,
     };
     await kiosks.createEnrollmentCode(row);
     await writeAudit('KIOSK_ENROLLMENT_CODE_CREATED', createdBy, reqLike, {
       enrollmentCodeId: row.id,
       locationId,
-      type,
     });
     return { code, expiresAt: row.expires_at };
   }
@@ -156,7 +151,6 @@ export function createKioskService({ db, kiosks, clock, audit }) {
               location_id: code.location_id,
               name: code.name,
               kiosk_code: kioskCode,
-              type: code.type,
               secret_hash: sha256(secret),
               active: true,
               software_version: softwareVersion || null,
@@ -188,7 +182,6 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       createdBy,
       name: kiosk.name,
       locationId: kiosk.location_id,
-      type: kiosk.type,
       kioskId: kiosk.id,
       reqLike,
     });

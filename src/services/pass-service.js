@@ -380,7 +380,7 @@ export function createPassService({ db, passes, clock }) {
     });
   }
 
-  async function createManagerKiosk({ name, kioskCode, kioskSecret, locationId, active, type }) {
+  async function createManagerKiosk({ name, kioskCode, kioskSecret, locationId, active }) {
     if (!(await passesRepository.findLocationById(locationId)))
       throw new ValidationError('Choose a valid location');
     if (await passesRepository.findKioskByKioskCode(kioskCode))
@@ -391,12 +391,11 @@ export function createPassService({ db, passes, clock }) {
       kiosk_code: kioskCode,
       location_id: locationId,
       secret_hash: kioskSecret ? sha256(kioskSecret) : null,
-      type: type || 'ROUND_TRIP',
       active,
     });
   }
 
-  async function updateManagerKiosk({ name, kioskCode, kioskSecret, locationId, active, type, id }) {
+  async function updateManagerKiosk({ name, kioskCode, kioskSecret, locationId, active, id }) {
     if (!(await passesRepository.findKioskById(id))) throw new NotFoundError('Kiosk not found');
     if (!(await passesRepository.findLocationById(locationId)))
       throw new ValidationError('Choose a valid location');
@@ -408,7 +407,6 @@ export function createPassService({ db, passes, clock }) {
       kiosk_code: kioskCode,
       location_id: locationId,
       ...(kioskSecret ? { secret_hash: sha256(kioskSecret) } : {}),
-      type: type || 'ROUND_TRIP',
       active,
     });
   }

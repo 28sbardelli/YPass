@@ -53,7 +53,6 @@ export const managerKioskCreateSchema = z.object({
   kioskSecret: z.string().trim().min(16).max(255).optional().or(z.literal('')),
   locationId: managerId,
   active,
-  type: z.enum(['TEACHER', 'ROUND_TRIP']).default('ROUND_TRIP'),
   _csrf: z.string().optional(),
 });
 export const managerKioskUpdateSchema = managerKioskCreateSchema.extend({ id: managerId });
@@ -61,7 +60,6 @@ export const managerKioskUpdateSchema = managerKioskCreateSchema.extend({ id: ma
 export const managerEnrollmentCodeSchema = z.object({
   name: z.string().trim().min(1).max(120),
   locationId: managerId,
-  type: z.enum(['TEACHER', 'ROUND_TRIP']),
   _csrf: z.string().optional(),
 });
 
@@ -69,7 +67,6 @@ export const managerEnrollmentCompleteSchema = z.object({
   enrollmentCode: z.string().trim().min(9).max(16),
   name: z.string().trim().min(1).max(120),
   locationId: managerId,
-  type: z.enum(['TEACHER', 'ROUND_TRIP']),
   _csrf: z.string().optional(),
 });
 

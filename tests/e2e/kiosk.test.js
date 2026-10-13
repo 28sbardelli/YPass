@@ -14,13 +14,7 @@ describe('kiosk pass flow', () => {
   it('identifies a student by barcode and creates a pending pass request', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
     const agent = (await import('supertest')).default.agent(ctx.app);
-    const studentId = 'student-kiosk-test';
-    await ctx.container.db.knex('students').insert({
-      id: studentId,
-      student_number: '10001',
-      display_name: 'Jordan Test',
-      status: 'active',
-    });
+    const student = await ctx.container.db.knex('students').where({ student_number: '111111' }).first();
 
     const registerPage = await agent.get('/auth/register');
     const registered = await agent
@@ -54,10 +48,10 @@ describe('kiosk pass flow', () => {
       .send({
         _csrf: extractCsrf(kioskPage.text),
         kioskCode: 'main-office',
-        studentNumber: '10001',
+        studentNumber: student.student_number,
       });
     expect(scan.status).toBe(200);
-    expect(scan.text).toContain('Jordan Test');
+    expect(scan.text).toContain(student.display_name);
     expect(scan.text).toContain('Choose destination');
 
     const destination = await ctx.container.db
@@ -70,45 +64,33 @@ describe('kiosk pass flow', () => {
       .send({
         _csrf: extractCsrf(scan.text),
         kioskCode: 'main-office',
-        studentNumber: '10001',
-        studentName: 'Jordan Test',
+        studentNumber: student.student_number,
+        studentName: student.display_name,
         destinationLocationId: destination.id,
       });
     expect(pass.status).toBe(200);
     expect(pass.text).toContain('teacher must approve');
 
-    const stored = await ctx.container.db.knex('passes').where({ student_id: studentId }).first();
+    const stored = await ctx.container.db.knex('passes').where({ student_id: student.id }).first();
     expect(stored.status).toBe('pending_approval');
   });
 
   it('requires a central kiosk session for the server-rendered pass page', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
-    const location = await ctx.container.db.knex('locations').first();
-    const started = await ctx.container.kioskService.startEnrollment({ softwareVersion: '2.1.0' });
-    await ctx.container.kioskService.completeEnrollment({
-      enrollmentCode: started.enrollmentCode,
-      name: 'Central Pass Kiosk',
-      locationId: location.id,
-      type: 'ROUND_TRIP',
-      reqLike: { requestId: 'test', serverUrl: 'http://central.test' },
-    });
-    const credentials = await ctx.container.kioskService.enrollmentStatus({
-      enrollmentCode: started.enrollmentCode,
-      enrollmentToken: started.enrollmentToken,
-    });
+    const kiosk = await ctx.container.db.knex('kiosks').where({ kiosk_code: 'main-office' }).first();
 
     expect((await ctx.request.get('/kiosk/pass')).status).toBe(401);
 
     const agent = (await import('supertest')).default.agent(ctx.app);
     const session = await agent
       .post('/api/v1/kiosks/session')
-      .set('x-kiosk-code', credentials.kiosk.code)
-      .set('x-kiosk-secret', credentials.credentials.secret);
+      .set('x-kiosk-code', kiosk.kiosk_code)
+      .set('x-kiosk-secret', 'change-me');
     expect(session.status).toBe(200);
 
     const page = await agent.get('/kiosk/pass');
     expect(page.status).toBe(200);
-    expect(page.text).toContain('Central Pass Kiosk');
+    expect(page.text).toContain(kiosk.name);
     expect(page.text).not.toContain('name="kioskCode"');
   });
 });

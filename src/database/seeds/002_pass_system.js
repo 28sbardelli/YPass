@@ -55,18 +55,12 @@ const SAMPLE_STUDENTS = [
 }));
 
 /**
- * Seed locations and kiosks. Teacher locations are linked after teacher users exist.
+ * Seed the baseline pass-flow fixtures used by local development and tests.
  * @param {import('knex').Knex} knex
  */
 export async function seed(knex) {
-  const studentExists = await knex('students')
-    .where({ student_number: TEST_STUDENT.student_number })
-    .first();
-  if (!studentExists) {
-    await knex('students').insert({ id: randomUUID(), ...TEST_STUDENT });
-  }
-
-  for (const student of SAMPLE_STUDENTS) {
+  const students = [TEST_STUDENT, ...SAMPLE_STUDENTS];
+  for (const student of students) {
     const exists = await knex('students').where({ student_number: student.student_number }).first();
     if (!exists) {
       await knex('students').insert({ id: randomUUID(), ...student });
