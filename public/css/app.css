@@ -226,6 +226,15 @@ button,
   max-width: 66rem;
   margin: 0 auto;
 }
+.staff-page > .staff-section {
+  margin-top: 1rem;
+}
+.staff-page > .staff-section:first-of-type {
+  margin-top: 1.5rem;
+}
+.staff-page > .staff-section[open] {
+  min-width: 0;
+}
 .narrow-page {
   max-width: 42rem;
 }
@@ -241,7 +250,57 @@ button,
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
 .staff-section {
-  margin-top: 1.5rem;
+  min-width: 0;
+}
+.staff-section summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 0;
+  border-bottom: 2px solid #d6d3d1;
+  cursor: pointer;
+  font-size: 1.45rem;
+  font-weight: 700;
+  list-style-position: inside;
+}
+.staff-section summary::marker {
+  color: var(--accent);
+}
+.staff-section[open] summary {
+  margin-bottom: 1rem;
+}
+.manager-form + .staff-list,
+.staff-form + .staff-list {
+  margin-top: 0.7rem;
+}
+.staff-section > .staff-list {
+  min-width: 0;
+}
+.manager-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.7rem;
+}
+.manager-form label {
+  margin: 0;
+}
+.manager-form strong {
+  grid-column: 1 / -1;
+}
+.manager-form button {
+  min-height: 2.35rem;
+}
+.staff-section > .staff-list .manager-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.staff-section > .staff-list .manager-form > span {
+  align-self: center;
+}
+.staff-section > .staff-list .manager-form + .manager-form {
+  margin-top: -0.6rem;
+  padding-top: 0;
+  border-top: 0;
 }
 .staff-section h2 {
   border-bottom: 2px solid #d6d3d1;
@@ -294,21 +353,6 @@ button,
   font: inherit;
   padding: 0.55rem;
 }
-.manager-form {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: end;
-  gap: 0.7rem;
-}
-.manager-form label {
-  margin: 0;
-}
-.manager-form strong {
-  grid-column: 1 / -1;
-}
-.manager-form button {
-  min-height: 2.35rem;
-}
 .filter-bar {
   display: flex;
   gap: 0.7rem;
@@ -356,5 +400,22 @@ button,
   .manager-form {
     display: grid;
     grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 900px) {
+  .staff-page {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1.5rem;
+  }
+  .staff-page > .staff-heading,
+  .staff-page > .filter-bar {
+    grid-column: 1 / -1;
+  }
+  .staff-page > .staff-section {
+    margin-top: 1.5rem;
+  }
+  .staff-page > .staff-section:first-of-type {
+    margin-top: 1.5rem;
   }
 }
