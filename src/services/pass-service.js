@@ -234,10 +234,7 @@ export function createPassService({ db, passes, clock }) {
           pass_id: passId,
           event_type: action === 'approve' ? 'approved' : 'cancelled',
           kiosk_id: null,
-          location_id:
-            pass.destination_teacher_id === userId
-              ? pass.destination_location_id
-              : pass.origin_location_id,
+          location_id: pass.origin_location_id,
           actor_user_id: userId,
           occurred_at: now,
           metadata_json: null,

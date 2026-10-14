@@ -4,7 +4,7 @@
     <div>
       <p class="kiosk-kicker">Staff workspace</p>
       <h1>Lehrerseite</h1>
-      <p class="muted">Review passes connected to your classroom locations.</p>
+      <p class="muted">Review passes that start at your assigned locations.</p>
     </div>
     <a class="button" href="/teacher/appointment">Create appointment</a>
   </div>
@@ -24,9 +24,9 @@
   </section>
 
   <section class="staff-section">
-    <h2>Passes involving your locations</h2>
+    <h2>Passes from your locations</h2>
     <% if (!passes.length) { %>
-      <p class="muted">No passes are currently connected to your locations.</p>
+      <p class="muted">No passes are currently starting at your locations.</p>
     <% } else { %>
       <div class="staff-sort">
         <label for="pass-sort">Sort passes</label>

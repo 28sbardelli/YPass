@@ -280,11 +280,7 @@ export function createPassRepository(db) {
           'passes.destination_teacher_id',
           'destination_teacher.id',
         )
-        .where((query) =>
-          query
-            .where('origin.teacher_user_id', userId)
-            .orWhere('destination.teacher_user_id', userId),
-        )
+        .where('origin.teacher_user_id', userId)
         .select(
           'passes.*',
           'students.student_number',
@@ -300,11 +296,7 @@ export function createPassRepository(db) {
         .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .join('locations as destination', 'passes.destination_location_id', 'destination.id')
         .where('passes.id', passId)
-        .where((query) =>
-          query
-            .where('origin.teacher_user_id', userId)
-            .orWhere('destination.teacher_user_id', userId),
-        )
+        .where('origin.teacher_user_id', userId)
         .select(
           'passes.*',
           'origin.teacher_user_id as origin_teacher_id',

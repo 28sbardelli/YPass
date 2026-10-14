@@ -91,7 +91,7 @@ kioskMachine/                 Separate kiosk UI, local proxy, and kiosk-client t
 | Change startup, shutdown, health, or dependency wiring | `src/server.js`, `src/bootstrap.js`, `src/container.js` | `src/app.js`, `src/realtime/`, `src/jobs/`, ops tests |
 | Add or change an HTTP endpoint | `src/routes/` | Matching controller, service, validator, tests, and `docs/openapi/v1.yaml` |
 | Change HTML pages or form behavior | Matching `src/routes/` and controller | `views/`, `public/`, CSRF/auth middleware, e2e tests |
-| Change the teacher panel or its location-scoped data | `src/routes/web.js`, `src/controllers/web-controller.js` | `src/services/pass-service.js`, `src/repositories/index.js`, `views/pages/teacher.ejs`, `tests/unit/pass-staff.test.js` |
+| Change the teacher panel or its location-scoped data | `src/routes/web.js`, `src/controllers/web-controller.js` | `src/services/pass-service.js`, `src/repositories/index.js`, `views/pages/teacher.ejs`, `tests/unit/pass-staff.test.js`; teacher pass visibility and actions are scoped to the assigned origin location |
 | Change API behavior | `src/routes/api.v1.js` | `src/controllers/api-controller.js`, validator, OpenAPI, e2e tests |
 | Change login, registration, password, or session behavior | `src/services/local-auth-service.js`, `src/auth/` | `src/controllers/auth-controller.js`, `src/routes/auth.js`, `src/middleware/session.js`, security tests |
 | Change Formbar OAuth or account linking | `src/integrations/formbar/`, `src/services/user-service.js` | `src/controllers/auth-controller.js`, `src/routes/account.js`, `tests/security/linking.test.js`, Formbar tests |
@@ -166,6 +166,7 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 ## Hall-pass and kiosk ownership
 
 - `src/services/pass-service.js` is the authoritative pass state machine. It enforces student identity, one active pass, destination-aware scans, round-trip transitions, appointment auto-approval, and server-clock expiry.
+- Teacher dashboards and pass actions are authorized by the assigned teacher of the pass's origin location; destination-location assignment does not grant pass access.
 - `src/repositories/index.js` owns hall-pass, appointment, location, kiosk, event, and heartbeat queries. The partial unique index `passes_one_active_per_student` is the database concurrency guard.
 - Migrations `002_pass_system.js` through `006_returning_pass_state.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, and the returning-state concurrency guard.
 - `src/database/seeds/002_pass_system.js` creates the standard and sample hall-pass locations with their demo kiosks; rerun `npm run db:seed` to apply seed additions safely.
