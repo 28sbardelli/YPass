@@ -5,6 +5,7 @@ import {
   buildHeartbeatPayload,
   buildKioskHeaders,
   establishKioskSession,
+  getKioskOptions,
   normaliseServerStatus,
 } from '../src/kiosk-client.js';
 
@@ -57,4 +58,28 @@ test('establishKioskSession returns a browser-safe cookie header', async () => {
   });
 
   assert.equal(session.cookieHeader, 'ypass.sid=opaque; fbapp.csrf=token');
+});
+
+test('getKioskOptions returns destinations from the central kiosk API', async () => {
+  const options = await getKioskOptions({
+    serverUrl: 'https://api.example.test',
+    config: { kioskCode: 'KSK-204', kioskSecret: 'super-secret' },
+    fetchImpl: async (url, request) => {
+      assert.equal(url, 'https://api.example.test/api/v1/kiosks/options');
+      assert.equal(request.method, 'GET');
+      return {
+        ok: true,
+        async json() {
+          return {
+            data: {
+              kiosk: { code: 'KSK-204' },
+              destinations: [{ id: 'location-1', name: 'Counselor' }],
+            },
+          };
+        },
+      };
+    },
+  });
+
+  assert.deepEqual(options.destinations, [{ id: 'location-1', name: 'Counselor' }]);
 });

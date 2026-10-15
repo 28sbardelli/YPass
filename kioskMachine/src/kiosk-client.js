@@ -135,3 +135,21 @@ export async function callKioskApi({
   }
   return data.data;
 }
+
+export async function getKioskOptions({
+  serverUrl,
+  config,
+  fetchImpl = globalThis.fetch,
+}) {
+  const result = await callKioskApi({
+    serverUrl,
+    config,
+    path: 'options',
+    method: 'GET',
+    fetchImpl,
+  });
+  return {
+    kiosk: result?.kiosk ?? null,
+    destinations: Array.isArray(result?.destinations) ? result.destinations : [],
+  };
+}

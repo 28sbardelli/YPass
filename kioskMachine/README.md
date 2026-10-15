@@ -26,7 +26,7 @@ Enrollment is the normal first-run path:
 2. Start the kiosk; it requests a private enrollment claim and displays only its enrollment code.
 3. Open `/manager`, complete registration for the displayed code, and choose the active location and kiosk type.
 4. The kiosk polls the claim status, receives its generated kiosk code and secret, and stores them in local `kiosk-config.json`.
-5. It authenticates once to create a central kiosk session, then automatically displays the central `/kiosk/pass` page.
+5. It authenticates with the central kiosk API, then loads the active destination locations for that kiosk.
 
 Enrollment codes and private claim tokens expire after 10 minutes and can be used once. The enrollment code alone cannot retrieve kiosk credentials. The kiosk secret is returned only during enrollment. Do not put it in the browser UI, commit `kiosk-config.json`, or paste it into logs.
 
@@ -54,12 +54,12 @@ These endpoints are served by the kiosk process, not directly by the central ser
 
 - `GET /api/config`: local kiosk identity and registration state
 - `GET /api/health`: local process and heartbeat state
+- `GET /api/options`: fetch the active destination locations from YPass
 - `POST /api/heartbeat`: forward a heartbeat to YPass
-- `GET /kiosk/pass`: proxy the central server-rendered pass page
-- `POST /kiosk/scan`: proxy the central student scan form
-- `POST /kiosk/pass`: proxy the central pass request form
+- `POST /api/scan`: identify a student through YPass
+- `POST /api/request-pass`: submit the selected destination and pass request to YPass
 
-The local process authenticates with `POST /api/v1/kiosks/session`, retains the server-side session cookie, and proxies the central pass page and assets. The browser only talks to the local kiosk process and never receives the kiosk secret or central session cookie.
+The local process authenticates with the kiosk code and secret, then proxies API calls to YPass. The browser only talks to the local kiosk process and never receives the kiosk secret.
 
 ## Testing and operations
 

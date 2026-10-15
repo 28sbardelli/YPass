@@ -161,7 +161,8 @@ export async function createKioskServer(options = {}) {
   }
 
   function rememberCentralCookies(response) {
-    const cookies = response.headers.getSetCookie?.() || [];
+    const cookies =
+      response.headers.getSetCookie?.() || getSetCookieFallback(response.headers.get('set-cookie'));
     for (const cookie of cookies) {
       const pair = cookie.split(';', 1)[0];
       const name = pair.split('=', 1)[0];
@@ -171,6 +172,10 @@ export async function createKioskServer(options = {}) {
       current.push(pair);
       state.centralSessionCookie = current.join('; ');
     }
+  }
+
+  function getSetCookieFallback(header) {
+    return header ? header.split(/,\s*(?=[^;,=]+=[^;,]+)/) : [];
   }
 
   const server = http.createServer(async (req, res) => {

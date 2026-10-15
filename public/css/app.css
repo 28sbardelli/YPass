@@ -156,6 +156,9 @@ button,
   border: 1px solid #a8a29e;
   background: #fffcf7;
 }
+.kiosk-form input[type='search'] {
+  padding-inline: 0.75rem;
+}
 .scan-input-wrap {
   display: flex;
   align-items: center;
