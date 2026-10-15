@@ -21,6 +21,7 @@ export default [
       'scripts/**/*.js',
       'tests/**/*.js',
       'tools/**/*.js',
+      'kioskMachine/app.js',
       'kioskMachine/src/**/*.js',
       'knexfile.js',
     ],

@@ -53,6 +53,10 @@ describe('kiosk pass flow', () => {
     expect(scan.status).toBe(200);
     expect(scan.text).toContain(student.display_name);
     expect(scan.text).toContain('Choose destination');
+    expect(scan.text).toContain('id="destinationSearch"');
+    expect(scan.text).toContain('name="destinationLocationId"');
+    expect(scan.text).not.toContain('>Confirm full name</label>');
+    expect(scan.text).not.toContain('id="studentName"');
 
     const destination = await ctx.container.db
       .knex('locations')

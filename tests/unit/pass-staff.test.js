@@ -53,6 +53,23 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
+  it('offers active locations without requiring a destination kiosk', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const location = {
+      id: randomUUID(),
+      name: 'Remote Destination',
+      type: 'one_way',
+      teacher_user_id: null,
+      active: true,
+    };
+    await knex('locations').insert(location);
+
+    const options = await ctx.container.passService.kioskOptions('main-office');
+
+    expect(options.destinations.map(({ id }) => id)).toContain(location.id);
+  });
+
   it('limits pass actions to the origin teacher and supports appointments', async () => {
     ctx = await createTestApp();
     const teacherId = randomUUID();

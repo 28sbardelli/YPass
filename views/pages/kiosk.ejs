@@ -45,10 +45,11 @@
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
           <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
-          <label for="studentName">Confirm full name</label>
-          <input id="studentName" name="studentName" value="<%= student.display_name || form.studentName || '' %>" required autocomplete="off">
+          <input type="hidden" name="studentName" value="<%= student.display_name || form.studentName || '' %>">
+          <label for="destinationSearch">Search locations</label>
+          <input id="destinationSearch" type="search" placeholder="Type a location name" autocomplete="off" data-destination-search>
           <label for="destinationLocationId">Destination</label>
-          <select id="destinationLocationId" name="destinationLocationId" required>
+          <select id="destinationLocationId" name="destinationLocationId" required data-destination-select>
             <option value="">Select a location</option>
             <% destinations.forEach((destination) => { %>
               <option value="<%= destination.id %>" <%= form.destinationLocationId === destination.id ? 'selected' : '' %>>

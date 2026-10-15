@@ -207,9 +207,7 @@ export function createPassRepository(db) {
     async listDestinations(originLocationId, trx = knex) {
       return trx('locations')
         .leftJoin('users', 'locations.teacher_user_id', 'users.id')
-        .join('kiosks', 'locations.id', 'kiosks.location_id')
         .where('locations.active', true)
-        .where('kiosks.active', true)
         .whereNot('locations.id', originLocationId)
         .select(
           'locations.id',
@@ -217,8 +215,6 @@ export function createPassRepository(db) {
           'locations.type',
           'locations.teacher_user_id',
           'users.display_name as teacher_name',
-          'kiosks.id as kiosk_id',
-          'kiosks.kiosk_code',
         )
         .orderBy('locations.name');
     },
