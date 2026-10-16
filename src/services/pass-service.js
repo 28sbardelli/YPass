@@ -453,5 +453,8 @@ function transitionForScan(pass, kioskLocationId) {
   if (pass.status === 'returning' && kioskLocationId === pass.origin_location_id) {
     return 'completed';
   }
+  if (pass.status === 'active' && kioskLocationId === pass.origin_location_id) {
+    return 'completed';
+  }
   return 'ended';
 }
