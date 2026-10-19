@@ -26,7 +26,7 @@
         <label for="studentNumber">Student ID</label>
         <div class="scan-input-wrap">
           <span class="scan-icon" aria-hidden="true">#</span>
-          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode">
+          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode" <% if (student){ %> readonly <% } %> >
         </div>
         <button type="submit" class="primary-button">Continue</button>
       </form>
