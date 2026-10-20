@@ -181,6 +181,9 @@ button,
   text-align: left;
   cursor: pointer;
 }
+.destination-option[hidden] {
+  display: none;
+}
 .destination-option span {
   color: #57534e;
   font-size: 0.9rem;
