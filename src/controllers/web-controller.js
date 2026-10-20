@@ -20,7 +20,6 @@ export function createWebController(container) {
           title: 'Teacher panel',
           currentUser: req.currentUser,
           ...dashboard,
-          message: null,
         }),
       );
     },
@@ -34,7 +33,6 @@ export function createWebController(container) {
           title: 'Teacher panel',
           currentUser: req.currentUser,
           ...dashboard,
-          message: req.body.action === 'approve' ? 'Pass approved.' : 'Pass cancelled.',
         });
       } catch (error) {
         next(error);
