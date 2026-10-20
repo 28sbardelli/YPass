@@ -9,6 +9,9 @@
     <a class="button" href="/teacher/appointment">Create appointment</a>
   </div>
 
+  <% if (message) { %>
+    <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
+  <% } %>
   <section class="staff-section">
     <h2>Your locations</h2>
     <% if (!locations.length) { %>
