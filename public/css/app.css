@@ -229,6 +229,13 @@ button,
   max-width: 66rem;
   margin: 0 auto;
 }
+.teacher-action-message {
+  position: fixed;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 10;
+  margin: 0;
+}
 .staff-page > .staff-section {
   margin-top: 1rem;
 }
