@@ -1,4 +1,5 @@
 <section class="kiosk-page">
+  <% const waitingForApproval = (typeof action !== 'undefined' && action === 'pending') || (typeof pass !== 'undefined' && pass && pass.status === 'pending_approval');%>
   <div class="kiosk-heading">
     <div>
       <p class="kiosk-kicker">Student movement</p>
@@ -20,20 +21,19 @@
           <p>Use the barcode scanner or type the student ID.</p>
         </div>
       </div>
-      <form method="post" action="/kiosk/scan" class="kiosk-form kiosk-scan-form">
+      <form method="post" action="/kiosk/scan" class="kiosk-form kiosk-scan-form" <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
         <label for="studentNumber">Student ID</label>
         <div class="scan-input-wrap">
           <span class="scan-icon" aria-hidden="true">#</span>
-          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode" <% if (student){ %> readonly <% } %> >
+          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode" <% if (waitingForApproval) { %> readonly <% } %> >
         </div>
-        <button type="submit" class="primary-button">Continue</button>
+        <% if (!waitingForApproval) { %><button type="submit" class="primary-button">Continue</button><% } %>
       </form>
-      <p class="scanner-note">A USB barcode scanner works like a keyboard. Keep this field focused.</p>
+      <p class="scanner-note"><%= waitingForApproval ? 'This kiosk is locked until the teacher accepts or cancels the pass.' : 'A USB barcode scanner works like a keyboard. Keep this field focused.' %></p>
     </section>
 
-    <% const waitingForApproval = (typeof action !== 'undefined' && action === 'pending') || (typeof pass !== 'undefined' && pass && pass.status === 'pending_approval');%>
     <% if (action === 'create' || student) { %>
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">
@@ -42,23 +42,31 @@
             <p>Student: <strong><%= student.display_name %></strong></p>
           </div>
         </div>
-        <form method="post" action="/kiosk/pass" class="kiosk-form">
+        <form method="post" action="/kiosk/pass" class="kiosk-form" <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
-          <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
-          <input type="hidden" name="studentName" value="<%= student.display_name || form.studentName || '' %>">
+          <% if (waitingForApproval) { %>
+            <label for="lockedStudentNumber">Student ID</label>
+            <input id="lockedStudentNumber" name="studentNumber" value="<%= student.student_number %>" readonly>
+            <label for="lockedStudentName">Student</label>
+            <input id="lockedStudentName" name="studentName" value="<%= student.display_name %>" readonly>
+          <% } else { %>
+            <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
+            <input type="hidden" name="studentName" value="<%= student.display_name || form.studentName || '' %>">
+          <% } %>
           <label for="destinationSearch">Search locations</label>
-          <input id="destinationSearch" type="search" placeholder="Type a location name" autocomplete="off" data-destination-search>
-          <label for="destinationLocationId">Destination</label>
-          <select id="destinationLocationId" name="destinationLocationId" required data-destination-select <% if (waitingForApproval) { %> disabled <% } %>>
-            <option value="">Select a location</option>
+          <input id="destinationSearch" type="search" placeholder="Search by location or teacher" autocomplete="off" data-destination-search <% if (waitingForApproval) { %> disabled <% } %>>
+          <input type="hidden" name="destinationLocationId" value="<%= form.destinationLocationId || '' %>" data-destination-value required>
+          <div class="destination-list" role="listbox" aria-label="Matching destinations" data-destination-list hidden <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
             <% destinations.forEach((destination) => { %>
-              <option value="<%= destination.id %>" <%= form.destinationLocationId === destination.id ? 'selected' : '' %>>
-                <%= destination.name %><%= destination.teacher_name ? ` - ${destination.teacher_name}` : '' %>
-              </option>
+              <button type="button" class="destination-option" role="option" aria-selected="false" data-destination-option data-location-id="<%= destination.id %>" data-location-name="<%= destination.name %>" data-search-text="<%= `${destination.name} ${destination.teacher_name || ''}` %>" hidden <% if (waitingForApproval) { %> disabled <% } %>>
+                <strong><%= destination.name %></strong>
+                <% if (destination.teacher_name) { %><span><%= destination.teacher_name %></span><% } %>
+              </button>
             <% }) %>
-          </select>
-          <button type="submit" class="primary-button" >Request teacher approval</button>
+            <p class="destination-empty" data-destination-empty hidden>No matching locations.</p>
+          </div>
+          <% if (!waitingForApproval) { %><button type="submit" class="primary-button">Request teacher approval</button><% } else { %><p class="kiosk-lock-note" role="status">Destination locked: waiting for teacher approval.</p><% } %>
         </form>
       </section>
     <% } %>

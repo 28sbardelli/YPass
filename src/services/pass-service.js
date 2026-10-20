@@ -12,6 +12,21 @@ export function createPassService({ db, passes, clock }) {
     return { kiosk, destinations };
   }
 
+  async function kioskPendingPass({ kioskCode, studentNumber, passId }) {
+    return db.transaction(async (trx) => {
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const student = await passes.findStudentByNumber(studentNumber, trx);
+      if (!student) return null;
+      const currentPass = await passes.findCurrentPassForStudent(student.id, trx);
+      if (!currentPass || (passId && currentPass.id !== passId)) return null;
+      if (currentPass.status !== 'pending_approval') return null;
+      const destination = destinations.find(
+        (item) => item.id === currentPass.destination_location_id,
+      );
+      return { kiosk, destinations, student, destination, pass: currentPass };
+    });
+  }
+
   async function scanStudent({ kioskCode, studentNumber, studentName, actorUserId }) {
     const now = clock.now();
     return db.transaction(async (trx) => {
@@ -312,7 +327,9 @@ export function createPassService({ db, passes, clock }) {
     const kiosksWithStatus = kiosks.map((kiosk) => ({
       ...kiosk,
       display_status:
-        kiosk.active && kiosk.last_seen_at && now.getTime() - new Date(kiosk.last_seen_at).getTime() < 60 * 1000
+        kiosk.active &&
+        kiosk.last_seen_at &&
+        now.getTime() - new Date(kiosk.last_seen_at).getTime() < 60 * 1000
           ? 'online'
           : 'offline',
     }));
@@ -411,6 +428,7 @@ export function createPassService({ db, passes, clock }) {
   const passesRepository = passes;
   return {
     kioskOptions,
+    kioskPendingPass,
     scanStudent,
     requestPass,
     teacherDashboard,
