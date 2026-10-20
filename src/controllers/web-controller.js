@@ -84,13 +84,30 @@ export function createWebController(container) {
       try {
         const kioskCode = String(req.query.kiosk || 'main-office');
         const options = await passService.kioskOptions(kioskCode);
+        const pendingRequest = req.session?.kioskPendingPass;
+        const pending = pendingRequest
+          ? await passService.kioskPendingPass({ kioskCode, ...pendingRequest })
+          : null;
+        if (!pending && pendingRequest) {
+          delete req.session.kioskPendingPass;
+        }
         renderKiosk(res, {
           kioskCode,
           ...options,
-          action: null,
-          student: null,
-          form: {},
-          message: null,
+          action: pending ? 'pending' : null,
+          student: pending?.student || null,
+          pass: pending?.pass || null,
+          form: pending
+            ? {
+                studentNumber: pending.student.student_number,
+                studentName: pending.student.display_name,
+                destinationLocationId:
+                  pending.destination?.id || pending.pass.destination_location_id,
+              }
+            : {},
+          message: pending
+            ? { type: 'warning', text: 'This pass is waiting for teacher approval.' }
+            : null,
         });
       } catch (error) {
         next(error);
@@ -99,15 +116,35 @@ export function createWebController(container) {
     async kioskPass(req, res, next) {
       try {
         const options = await passService.kioskOptions(req.kiosk.kiosk_code);
+        const pendingRequest = req.session.kioskPendingPass;
+        const pending = pendingRequest
+          ? await passService.kioskPendingPass({
+              kioskCode: req.kiosk.kiosk_code,
+              ...pendingRequest,
+            })
+          : null;
+        if (!pending && pendingRequest) {
+          delete req.session.kioskPendingPass;
+        }
         renderKiosk(res, {
           view: 'pages/pass',
           kioskSession: true,
           kioskCode: req.kiosk.kiosk_code,
           ...options,
-          action: null,
-          student: null,
-          form: {},
-          message: null,
+          action: pending ? 'pending' : null,
+          student: pending?.student || null,
+          pass: pending?.pass || null,
+          form: pending
+            ? {
+                studentNumber: pending.student.student_number,
+                studentName: pending.student.display_name,
+                destinationLocationId:
+                  pending.destination?.id || pending.pass.destination_location_id,
+              }
+            : {},
+          message: pending
+            ? { type: 'warning', text: 'This pass is waiting for teacher approval.' }
+            : null,
         });
       } catch (error) {
         next(error);
@@ -155,6 +192,27 @@ export function createWebController(container) {
     async createKioskPass(req, res, next) {
       const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
       try {
+        const pendingRequest = req.session?.kioskPendingPass;
+        if (pendingRequest) {
+          const pending = await passService.kioskPendingPass({ kioskCode, ...pendingRequest });
+          if (pending) {
+            renderKiosk(res, {
+              ...pending,
+              action: 'pending',
+              kioskCode,
+              kioskSession: Boolean(req.kiosk),
+              form: {
+                studentNumber: pending.student.student_number,
+                studentName: pending.student.display_name,
+                destinationLocationId:
+                  pending.destination?.id || pending.pass.destination_location_id,
+              },
+              message: { type: 'warning', text: 'This pass is waiting for teacher approval.' },
+            });
+            return;
+          }
+          delete req.session.kioskPendingPass;
+        }
         const result = await passService.requestPass({
           kioskCode,
           studentNumber: req.body.studentNumber,
@@ -162,6 +220,12 @@ export function createWebController(container) {
           destinationLocationId: req.body.destinationLocationId,
           actorUserId: req.currentUser?.id,
         });
+        if (result.pass.status === 'pending_approval' && req.session) {
+          req.session.kioskPendingPass = {
+            passId: result.pass.id,
+            studentNumber: result.student.student_number,
+          };
+        }
         renderKiosk(res, {
           ...result,
           kioskCode,

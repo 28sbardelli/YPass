@@ -14,7 +14,10 @@ describe('kiosk pass flow', () => {
   it('identifies a student by barcode and creates a pending pass request', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
     const agent = (await import('supertest')).default.agent(ctx.app);
-    const student = await ctx.container.db.knex('students').where({ student_number: '111111' }).first();
+    const student = await ctx.container.db
+      .knex('students')
+      .where({ student_number: '111111' })
+      .first();
 
     const registerPage = await agent.get('/auth/register');
     const registered = await agent
@@ -55,6 +58,8 @@ describe('kiosk pass flow', () => {
     expect(scan.text).toContain('Choose destination');
     expect(scan.text).toContain('id="destinationSearch"');
     expect(scan.text).toContain('name="destinationLocationId"');
+    expect(scan.text).toContain('data-destination-option');
+    expect(scan.text).toContain('data-destination-list hidden');
     expect(scan.text).not.toContain('>Confirm full name</label>');
     expect(scan.text).not.toContain('id="studentName"');
 
@@ -74,6 +79,28 @@ describe('kiosk pass flow', () => {
       });
     expect(pass.status).toBe(200);
     expect(pass.text).toContain('teacher must approve');
+    expect(pass.text).toContain(
+      'This kiosk is locked until the teacher accepts or cancels the pass.',
+    );
+    expect(pass.text).toContain('id="lockedStudentNumber"');
+    expect(pass.text).not.toContain('Request teacher approval');
+
+    const refreshed = await agent.get('/kiosk?kiosk=main-office');
+    expect(refreshed.status).toBe(200);
+    expect(refreshed.text).toContain('Destination locked: waiting for teacher approval.');
+
+    const blocked = await agent
+      .post('/kiosk/pass')
+      .type('form')
+      .send({
+        _csrf: extractCsrf(pass.text),
+        kioskCode: 'main-office',
+        studentNumber: '222222',
+        studentName: student.display_name,
+        destinationLocationId: destination.id,
+      });
+    expect(blocked.status).toBe(200);
+    expect(blocked.text).toContain(student.display_name);
 
     const stored = await ctx.container.db.knex('passes').where({ student_id: student.id }).first();
     expect(stored.status).toBe('pending_approval');
@@ -81,7 +108,10 @@ describe('kiosk pass flow', () => {
 
   it('requires a central kiosk session for the server-rendered pass page', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
-    const kiosk = await ctx.container.db.knex('kiosks').where({ kiosk_code: 'main-office' }).first();
+    const kiosk = await ctx.container.db
+      .knex('kiosks')
+      .where({ kiosk_code: 'main-office' })
+      .first();
 
     expect((await ctx.request.get('/kiosk/pass')).status).toBe(401);
 
