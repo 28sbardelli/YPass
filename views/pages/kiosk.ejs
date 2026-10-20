@@ -26,13 +26,14 @@
         <label for="studentNumber">Student ID</label>
         <div class="scan-input-wrap">
           <span class="scan-icon" aria-hidden="true">#</span>
-          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode">
+          <input id="studentNumber" name="studentNumber" value="<%= form.studentNumber || '' %>" required autofocus autocomplete="off" inputmode="numeric" placeholder="Scan barcode" <% if (student){ %> readonly <% } %> >
         </div>
         <button type="submit" class="primary-button">Continue</button>
       </form>
       <p class="scanner-note">A USB barcode scanner works like a keyboard. Keep this field focused.</p>
     </section>
 
+    <% const waitingForApproval = (typeof action !== 'undefined' && action === 'pending') || (typeof pass !== 'undefined' && pass && pass.status === 'pending_approval');%>
     <% if (action === 'create' || student) { %>
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">
@@ -49,7 +50,7 @@
           <label for="destinationSearch">Search locations</label>
           <input id="destinationSearch" type="search" placeholder="Type a location name" autocomplete="off" data-destination-search>
           <label for="destinationLocationId">Destination</label>
-          <select id="destinationLocationId" name="destinationLocationId" required data-destination-select>
+          <select id="destinationLocationId" name="destinationLocationId" required data-destination-select <% if (waitingForApproval) { %> disabled <% } %>>
             <option value="">Select a location</option>
             <% destinations.forEach((destination) => { %>
               <option value="<%= destination.id %>" <%= form.destinationLocationId === destination.id ? 'selected' : '' %>>
@@ -57,7 +58,7 @@
               </option>
             <% }) %>
           </select>
-          <button type="submit" class="primary-button">Request teacher approval</button>
+          <button type="submit" class="primary-button" >Request teacher approval</button>
         </form>
       </section>
     <% } %>
