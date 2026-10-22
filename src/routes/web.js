@@ -44,6 +44,7 @@ export function createWebRouter(container) {
   );
   router.get('/kiosk', requireAuthentication(), controller.kiosk);
   router.get('/kiosk/pass', requireKioskSession(container), controller.kioskPass);
+  router.get('/kiosk/pass/status', requireKioskSession(container), controller.kioskPassStatus);
   router.post(
     '/kiosk/scan',
     (req, _res, next) =>

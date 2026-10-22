@@ -44,6 +44,7 @@ export async function startServer({ config, logger }) {
     sessionMiddleware,
   });
   container.io = io;
+  container.setRealtime(io);
 
   container.jobs = await createJobs(config, logger, {
     challengeRepository: container.challenges,

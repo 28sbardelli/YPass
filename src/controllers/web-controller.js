@@ -19,6 +19,7 @@ export function createWebController(container) {
         res.render('pages/teacher', {
           title: 'Teacher panel',
           currentUser: req.currentUser,
+          message: null,
           ...dashboard,
         }),
       );
@@ -32,6 +33,7 @@ export function createWebController(container) {
         res.render('pages/teacher', {
           title: 'Teacher panel',
           currentUser: req.currentUser,
+          message: null,
           ...dashboard,
         });
       } catch (error) {
@@ -144,6 +146,21 @@ export function createWebController(container) {
             ? { type: 'warning', text: 'This pass is waiting for teacher approval.' }
             : null,
         });
+      } catch (error) {
+        next(error);
+      }
+    },
+    async kioskPassStatus(req, res, next) {
+      try {
+        const pendingRequest = req.session.kioskPendingPass;
+        const pending = pendingRequest
+          ? await passService.kioskPendingPass({
+              kioskCode: req.kiosk.kiosk_code,
+              ...pendingRequest,
+            })
+          : null;
+        if (!pending && pendingRequest) delete req.session.kioskPendingPass;
+        res.json({ pending: Boolean(pending) });
       } catch (error) {
         next(error);
       }

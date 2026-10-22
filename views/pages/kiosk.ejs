@@ -13,7 +13,7 @@
     <div class="kiosk-message kiosk-message-<%= message.type %>" role="status"><%= message.text %></div>
   <% } %>
 
-  <div class="kiosk-grid">
+  <div class="kiosk-grid" <% if (waitingForApproval && kioskSession) { %>data-kiosk-pending<% } %>>
     <section class="kiosk-panel kiosk-scan-panel">
       <div class="panel-heading">
         <div>
@@ -72,3 +72,6 @@
     <% } %>
   </div>
 </section>
+<% if (waitingForApproval && kioskSession) { %>
+  <script src="/js/kiosk-pass-status.js" defer></script>
+<% } %>

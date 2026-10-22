@@ -141,6 +141,11 @@ describe('staff pass controls', () => {
     });
     expect(approved.status).toBe('active');
     expect(approved.timeout_at).toBeTruthy();
+    const retriedApproval = await ctx.container.passService.approvePass({
+      passId: requested.pass.id,
+      userId: teacherId,
+    });
+    expect(retriedApproval.status).toBe('active');
     const approvalEvent = await ctx.container.db
       .knex('pass_events')
       .where({ pass_id: requested.pass.id, event_type: 'approved' })

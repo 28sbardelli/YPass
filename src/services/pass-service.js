@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from '#errors';
 import { sha256 } from '#utils/crypto.js';
 
-export function createPassService({ db, passes, clock }) {
+export function createPassService({ db, passes, clock, onPassRequested = () => {} }) {
   async function kioskOptions(kioskCode, trx) {
     const kiosk = await passes.findKioskByCode(kioskCode, trx);
     if (!kiosk) {
@@ -129,7 +129,7 @@ export function createPassService({ db, passes, clock }) {
     actorUserId,
   }) {
     const now = clock.now();
-    return db.transaction(async (trx) => {
+    const result = await db.transaction(async (trx) => {
       const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
@@ -203,6 +203,14 @@ export function createPassService({ db, passes, clock }) {
       }
       return { pass, student, destination, kiosk, destinations, autoApproved };
     });
+    if (result.pass.status === 'pending_approval' && result.kiosk.location_teacher_id) {
+      onPassRequested({
+        teacherUserId: result.kiosk.location_teacher_id,
+        passId: result.pass.id,
+        originLocationId: result.pass.origin_location_id,
+      });
+    }
+    return result;
   }
 
   async function teacherDashboard(userId) {
@@ -227,6 +235,8 @@ export function createPassService({ db, passes, clock }) {
     return db.transaction(async (trx) => {
       const pass = await passesRepository.findPassForTeacher(passId, userId, trx);
       if (!pass) throw new NotFoundError('Pass not found or outside your locations');
+      if (action === 'approve' && pass.status === 'active') return pass;
+      if (action === 'cancel' && pass.status === 'cancelled') return pass;
       if (action === 'approve' && pass.status !== 'pending_approval')
         throw new ConflictError('Only pending passes can be approved');
       if (action === 'cancel' && ['completed', 'cancelled', 'expired'].includes(pass.status))

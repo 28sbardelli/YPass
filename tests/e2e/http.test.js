@@ -44,9 +44,41 @@ describe('http skeleton', () => {
     expect(me.status).toBe(401);
   });
 
+  it('renders the teacher page for an authenticated user', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled', EMAIL_ENABLED: 'false' });
+    const { default: request } = await import('supertest');
+    const agent = request.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    const register = await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'teacher-page-user',
+      email: 'teacher-page@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Teacher Page User',
+    });
+    expect(register.status).toBe(302);
+
+    const loginPage = await agent.get('/auth/login');
+    const login = await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'teacher-page-user',
+      password: 'correct-horse-battery',
+    });
+    expect(login.status).toBe(302);
+
+    const teacherPage = await agent.get('/teacher');
+    expect(teacherPage.status).toBe(200);
+    expect(teacherPage.text).toContain('Lehrerseite');
+  });
+
   it('does not register API routes when API_ENABLED is false', async () => {
     ctx = await createTestApp({ API_ENABLED: 'false' });
     const res = await ctx.request.get('/api/v1/me');
     expect(res.status).toBe(404);
   });
 });
+
+function extractCsrf(html) {
+  const match = html.match(/name="_csrf" value="([^"]+)"/);
+  return match ? match[1] : '';
+}
