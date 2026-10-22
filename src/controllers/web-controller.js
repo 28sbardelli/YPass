@@ -19,19 +19,21 @@ export function createWebController(container) {
         res.render('pages/teacher', {
           title: 'Teacher panel',
           currentUser: req.currentUser,
+          message: null,
           ...dashboard,
         }),
       );
     },
     async teacherAction(req, res, next) {
       try {
-        const action =
-          req.body.action === 'approve' ? passService.approvePass : passService.cancelPass;
+        const approved = req.body.action === 'approve';
+        const action = approved ? passService.approvePass : passService.cancelPass;
         await action({ passId: req.body.passId, userId: req.currentUser.id });
         const dashboard = await passService.teacherDashboard(req.currentUser.id);
         res.render('pages/teacher', {
           title: 'Teacher panel',
           currentUser: req.currentUser,
+          message: approved ? 'Pass approved.' : 'Pass cancelled.',
           ...dashboard,
         });
       } catch (error) {
