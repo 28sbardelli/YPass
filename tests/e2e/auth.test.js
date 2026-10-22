@@ -35,6 +35,10 @@ describe('local authentication', () => {
     const me = await agent.get('/api/v1/me');
     expect(me.status).toBe(200);
     expect(me.body.data.displayName).toBe('Alice');
+
+    const teacherPage = await agent.get('/teacher');
+    expect(teacherPage.status).toBe(200);
+    expect(teacherPage.text).toContain('Your locations');
   });
 
   it('uses a generic password-reset response whether or not the email exists', async () => {
