@@ -70,6 +70,79 @@ describe('staff pass controls', () => {
     expect(options.destinations.map(({ id }) => id)).toContain(location.id);
   });
 
+  it('notifies the origin teacher when a round-trip pass ends', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const mainOffice = await knex('locations').where({ name: 'Main Office' }).first();
+    const teacherId = randomUUID();
+    await knex('users').insert({
+      id: teacherId,
+      display_name: 'Origin Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    await knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    mainOffice.teacher_user_id = teacherId;
+    const destination = await knex('locations')
+      .where({ type: 'round_trip' })
+      .whereNot({ id: mainOffice.id })
+      .first();
+    const student = await knex('students').where({ student_number: '111111' }).first();
+    const events = [];
+    ctx.container.setRealtime({
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    });
+
+    const requested = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      destinationLocationId: destination.id,
+    });
+    await ctx.container.passService.approvePass({
+      passId: requested.pass.id,
+      userId: mainOffice.teacher_user_id,
+    });
+    const destinationKiosk = await knex('kiosks').where({ location_id: destination.id }).first();
+
+    expect(
+      (
+        await ctx.container.passService.scanStudent({
+          kioskCode: destinationKiosk.kiosk_code,
+          studentNumber: student.student_number,
+        })
+      ).action,
+    ).toBe('arrival');
+    expect(
+      (
+        await ctx.container.passService.scanStudent({
+          kioskCode: destinationKiosk.kiosk_code,
+          studentNumber: student.student_number,
+        })
+      ).action,
+    ).toBe('scan_out');
+    const ended = await ctx.container.passService.scanStudent({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+    });
+
+    expect(ended.action).toBe('completed');
+    await expect(ctx.container.passService.teacherDashboard(mainOffice.teacher_user_id)).resolves.toMatchObject({
+      passes: [expect.objectContaining({ id: requested.pass.id, status: 'completed' })],
+    });
+    expect(events).toContainEqual({
+      room: `teacher:${mainOffice.teacher_user_id}`,
+      event: 'teacher-pass-ended',
+      payload: { passId: requested.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
   it('limits pass actions to the origin teacher and supports appointments', async () => {
     ctx = await createTestApp();
     const teacherId = randomUUID();
@@ -141,6 +214,11 @@ describe('staff pass controls', () => {
     });
     expect(approved.status).toBe('active');
     expect(approved.timeout_at).toBeTruthy();
+    const retriedApproval = await ctx.container.passService.approvePass({
+      passId: requested.pass.id,
+      userId: teacherId,
+    });
+    expect(retriedApproval.status).toBe('active');
     const approvalEvent = await ctx.container.db
       .knex('pass_events')
       .where({ pass_id: requested.pass.id, event_type: 'approved' })

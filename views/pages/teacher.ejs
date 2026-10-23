@@ -1,4 +1,8 @@
 <section class="staff-page">
+  <% if (features.socketIo) { %>
+    <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
+    <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
+  <% } %>
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js" defer></script>
   <div class="staff-heading">
     <div>

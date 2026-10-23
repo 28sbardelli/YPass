@@ -81,7 +81,24 @@ export async function createContainer({ config, logger }) {
       })
     : null;
 
-  const passService = createPassService({ db, passes: passRepository, clock });
+  let realtime = null;
+  const passService = createPassService({
+    db,
+    passes: passRepository,
+    clock,
+    onPassRequested({ teacherUserId, passId, originLocationId }) {
+      realtime?.to(`teacher:${teacherUserId}`).emit('teacher-pass-requested', {
+        passId,
+        originLocationId,
+      });
+    },
+    onPassEnded({ teacherUserId, passId, originLocationId }) {
+      realtime?.to(`teacher:${teacherUserId}`).emit('teacher-pass-ended', {
+        passId,
+        originLocationId,
+      });
+    },
+  });
   const kioskService = createKioskService({
     db,
     kiosks: passRepository,
@@ -134,6 +151,9 @@ export async function createContainer({ config, logger }) {
     formbarWs,
     formbarWsExampleUnsubscribe,
     entraProvider,
+    setRealtime(io) {
+      realtime = io;
+    },
     io: null,
     jobs: null,
     ready: { value: false },

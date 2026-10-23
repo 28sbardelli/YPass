@@ -44,9 +44,90 @@ describe('http skeleton', () => {
     expect(me.status).toBe(401);
   });
 
+  it('renders the teacher page for an authenticated user', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled', EMAIL_ENABLED: 'false' });
+    const { default: request } = await import('supertest');
+    const agent = request.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    const register = await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'teacher-page-user',
+      email: 'teacher-page@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Teacher Page User',
+    });
+    expect(register.status).toBe(302);
+
+    const loginPage = await agent.get('/auth/login');
+    const login = await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'teacher-page-user',
+      password: 'correct-horse-battery',
+    });
+    expect(login.status).toBe(302);
+
+    const teacherPage = await agent.get('/teacher');
+    expect(teacherPage.status).toBe(200);
+    expect(teacherPage.text).toContain('Lehrerseite');
+  });
+
+  it('redirects teacher pass actions before rendering the teacher page', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled', EMAIL_ENABLED: 'false' });
+    const { default: request } = await import('supertest');
+    const agent = request.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'teacher-action-user',
+      email: 'teacher-action@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Teacher Action User',
+    });
+    const loginPage = await agent.get('/auth/login');
+    await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'teacher-action-user',
+      password: 'correct-horse-battery',
+    });
+    const user = await ctx.container.db
+      .knex('users')
+      .where({ primary_email: 'teacher-action@example.test' })
+      .first();
+    const origin = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const destination = await ctx.container.db
+      .knex('locations')
+      .whereNot({ id: origin.id })
+      .first();
+    await ctx.container.db
+      .knex('locations')
+      .where({ id: origin.id })
+      .update({ teacher_user_id: user.id });
+    const requested = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: '111111',
+      studentName: 'Test Student 111111',
+      destinationLocationId: destination.id,
+    });
+    const teacherPage = await agent.get('/teacher');
+
+    const response = await agent.post('/teacher/pass').type('form').send({
+      _csrf: extractCsrf(teacherPage.text),
+      passId: requested.pass.id,
+      action: 'approve',
+    });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/teacher');
+  });
+
   it('does not register API routes when API_ENABLED is false', async () => {
     ctx = await createTestApp({ API_ENABLED: 'false' });
     const res = await ctx.request.get('/api/v1/me');
     expect(res.status).toBe(404);
   });
 });
+
+function extractCsrf(html) {
+  const match = html.match(/name="_csrf" value="([^"]+)"/);
+  return match ? match[1] : '';
+}
