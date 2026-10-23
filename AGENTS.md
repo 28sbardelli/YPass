@@ -162,6 +162,7 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 5. Update `docs/openapi/v1.yaml`, `wiki/`, or `.env.example` when the public contract or setup changes.
 6. Run focused tests, then `npm run lint` and broader tests when the change warrants it.
 7. Update this index if you add a major module, command, route family, or ownership boundary.
+8. Alter AGENTS.md to be up to date with any made changes
 
 ## Hall-pass and kiosk ownership
 
