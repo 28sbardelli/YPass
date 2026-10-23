@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from '#errors';
 import { sha256 } from '#utils/crypto.js';
 
-export function createPassService({ db, passes, clock, onPassRequested = () => {} }) {
+export function createPassService({
+  db,
+  passes,
+  clock,
+  onPassRequested = () => {},
+  onPassEnded = () => {},
+}) {
   async function kioskOptions(kioskCode, trx) {
     const kiosk = await passes.findKioskByCode(kioskCode, trx);
     if (!kiosk) {
@@ -29,7 +35,7 @@ export function createPassService({ db, passes, clock, onPassRequested = () => {
 
   async function scanStudent({ kioskCode, studentNumber, studentName, actorUserId }) {
     const now = clock.now();
-    return db.transaction(async (trx) => {
+    const result = await db.transaction(async (trx) => {
       const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
@@ -119,6 +125,14 @@ export function createPassService({ db, passes, clock, onPassRequested = () => {
         pass: { ...currentPass, ...patch },
       };
     });
+    if (result.action === 'completed' && result.pass.journey_type === 'round_trip') {
+      onPassEnded({
+        teacherUserId: result.kiosk.location_teacher_id,
+        passId: result.pass.id,
+        originLocationId: result.pass.origin_location_id,
+      });
+    }
+    return result;
   }
 
   async function requestPass({

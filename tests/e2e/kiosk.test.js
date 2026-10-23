@@ -195,6 +195,77 @@ describe('kiosk pass flow', () => {
 
     expect((await agent.get('/kiosk/pass/status')).body).toEqual({ pending: false });
   });
+
+  it('does not show destination selection after a round-trip pass ends', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
+    const agent = (await import('supertest')).default.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    await agent
+      .post('/auth/register')
+      .type('form')
+      .send({
+        _csrf: extractCsrf(registerPage.text),
+        username: 'round-trip-operator',
+        email: 'round-trip-operator@example.test',
+        password: 'correct-horse-battery',
+        displayName: 'Round Trip Operator',
+      });
+    const loginPage = await agent.get('/auth/login');
+    await agent
+      .post('/auth/login')
+      .type('form')
+      .send({
+        _csrf: extractCsrf(loginPage.text),
+        username: 'round-trip-operator',
+        password: 'correct-horse-battery',
+      });
+    const student = await ctx.container.db
+      .knex('students')
+      .where({ student_number: '111111' })
+      .first();
+    const origin = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const destination = await ctx.container.db
+      .knex('locations')
+      .where({ type: 'round_trip' })
+      .whereNot({ id: origin.id })
+      .first();
+    const destinationKiosk = await ctx.container.db
+      .knex('kiosks')
+      .where({ location_id: destination.id })
+      .first();
+    const request = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      destinationLocationId: destination.id,
+    });
+    await ctx.container.passService.approvePass({
+      passId: request.pass.id,
+      userId: origin.teacher_user_id,
+    });
+    await ctx.container.passService.scanStudent({
+      kioskCode: destinationKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+    await ctx.container.passService.scanStudent({
+      kioskCode: destinationKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+
+    const kioskPage = await agent.get('/kiosk?kiosk=main-office');
+    const page = await agent
+      .post('/kiosk/scan')
+      .type('form')
+      .send({
+        _csrf: extractCsrf(kioskPage.text),
+        kioskCode: 'main-office',
+        studentNumber: student.student_number,
+      });
+
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('Pass ended');
+    expect(page.text).not.toContain('Choose destination');
+  });
 });
 
 function extractCsrf(html) {

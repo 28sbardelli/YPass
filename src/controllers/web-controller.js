@@ -29,13 +29,7 @@ export function createWebController(container) {
         const action =
           req.body.action === 'approve' ? passService.approvePass : passService.cancelPass;
         await action({ passId: req.body.passId, userId: req.currentUser.id });
-        const dashboard = await passService.teacherDashboard(req.currentUser.id);
-        res.render('pages/teacher', {
-          title: 'Teacher panel',
-          currentUser: req.currentUser,
-          message: null,
-          ...dashboard,
-        });
+        res.redirect('/teacher');
       } catch (error) {
         next(error);
       }

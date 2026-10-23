@@ -92,6 +92,12 @@ export async function createContainer({ config, logger }) {
         originLocationId,
       });
     },
+    onPassEnded({ teacherUserId, passId, originLocationId }) {
+      realtime?.to(`teacher:${teacherUserId}`).emit('teacher-pass-ended', {
+        passId,
+        originLocationId,
+      });
+    },
   });
   const kioskService = createKioskService({
     db,

@@ -34,7 +34,7 @@
       <p class="scanner-note"><%= waitingForApproval ? 'This kiosk is locked until the teacher accepts or cancels the pass.' : 'A USB barcode scanner works like a keyboard. Keep this field focused.' %></p>
     </section>
 
-    <% if (action === 'create' || student) { %>
+    <% if (action === 'create' || action === 'pending' || pass?.status === 'pending_approval') { %>
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">
           <div>
@@ -73,5 +73,5 @@
   </div>
 </section>
 <% if (waitingForApproval && kioskSession) { %>
-  <script src="/js/kiosk-pass-status.js" defer></script>
+  <script src="/js/kiosk-pass-status.js?v=3" defer></script>
 <% } %>
