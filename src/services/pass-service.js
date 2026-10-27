@@ -344,6 +344,18 @@ export function createPassService({
       passesRepository.listManagerKiosks(),
       passesRepository.listManagerUsers(),
     ]);
+
+    const bathrooms = locations.filter(
+    (location) => location.type === 'bathroom'
+    );
+    const bathroomsById = new Map(
+    bathrooms.map((bathroom) => [bathroom.id, bathroom])
+    );
+    const locationsWithBathrooms = locations.map((location) => ({
+      ...location,
+      bathroom_name: bathroomsById.get(location.bathroom)?.name || null,
+    }));
+
     const passesWithTimeoutStatus = passRows.map((pass) => ({
       ...pass,
       display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
@@ -362,7 +374,8 @@ export function createPassService({
       appointments: appointmentRows,
       filters,
       students,
-      locations,
+      locations: locationsWithBathrooms,
+      bathrooms,
       kiosks: kiosksWithStatus,
       users,
     };
@@ -392,19 +405,20 @@ export function createPassService({
     });
   }
 
-  async function createManagerLocation({ name, type, teacherUserId, active }) {
+  async function createManagerLocation({ name, type, bathroom, teacherUserId, active }) {
     if (await passesRepository.findLocationByName(name))
       throw new ConflictError('A location with that name already exists');
     return passesRepository.createLocation({
       id: randomUUID(),
       name,
       type,
+      bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
       active,
     });
   }
 
-  async function updateManagerLocation({ id, name, type, teacherUserId, active }) {
+  async function updateManagerLocation({ id, name, type, bathroom, teacherUserId, active }) {
     if (!(await passesRepository.findLocationById(id)))
       throw new NotFoundError('Location not found');
     const existing = await passesRepository.findLocationByName(name);
@@ -413,6 +427,7 @@ export function createPassService({
     await passesRepository.updateLocation(id, {
       name,
       type,
+      bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
       active,
     });

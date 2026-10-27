@@ -54,7 +54,9 @@
             <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
             <input type="hidden" name="studentName" value="<%= student.display_name || form.studentName || '' %>">
           <% } %>
+          
           <label for="destinationSearch">Search locations</label>
+          <input name="defaultLocations" type="hidden" value="<%= JSON.stringify(destinations) %>">
           <input id="destinationSearch" type="search" placeholder="Search by location or teacher" autocomplete="off" data-destination-search <% if (waitingForApproval) { %> disabled <% } %>>
           <input type="hidden" name="destinationLocationId" value="<%= form.destinationLocationId || '' %>" data-destination-value required>
           <div class="destination-list" role="listbox" aria-label="Matching destinations" data-destination-list hidden <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
