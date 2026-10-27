@@ -49,7 +49,7 @@ function createSortablePage() {
         },
         {
           dataset: {
-            sortStatus: 'completed',
+            sortStatus: 'cancelled',
             sortStudent: 'Bob',
             sortDate: '2026-10-22T12:00:00Z',
           },
@@ -74,7 +74,7 @@ function createSortablePage() {
 
 describe('teacher page sort controls', () => {
   it.each([
-    ['status', ['Zoe', 'Bob', 'Alice']],
+    ['status', ['Alice', 'Zoe', 'Bob']],
     ['student', ['Alice', 'Bob', 'Zoe']],
     ['date-desc', ['Zoe', 'Bob', 'Alice']],
     ['date-asc', ['Alice', 'Bob', 'Zoe']],
@@ -139,6 +139,18 @@ describe('teacher page sort controls', () => {
       'Alice',
       'Bob',
       'Zoe',
+    ]);
+  });
+
+  it('keeps appointment statuses in alphabetical order', () => {
+    const { controls, lists } = createSortablePage();
+
+    controls[1].change('status');
+
+    expect(lists.get('appointments').children.map((row) => row.dataset.sortStudent)).toEqual([
+      'Zoe',
+      'Bob',
+      'Alice',
     ]);
   });
 });
