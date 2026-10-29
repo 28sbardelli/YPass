@@ -31,7 +31,7 @@ export function loadConfig(env = process.env) {
     kioskName: env.KIOSK_NAME || stored.kioskName || 'Hall Pass Kiosk',
     kioskLocation: env.KIOSK_LOCATION || stored.kioskLocation || 'Unknown Location',
     kioskSecret: env.KIOSK_SECRET || stored.kioskSecret || '',
-    serverUrl: env.KIOSK_SERVER_URL || stored.serverUrl || '',
+    serverUrl: env.KIOSK_SERVER_URL || stored.serverUrl || 'http://localhost:3000',
     enrollmentToken: '',
     port: Number.isFinite(port) ? port : 4177,
     heartbeatMs: Number.isFinite(heartbeatMs) ? heartbeatMs : 30000,

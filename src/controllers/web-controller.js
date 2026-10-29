@@ -150,6 +150,21 @@ export function createWebController(container) {
         next(error);
       }
     },
+    async kioskPassStatus(req, res, next) {
+      try {
+        const pendingRequest = req.session.kioskPendingPass;
+        const pending = pendingRequest
+          ? await passService.kioskPendingPass({
+              kioskCode: req.kiosk.kiosk_code,
+              ...pendingRequest,
+            })
+          : null;
+        if (!pending && pendingRequest) delete req.session.kioskPendingPass;
+        res.json({ pending: Boolean(pending) });
+      } catch (error) {
+        next(error);
+      }
+    },
     async scanKiosk(req, res, next) {
       const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
       try {

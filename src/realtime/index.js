@@ -68,6 +68,7 @@ export async function createRealtime(httpServer, { config, logger, redis, sessio
 
   io.on('connection', (socket) => {
     socket.join(socket.data.sessionId);
+    socket.join(`teacher:${socket.data.userId}`);
     const eventHits = [];
 
     socket.on('ping', (payload, callback) => {

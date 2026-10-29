@@ -182,7 +182,7 @@ export async function createKioskServer(options = {}) {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
     if (
-      ['/kiosk/pass', '/kiosk/scan'].includes(url.pathname) ||
+      ['/kiosk/pass', '/kiosk/pass/status', '/kiosk/scan'].includes(url.pathname) ||
       url.pathname.startsWith('/css/') ||
       url.pathname.startsWith('/js/')
     ) {
