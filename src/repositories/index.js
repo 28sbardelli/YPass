@@ -213,15 +213,31 @@ export function createPassRepository(db) {
     async listDestinations(originLocationId, trx = knex) {
       return trx('locations')
         .leftJoin('users', 'locations.teacher_user_id', 'users.id')
+        .leftJoin('locations as bathroom', 'locations.bathroom', 'bathroom.id')
         .where('locations.active', true)
-        .whereNot('locations.id', originLocationId)
+        .where((query) =>
+          query
+            .whereNot('locations.id', originLocationId)
+            .orWhereIn(
+              'locations.id',
+              trx('locations').select('bathroom').where('id', originLocationId),
+            ),
+        )
         .select(
           'locations.id',
           'locations.name',
           'locations.type',
+          'locations.default_location',
           'locations.teacher_user_id',
           'users.display_name as teacher_name',
+          'bathroom.name as bathroom_name',
+          trx.raw(
+            'case when locations.id = (select bathroom from locations as origin_location where origin_location.id = ?) then 1 else 0 end as assigned_bathroom',
+            [originLocationId],
+          ),
         )
+        .orderBy('assigned_bathroom', 'desc')
+        .orderBy('locations.default_location', 'desc')
         .orderBy('locations.name');
     },
     async findStudentByNumber(studentNumber, trx = knex) {
