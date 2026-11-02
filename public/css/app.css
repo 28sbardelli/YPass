@@ -467,25 +467,28 @@ button:not(.danger-button):hover, .button:hover {
   border-radius: 10px;
   border: 1px solid var(--card-border);
 }
+:root {
+  --pass-border: 8px;
+}
 .staff-row.pending_approval {
-  border-left: 5px solid rgb(214, 168, 18) !important;
+  border-left: var(--pass-border) solid rgb(214, 168, 18) !important;
 }
 .staff-row.active {
   animation: blink 1s infinite ease-in-out;
 }
 @keyframes blink {
   0%, 100% {
-    border-left: 5px solid rgb(26, 110, 206);
+    border-left: var(--pass-border) solid rgb(26, 110, 206);
   }
   50% {
-    border-left: 5px solid rgba(66, 66, 66, 0.205);
+    border-left: var(--pass-border) solid rgba(66, 66, 66, 0.205);
   }
 }
 .staff-row.completed {
-  border-left: 5px solid var(--accent) !important;
+  border-left: var(--pass-border) solid var(--accent) !important;
 }
 .staff-row.cancelled {
-  border-left: 5px solid var(--danger) !important;
+  border-left: var(--pass-border) solid var(--danger) !important;
 }
 .staff-row p {
   margin: 0.35rem 0 0;
