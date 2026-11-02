@@ -3,7 +3,7 @@
     <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
     <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
   <% } %>
-  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=6" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=7" defer></script>
   <div class="staff-heading">
     <div>
       <h4>
@@ -26,13 +26,13 @@
     <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
   <% } %>
   <section class="staff-section">
-    <h2>Location(s)</h2>
+    <h2>Location</h2>
     <% if (!locations.length) { %>
       <p class="muted">No active locations are assigned to your account.</p>
     <% } else { %>
       <ul>
         <% locations.forEach((location) => { %>
-          <li class="account-info-box">➤ <%= location.name %></li>
+          <li class="account-info-box"><h4 class="small-muted">⌂ <%= location.name %></h4></li>
         <% }) %>
       </ul>
     <% } %>
@@ -44,51 +44,54 @@
       <p class="muted">No passes are currently starting at your locations.</p>
     <% } else { %>
       <div class="staff-filter" role="group" aria-label="Filter passes by status">
-        <button type="button" data-filter-control="passes" data-filter-value="all" aria-pressed="true">All</button>
-        <button type="button" data-filter-control="passes" data-filter-value="pending_approval" aria-pressed="false">Pending</button>
-        <button type="button" data-filter-control="passes" data-filter-value="active" aria-pressed="false">Active</button>
-        <button type="button" data-filter-control="passes" data-filter-value="returning" aria-pressed="false">Returning</button>
-        <button type="button" data-filter-control="passes" data-filter-value="completed" aria-pressed="false">Completed</button>
-        <button type="button" data-filter-control="passes" data-filter-value="cancelled" aria-pressed="false">Cancelled</button>
-        <button type="button" data-filter-control="passes" data-filter-value="expired" aria-pressed="false">Expired</button>
+        <button class="filter-pending" type="button" data-filter-control="passes" data-filter-value="pending_approval" aria-pressed="false">Pending</button>
+        <button class="filter-active" type="button" data-filter-control="passes" data-filter-value="active" aria-pressed="false">Active</button>
+        <button class="filter-returning" type="button" data-filter-control="passes" data-filter-value="returning" aria-pressed="false">Returning</button>
+        <button class="filter-completed" type="button" data-filter-control="passes" data-filter-value="completed" aria-pressed="false">Completed</button>
+        <button class="filter-cancelled" type="button" data-filter-control="passes" data-filter-value="cancelled" aria-pressed="false">Cancelled</button>
+        <button class="filter-expired" type="button" data-filter-control="passes" data-filter-value="expired" aria-pressed="false">Expired</button>
       </div>
       <div class="staff-sort" role="group" aria-label="Sort passes">
         <button type="button" data-sort-control="passes" data-sort-value="status" aria-pressed="true">Status</button>
-        <button type="button" data-sort-control="passes" data-sort-value="student" aria-pressed="false">Student (A-Z)</button>
-        <button type="button" data-sort-control="passes" data-sort-value="date-desc" aria-pressed="false">Newest first</button>
-        <button type="button" data-sort-control="passes" data-sort-value="date-asc" aria-pressed="false">Oldest first</button>
+        <button type="button" data-sort-control="passes" data-sort-value="student" aria-pressed="false">Student</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-desc" aria-pressed="false">Newest</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-asc" aria-pressed="false">Oldest</button>
       </div>
       <div class="staff-list" data-sort-list="passes">
         <% passes.forEach((pass) => { %>
-          <article class="staff-row <%= pass.status %>" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
-            <div>
+          <article class="staff-row pass-row <%= pass.status %>" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
+            <div class="pass-identity">
               <div class="passes-header-wrap">
                 <strong><%= pass.student_name %></strong>
-                <h4 class="muted"><%= pass.student_number %></h4>
               </div>
+              <h4 class="small-muted">🇮🇩 <%= pass.student_number %></h4>
+            </div>
+            <div class="pass-details">
               <div class="passes-footer-wrap">
-                <%= pass.origin_name %> → <%= pass.destination_name %> 
+                <div>Destination</div>
+                <h4 class="small-muted">⌂ <%= pass.destination_name %></h4>
               </div>
             </div>
+            <div class="staff-actions pass-actions">
             <% if (!['completed', 'cancelled', 'expired'].includes(pass.status)) { %>
-              <div class="staff-actions">
+              
                 <% if (pass.status === 'pending_approval') { %>
                   <form method="post" action="/teacher/pass">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="passId" value="<%= pass.id %>">
                     <input type="hidden" name="action" value="approve">
-                    <button type="submit">Approve</button>
+                    <button type="submit">✓ Approve</button>
                   </form>
                 <% } %>
                 <form method="post" action="/teacher/pass"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <input type="hidden" name="passId" value="<%= pass.id %>">
                   <input type="hidden" name="action" value="cancel">
-                  <button type="submit" class="danger-button">
-                    <%= pass.status === "pending_approval" ? "Decline" : "Cancel" %>
+                  <button type="submit" class="danger-button decline">
+                    <%= pass.status === "pending_approval" ? "✕" : "✕" %>
                   </button>
                 </form>
-              </div>
             <% } %>
+            </div>
           </article>
         <% }) %>
       </div>

@@ -68,6 +68,7 @@ document.querySelectorAll('[data-sort-control][data-sort-value]').forEach((contr
       .forEach((button) => button.setAttribute('aria-pressed', String(button === control)));
 
     const sortBy = control.dataset.sortValue;
+    const stableOrder = new Map(Array.from(list.children).map((row, index) => [row, index]));
     const sortedRows = [...rows].sort((left, right) => {
       if (sortBy === 'default') return originalOrder.get(left) - originalOrder.get(right);
       if (sortBy === 'status') {
@@ -81,8 +82,8 @@ document.querySelectorAll('[data-sort-control][data-sort-value]').forEach((contr
         );
       }
 
-      if (sortBy === 'date-desc') return compareNewestFirst(left, right, originalOrder);
-      if (sortBy === 'date-asc') return compareOldestFirst(left, right, originalOrder);
+      if (sortBy === 'date-desc') return compareNewestFirst(left, right, stableOrder);
+      if (sortBy === 'date-asc') return compareOldestFirst(left, right, stableOrder);
       return 0;
     });
 
@@ -100,13 +101,20 @@ document.querySelectorAll('[data-filter-control][data-filter-value]').forEach((c
 
   const rows = Array.from(list.children);
   control.addEventListener('click', () => {
-    document
-      .querySelectorAll(`[data-filter-control="${filterName}"][data-filter-value]`)
-      .forEach((button) => button.setAttribute('aria-pressed', String(button === control)));
+    control.setAttribute(
+      'aria-pressed',
+      String(control.getAttribute('aria-pressed') !== 'true'),
+    );
+    const selectedStatuses = new Set(
+      Array.from(
+        document.querySelectorAll(`[data-filter-control="${filterName}"][data-filter-value]`),
+      )
+        .filter((button) => button.getAttribute('aria-pressed') === 'true')
+        .map((button) => button.dataset.filterValue),
+    );
 
-    const status = control.dataset.filterValue;
     rows.forEach((row) => {
-      row.hidden = status !== 'all' && row.dataset.sortStatus !== status;
+      row.hidden = selectedStatuses.size > 0 && !selectedStatuses.has(row.dataset.sortStatus);
     });
   });
 });

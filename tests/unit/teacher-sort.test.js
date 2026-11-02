@@ -33,7 +33,10 @@ function createFilterControl(value) {
   let clickHandler;
   return {
     dataset: { filterControl: 'passes', filterValue: value },
-    attributes: { 'aria-pressed': String(value === 'all') },
+    attributes: { 'aria-pressed': 'false' },
+    getAttribute(attribute) {
+      return this.attributes[attribute];
+    },
     addEventListener(event, handler) {
       if (event === 'click') clickHandler = handler;
     },
@@ -63,7 +66,7 @@ function createSortablePage(passStatuses) {
   const controls = ['passes', 'appointments'].flatMap((name) =>
     sortOptions.map((option) => createSortControl(name, option)),
   );
-  const filterControls = ['all', 'pending_approval', 'active', 'arrived', 'returning', 'completed', 'cancelled', 'expired'].map(createFilterControl);
+  const filterControls = ['pending_approval', 'active', 'arrived', 'returning', 'completed', 'cancelled', 'expired'].map(createFilterControl);
   const passRows = passStatuses
     ? passStatuses.map((status) => ({ dataset: { sortStatus: status, sortStudent: status, sortDate: '' } }))
     : [
@@ -227,19 +230,39 @@ describe('teacher page sort controls', () => {
       ]);
       expect(
         filterControls.map((control) => control.attributes['aria-pressed']),
-      ).toEqual(['false', ...statuses.map((item) => String(item === status))]);
+      ).toEqual(statuses.map((item) => String(item === status)));
     },
   );
 
-  it('shows every pass again when the all-status filter is selected', () => {
+  it('shows multiple selected pass statuses together', () => {
+    const statuses = ['pending_approval', 'active', 'arrived', 'completed'];
+    const { filterControls, lists } = createSortablePage(statuses);
+    const rows = lists.get('passes').children;
+
+    clickFilter(filterControls, 'pending_approval');
+    clickFilter(filterControls, 'completed');
+
+    expect(rows.filter((row) => !row.hidden).map((row) => row.dataset.sortStatus)).toEqual([
+      'pending_approval',
+      'completed',
+    ]);
+  });
+
+  it('shows all passes when no status filters are selected', () => {
     const statuses = ['active', 'completed'];
     const { filterControls, lists } = createSortablePage(statuses);
     const rows = lists.get('passes').children;
 
     clickFilter(filterControls, 'completed');
-    clickFilter(filterControls, 'all');
+    clickFilter(filterControls, 'completed');
 
     expect(rows.every((row) => !row.hidden)).toBe(true);
+  });
+
+  it('does not include a separate all-status filter', () => {
+    const { filterControls } = createSortablePage();
+
+    expect(filterControls.some((control) => control.dataset.filterValue === 'all')).toBe(false);
   });
 
   it('keeps equal and invalid timestamps stable while sorting valid dates', () => {
