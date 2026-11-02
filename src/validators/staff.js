@@ -29,6 +29,9 @@ export const managerFilterSchema = z.object({
 
 const active = z.enum(['true', 'false']).transform((value) => value === 'true');
 const managerId = z.string().uuid();
+const defaultLocation = z
+  .preprocess((value) => value === 'true' || value === true, z.boolean())
+  .default(false);
 
 export const managerStudentCreateSchema = z.object({
   studentNumber,
@@ -41,7 +44,9 @@ export const managerStudentUpdateSchema = managerStudentCreateSchema.extend({ id
 export const managerLocationCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   type: z.enum(['round_trip', 'one_way', 'bathroom']),
+  bathroom: managerId.optional().or(z.literal('')),
   teacherUserId: managerId.optional().or(z.literal('')),
+  defaultLocation,
   active,
   _csrf: z.string().optional(),
 });

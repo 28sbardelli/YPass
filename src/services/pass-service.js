@@ -405,7 +405,14 @@ export function createPassService({
     });
   }
 
-  async function createManagerLocation({ name, type, bathroom, teacherUserId, active }) {
+  async function createManagerLocation({
+    name,
+    type,
+    bathroom,
+    teacherUserId,
+    defaultLocation,
+    active,
+  }) {
     if (await passesRepository.findLocationByName(name))
       throw new ConflictError('A location with that name already exists');
     return passesRepository.createLocation({
@@ -414,11 +421,20 @@ export function createPassService({
       type,
       bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
+      default_location: defaultLocation,
       active,
     });
   }
 
-  async function updateManagerLocation({ id, name, type, bathroom, teacherUserId, active }) {
+  async function updateManagerLocation({
+    id,
+    name,
+    type,
+    bathroom,
+    teacherUserId,
+    defaultLocation,
+    active,
+  }) {
     if (!(await passesRepository.findLocationById(id)))
       throw new NotFoundError('Location not found');
     const existing = await passesRepository.findLocationByName(name);
@@ -429,6 +445,7 @@ export function createPassService({
       type,
       bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
+      default_location: defaultLocation,
       active,
     });
   }

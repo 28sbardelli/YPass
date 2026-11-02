@@ -59,11 +59,13 @@
           <input name="defaultLocations" type="hidden" value="<%= JSON.stringify(destinations) %>">
           <input id="destinationSearch" type="search" placeholder="Search by location or teacher" autocomplete="off" data-destination-search <% if (waitingForApproval) { %> disabled <% } %>>
           <input type="hidden" name="destinationLocationId" value="<%= form.destinationLocationId || '' %>" data-destination-value required>
-          <div class="destination-list" role="listbox" aria-label="Matching destinations" data-destination-list hidden <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
+          <div class="destination-list" role="listbox" aria-label="Destinations" data-destination-list <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
             <% destinations.forEach((destination) => { %>
-              <button type="button" class="destination-option" role="option" aria-selected="false" data-destination-option data-location-id="<%= destination.id %>" data-location-name="<%= destination.name %>" data-search-text="<%= `${destination.name} ${destination.teacher_name || ''}` %>" hidden <% if (waitingForApproval) { %> disabled <% } %>>
+              <button type="button" class="destination-option<%= destination.default_location ? ' default-destination' : '' %><%= destination.assigned_bathroom ? ' assigned-bathroom' : '' %>" role="option" aria-selected="false" data-destination-option data-default-location="<%= (destination.default_location || destination.assigned_bathroom) ? 'true' : 'false' %>" data-location-id="<%= destination.id %>" data-location-name="<%= destination.name %>" data-search-text="<%= `${destination.name} ${destination.teacher_name || ''} ${destination.bathroom_name || ''}` %>" <%= (destination.default_location || destination.assigned_bathroom) ? '' : 'hidden' %> <% if (waitingForApproval) { %> disabled <% } %>>
                 <strong><%= destination.name %></strong>
+                <% if (destination.assigned_bathroom) { %><span>Assigned bathroom</span><% } %>
                 <% if (destination.teacher_name) { %><span><%= destination.teacher_name %></span><% } %>
+                <% if (destination.bathroom_name) { %><span>Bathroom: <%= destination.bathroom_name %></span><% } %>
               </button>
             <% }) %>
             <p class="destination-empty" data-destination-empty hidden>No matching locations.</p>
