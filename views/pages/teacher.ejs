@@ -105,10 +105,10 @@
     <% } else { %>
       <div class="staff-sort" role="group" aria-label="Sort appointments">
         <button type="button" data-sort-control="appointments" data-sort-value="default" aria-pressed="true">Order shown</button>
-        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="false">Status (A-Z)</button>
-        <button type="button" data-sort-control="appointments" data-sort-value="student" aria-pressed="false">Student (A-Z)</button>
-        <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest first</button>
-        <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest first</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="false">Status</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="student" aria-pressed="false">Student</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest</button>
       </div>
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
