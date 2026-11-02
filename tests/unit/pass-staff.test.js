@@ -281,6 +281,18 @@ describe('staff pass controls', () => {
     });
     expect(appointment.appointment.status).toBe('scheduled');
 
+    const sameTime = new Date(appointment.appointment.scheduled_at);
+    await expect(
+      ctx.container.passService.createAppointment({
+        userId: teacherId,
+        studentNumber: '111111',
+        studentName: 'Test Student 111111',
+        originLocationId: mainOffice.id,
+        destinationLocationId: counseling.id,
+        scheduledAt: sameTime,
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+
     const student = await ctx.container.db
       .knex('students')
       .where({ student_number: '200001' })
@@ -321,6 +333,11 @@ describe('staff pass controls', () => {
     expect(timedOut.passes).toHaveLength(1);
     expect(timedOut.passes[0].id).toBe(requested.pass.id);
     expect(timedOut.passes[0].display_status).toBe('timedout');
+    expect(timedOut.recentTimedOutPasses).toHaveLength(1);
+    expect(timedOut.recentTimedOutPasses[0].id).toBe(requested.pass.id);
+    expect(timedOut.recentTimedOutPasses[0].display_status).toBe('timedout');
+    expect(timedOut.timedOutPasses).toHaveLength(1);
+    expect(timedOut.timedOutPasses[0].id).toBe(requested.pass.id);
   });
 
   it('lets managers create and update students, locations, and kiosks', async () => {
@@ -410,5 +427,24 @@ describe('staff pass controls', () => {
       kiosk_code: 'updated-kiosk',
       active: 0,
     });
+  });
+
+  it('replaces the staff role instead of accumulating lower roles', async () => {
+    ctx = await createTestApp();
+    const userId = randomUUID();
+    await ctx.container.db.knex('users').insert({
+      id: userId,
+      display_name: 'Role Test User',
+      primary_email: `${userId}@example.test`,
+      status: 'active',
+    });
+
+    await ctx.container.userService.setStaffRole({ userId, roleName: 'teacher' });
+    await ctx.container.userService.setStaffRole({ userId, roleName: 'manager' });
+
+    const roles = await ctx.container.rbac.getRoles(userId);
+    expect(roles).toContain('manager');
+    expect(roles).not.toContain('teacher');
+    expect(roles).not.toContain('student');
   });
 });

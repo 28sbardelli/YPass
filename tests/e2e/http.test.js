@@ -57,6 +57,11 @@ describe('http skeleton', () => {
       displayName: 'Teacher Page User',
     });
     expect(register.status).toBe(302);
+    const user = await ctx.container.db
+      .knex('users')
+      .where({ primary_email: 'teacher-page@example.test' })
+      .first();
+    await ctx.container.userService.setStaffRole({ userId: user.id, roleName: 'teacher' });
 
     const loginPage = await agent.get('/auth/login');
     const login = await agent.post('/auth/login').type('form').send({
@@ -93,6 +98,7 @@ describe('http skeleton', () => {
       .knex('users')
       .where({ primary_email: 'teacher-action@example.test' })
       .first();
+    await ctx.container.userService.setStaffRole({ userId: user.id, roleName: 'teacher' });
     const origin = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
     const destination = await ctx.container.db
       .knex('locations')
@@ -118,6 +124,65 @@ describe('http skeleton', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/teacher');
+  });
+
+  it('allows managers to use teacher and manager pages but blocks students from both', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled', EMAIL_ENABLED: 'false' });
+    const { default: request } = await import('supertest');
+    const studentAgent = request.agent(ctx.app);
+    const registerPage = await studentAgent.get('/auth/register');
+    await studentAgent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'student-access-user',
+      email: 'student-access@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Student Access User',
+    });
+    const studentLoginPage = await studentAgent.get('/auth/login');
+    await studentAgent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(studentLoginPage.text),
+      username: 'student-access-user',
+      password: 'correct-horse-battery',
+    });
+    expect((await studentAgent.get('/teacher')).status).toBe(403);
+    expect((await studentAgent.get('/manager')).status).toBe(403);
+
+    const manager = await ctx.container.db
+      .knex('users')
+      .where({ primary_email: 'student-access@example.test' })
+      .first();
+    await ctx.container.userService.setStaffRole({ userId: manager.id, roleName: 'manager' });
+    expect((await studentAgent.get('/teacher')).status).toBe(200);
+    expect((await studentAgent.get('/manager')).status).toBe(200);
+  });
+
+  it('treats configured MANAGERS as admin users', async () => {
+    ctx = await createTestApp({
+      MANAGERS: 'env-admin@example.test',
+      LOCAL_AUTH_EMAIL_FLOW: 'disabled',
+      EMAIL_ENABLED: 'false',
+    });
+    const { default: request } = await import('supertest');
+    const agent = request.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'env-admin-user',
+      email: 'env-admin@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Env Admin User',
+    });
+    const loginPage = await agent.get('/auth/login');
+    await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'env-admin-user',
+      password: 'correct-horse-battery',
+    });
+
+    const me = await agent.get('/api/v1/me');
+    expect(me.status).toBe(200);
+    expect(me.body.data.roles).toContain('admin');
+    expect((await agent.get('/manager')).status).toBe(200);
   });
 
   it('does not register API routes when API_ENABLED is false', async () => {
