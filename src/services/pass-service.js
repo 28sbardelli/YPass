@@ -368,9 +368,11 @@ export function createPassService({
     const passesWithTimeoutStatus = passRows.map((pass) => ({
       ...pass,
       display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
-    });
-    const passesWithTimeoutStatus = passRows.map(withTimeoutStatus);
-    const timedOutPasses = timedOutRows.map(withTimeoutStatus);
+    }));
+    const timedOutPasses = timedOutRows.map((pass) => ({
+      ...pass,
+      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
+    }));
     const kiosksWithStatus = kiosks.map((kiosk) => ({
       ...kiosk,
       display_status:
