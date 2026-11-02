@@ -3,7 +3,7 @@
     <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
     <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
   <% } %>
-  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=6" defer></script>
   <div class="staff-heading">
     <div>
       <h4>
@@ -43,14 +43,20 @@
     <% if (!passes.length) { %>
       <p class="muted">No passes are currently starting at your locations.</p>
     <% } else { %>
-      <div class="staff-sort">
-        <select id="pass-sort" data-sort-control="passes">
-          <option value="default">Order shown</option>
-          <option value="status">Status</option>
-          <option value="student">Student (A-Z)</option>
-          <option value="date-desc">Newest first</option>
-          <option value="date-asc">Oldest first</option>
-        </select>
+      <div class="staff-filter" role="group" aria-label="Filter passes by status">
+        <button type="button" data-filter-control="passes" data-filter-value="all" aria-pressed="true">All</button>
+        <button type="button" data-filter-control="passes" data-filter-value="pending_approval" aria-pressed="false">Pending</button>
+        <button type="button" data-filter-control="passes" data-filter-value="active" aria-pressed="false">Active</button>
+        <button type="button" data-filter-control="passes" data-filter-value="returning" aria-pressed="false">Returning</button>
+        <button type="button" data-filter-control="passes" data-filter-value="completed" aria-pressed="false">Completed</button>
+        <button type="button" data-filter-control="passes" data-filter-value="cancelled" aria-pressed="false">Cancelled</button>
+        <button type="button" data-filter-control="passes" data-filter-value="expired" aria-pressed="false">Expired</button>
+      </div>
+      <div class="staff-sort" role="group" aria-label="Sort passes">
+        <button type="button" data-sort-control="passes" data-sort-value="status" aria-pressed="true">Status</button>
+        <button type="button" data-sort-control="passes" data-sort-value="student" aria-pressed="false">Student (A-Z)</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-desc" aria-pressed="false">Newest first</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-asc" aria-pressed="false">Oldest first</button>
       </div>
       <div class="staff-list" data-sort-list="passes">
         <% passes.forEach((pass) => { %>
@@ -94,14 +100,12 @@
     <% if (!appointments.length) { %>
       <p class="muted">No appointments.</p>
     <% } else { %>
-      <div class="staff-sort">
-        <select id="appointment-sort" data-sort-control="appointments">
-          <option value="default">Order shown</option>
-          <option value="status">Status (A-Z)</option>
-          <option value="student">Student (A-Z)</option>
-          <option value="date-asc">Soonest first</option>
-          <option value="date-desc">Latest first</option>
-        </select>
+      <div class="staff-sort" role="group" aria-label="Sort appointments">
+        <button type="button" data-sort-control="appointments" data-sort-value="default" aria-pressed="true">Order shown</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="false">Status (A-Z)</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="student" aria-pressed="false">Student (A-Z)</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest first</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest first</button>
       </div>
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
