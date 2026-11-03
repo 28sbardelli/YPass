@@ -2,6 +2,65 @@ import { randomUUID } from 'node:crypto';
 import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from '#errors';
 import { sha256 } from '#utils/crypto.js';
 
+function formatActiveDuration(pass, now, endedAt = null) {
+  if (endedAt || !['active', 'arrived', 'returning'].includes(pass.status)) return null;
+  const activeSince = pass.departed_at || pass.approved_at;
+  const startedAt = new Date(activeSince);
+  if (!activeSince || Number.isNaN(startedAt.getTime())) return null;
+
+  const end = endedAt ? new Date(endedAt) : now;
+  if (Number.isNaN(end.getTime())) return null;
+  const totalSeconds = Math.max(0, Math.floor((end.getTime() - startedAt.getTime()) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const label = endedAt ? 'Was active for' : 'Active for';
+  return `${label} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatFinishedAt(timestamp) {
+  if (!timestamp) return null;
+  const finishedAt = new Date(timestamp);
+  if (Number.isNaN(finishedAt.getTime())) return null;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(finishedAt);
+}
+
+function formatAppointmentAt(timestamp) {
+  const scheduledAt = new Date(timestamp);
+  if (Number.isNaN(scheduledAt.getTime())) return timestamp;
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(scheduledAt);
+}
+
+function decorateActivePass(pass, now, forcedEndedAt = null) {
+  const activeSince = pass.departed_at || pass.approved_at;
+  const recordedEndedAt = forcedEndedAt || pass.ended_at || null;
+  const timeoutAt = pass.timeout_at ? new Date(pass.timeout_at) : null;
+  const recordedEnd = recordedEndedAt ? new Date(recordedEndedAt) : null;
+  const endedAt =
+    timeoutAt && recordedEnd && timeoutAt < recordedEnd ? pass.timeout_at : recordedEndedAt;
+  const activeLive = !endedAt && ['active', 'arrived', 'returning'].includes(pass.status);
+  const activeDuration = activeLive ? formatActiveDuration(pass, now) : null;
+  return {
+    ...pass,
+    active_duration: activeDuration,
+    active_duration_label: 'Active for',
+    active_live: activeLive,
+    active_since: activeSince ? new Date(activeSince).toISOString() : null,
+    finished_at: activeSince && endedAt ? new Date(endedAt).toISOString() : null,
+    finished_at_display: activeSince && endedAt ? formatFinishedAt(endedAt) : null,
+  };
+}
+
 export function createPassService({
   db,
   passes,
@@ -189,7 +248,7 @@ export function createPassService({
         approved_by: null,
         approved_at: autoApproved ? now : null,
         departed_at: autoApproved ? now : null,
-        timeout_at: autoApproved ? new Date(now.getTime() + 1 * 1 * 1000) : null,
+        timeout_at: autoApproved ? new Date(now.getTime() + 30 * 60 * 1000) : null,
       };
       await passes.createPass(
         pass,
@@ -234,12 +293,20 @@ export function createPassService({
   }
 
   async function teacherDashboard(userId) {
+    const now = clock.now();
     const [locations, passes, appointments] = await Promise.all([
       passesRepository.listTeacherLocations(userId),
       passesRepository.listTeacherPasses(userId),
       passesRepository.listAppointmentsForTeacher(userId),
     ]);
-    return { locations, passes, appointments };
+    return {
+      locations,
+      passes: passes.map((pass) => decorateActivePass(pass, now)),
+      appointments: appointments.map((appointment) => ({
+        ...appointment,
+        scheduled_at_display: formatAppointmentAt(appointment.scheduled_at),
+      })),
+    };
   }
 
   async function approvePass({ passId, userId }) {
@@ -392,7 +459,10 @@ export function createPassService({
       passes: passesWithTimeoutStatus,
       recentTimedOutPasses: timedOutPasses.slice(0, 5),
       timedOutPasses,
-      appointments: appointmentRows,
+      appointments: appointmentRows.map((appointment) => ({
+        ...appointment,
+        scheduled_at_display: formatAppointmentAt(appointment.scheduled_at),
+      })),
       filters,
       students,
       locations: locationsWithBathrooms,
