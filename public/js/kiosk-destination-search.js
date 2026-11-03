@@ -11,14 +11,16 @@ if (searchInput && destinationValue && destinationList) {
     let matchCount = 0;
 
     destinationOptions.forEach((option) => {
-      const matches =
-        hasQuery && option.dataset.locationName.toLocaleLowerCase().startsWith(query);
+      const searchText = option.dataset.searchText.toLocaleLowerCase();
+      const matches = hasQuery
+        ? searchText.includes(query)
+        : option.dataset.defaultLocation === 'true';
       option.hidden = !matches;
       if (matches) matchCount += 1;
     });
 
     destinationEmpty.hidden = !hasQuery || matchCount > 0;
-    destinationList.hidden = !hasQuery;
+    destinationList.hidden = false;
   });
 
   destinationOptions.forEach((option) => {

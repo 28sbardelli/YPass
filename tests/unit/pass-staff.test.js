@@ -70,6 +70,51 @@ describe('staff pass controls', () => {
     expect(options.destinations.map(({ id }) => id)).toContain(location.id);
   });
 
+  it('marks manager-selected default locations in kiosk options', async () => {
+    ctx = await createTestApp();
+    const bathroom = await ctx.container.passService.createManagerLocation({
+      name: 'North Hall Bathroom',
+      type: 'bathroom',
+      teacherUserId: '',
+      defaultLocation: false,
+      active: true,
+    });
+    await ctx.container.db.knex('locations').where({ name: 'Main Office' }).update({
+      bathroom: bathroom.id,
+    });
+    const location = await ctx.container.passService.createManagerLocation({
+      name: 'Quick Destination',
+      type: 'one_way',
+      bathroom: bathroom.id,
+      teacherUserId: '',
+      active: true,
+      defaultLocation: true,
+    });
+
+    const options = await ctx.container.passService.kioskOptions('main-office');
+    expect(options.destinations.find(({ id }) => id === location.id)).toMatchObject({
+      default_location: 1,
+      bathroom_name: 'North Hall Bathroom',
+    });
+    expect(options.destinations[0]).toMatchObject({
+      id: bathroom.id,
+      name: 'North Hall Bathroom',
+      assigned_bathroom: 1,
+    });
+
+    await ctx.container.passService.updateManagerLocation({
+      id: location.id,
+      name: location.name,
+      type: location.type,
+      teacherUserId: '',
+      active: true,
+      defaultLocation: false,
+    });
+    await expect(ctx.container.db.knex('locations').where({ id: location.id }).first()).resolves.toMatchObject({
+      default_location: 0,
+    });
+  });
+
   it('notifies the origin teacher when a round-trip pass ends', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
@@ -348,11 +393,20 @@ describe('staff pass controls', () => {
       status: 'inactive',
     });
 
+    const bathroom = await ctx.container.passService.createManagerLocation({
+      name: 'Bathroom',
+      type: 'bathroom',
+      active: true,
+      defaultLocation: false,
+    });
+
     const location = await ctx.container.passService.createManagerLocation({
       name: 'New Location',
       type: 'one_way',
+      bathroom: bathroom.id,
       teacherUserId: teacherId,
       active: true,
+      defaultLocation: true,
     });
     const kiosk = await ctx.container.passService.createManagerKiosk({
       name: 'New Kiosk',
@@ -364,8 +418,10 @@ describe('staff pass controls', () => {
       id: location.id,
       name: 'Updated Location',
       type: 'round_trip',
+      bathroom: bathroom.id,
       teacherUserId: '',
       active: false,
+      defaultLocation: false,
     });
     await ctx.container.passService.updateManagerKiosk({
       id: kiosk.id,
@@ -385,7 +441,9 @@ describe('staff pass controls', () => {
       ctx.container.db.knex('locations').where({ id: location.id }).first(),
     ).resolves.toMatchObject({
       name: 'Updated Location',
+      bathroom: bathroom.id,
       active: 0,
+      default_location: 0,
     });
     await expect(
       ctx.container.db.knex('kiosks').where({ id: kiosk.id }).first(),
