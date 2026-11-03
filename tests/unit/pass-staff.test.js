@@ -53,6 +53,31 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
+  it('repairs a legacy locations table missing bathroom/default_location columns', async () => {
+    const { buildKnexConfig, createSqlJsKnex } = await import('../../src/database/knex-config.js');
+    const legacyDbPath = `${process.cwd()}/data/test-legacy-location-schema.sqlite`;
+    const config = buildKnexConfig({ database: { provider: 'sqlite', url: legacyDbPath } }, process.env);
+    const knex = await createSqlJsKnex(config);
+    try {
+      await knex.schema.createTable('locations', (table) => {
+        table.uuid('id').primary();
+        table.string('name').notNullable();
+        table.string('type').notNullable();
+        table.uuid('teacher_user_id').nullable();
+        table.boolean('active').notNullable().defaultTo(true);
+      });
+
+      const { up } = await import('../../src/database/migrations/014_fix_missing_location_columns.js');
+      await up(knex);
+
+      await expect(knex.schema.hasColumn('locations', 'bathroom')).resolves.toBe(true);
+      await expect(knex.schema.hasColumn('locations', 'default_location')).resolves.toBe(true);
+    } finally {
+      await knex.destroy();
+      await import('node:fs/promises').then(({ rm }) => rm(legacyDbPath, { force: true }));
+    }
+  });
+
   it('offers active locations without requiring a destination kiosk', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
