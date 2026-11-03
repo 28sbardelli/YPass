@@ -11,8 +11,13 @@
       </h4>
       <div class="h-line"></div>
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
-      <li>
+      <li class="teacher-data">
         <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
+        <% if (locations.length) { %>
+            <% locations.forEach((location) => { %>
+                <p class="account-info-box">⌂ <%= location.name %></p>
+            <% }) %>
+        <% } %>
         <form class="inline" method="post" action="/auth/logout">
           <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
           <button type="submit">Sign out</button>
@@ -25,21 +30,6 @@
   <% if (message) { %>
     <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
   <% } %>
-  <section class="staff-section">
-    <div class="header-cont">
-      <img src="/images/location.png" width="20" height="20">
-      <h2>Location</h2>
-    </div>
-    <% if (!locations.length) { %>
-      <p class="muted">No active locations are assigned to your account.</p>
-    <% } else { %>
-      <ul>
-        <% locations.forEach((location) => { %>
-          <li class="account-info-box"><h4 class="small-muted">⌂ <%= location.name %></h4></li>
-        <% }) %>
-      </ul>
-    <% } %>
-  </section>
 
   <section class="staff-section">
     <div class="header-cont">
@@ -133,7 +123,7 @@
                 <h4 class="small-muted">⌂ <%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
               </div>
             </div>
-            <span class="status-label appointment-status"><%= appointment.status %></span>
+            <span class="status-label appointment-status">⏱︎ <%= appointment.status %></span>
           </article>
         <% }) %>
       </div>

@@ -407,6 +407,21 @@ button:not(.danger-button):hover, .button:hover {
   z-index: 10;
   margin: 0;
 }
+.teacher-data {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 10px 0;
+}
+.teacher-data > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.teacher-data > p {
+  margin: 5px 0px;
+}
 .staff-page > .staff-section {
   margin-top: 1rem;
 }
@@ -720,6 +735,11 @@ button:not(.danger-button):hover, .button:hover {
   .staff-heading,
   .staff-row {
     display: block;
+  }
+  .teacher-data {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
   }
   .staff-row.pass-row {
     display: grid;
