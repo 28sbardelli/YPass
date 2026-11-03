@@ -1,16 +1,51 @@
 <section class="staff-page narrow-page">
-  <a href="/teacher">Back to teacher panel</a>
+  <a class="button" href="/teacher">← Back to dashboard</a>
   <h1>Create appointment</h1>
   <p class="muted">The student must still scan at a kiosk. An appointment does not create a pass by itself.</p>
   <% if (message) { %><p class="flash <%= message === 'Appointment created.' ? 'flash-success' : 'flash-error' %>"><%= message %></p><% } %>
   <form method="post" action="/teacher/appointment" class="staff-form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <label>Student ID<input name="studentNumber" value="<%= form.studentNumber || '' %>" required></label>
-    <label>Student full name<input name="studentName" value="<%= form.studentName || '' %>" required></label>
-    <label>Coming from<select name="originLocationId" required><option value="">Select location</option><% locations.forEach((location) => { %><option value="<%= location.id %>" <%= form.originLocationId === location.id ? 'selected' : '' %>><%= location.name %></option><% }) %></select></label>
-    <label>Going to<select name="destinationLocationId" required><option value="">Select location</option><% locations.forEach((location) => { %><option value="<%= location.id %>" <%= form.destinationLocationId === location.id ? 'selected' : '' %>><%= location.name %></option><% }) %></select></label>
-    <label>Scheduled time<input type="datetime-local" name="scheduledAt" value="<%= form.scheduledAt || '' %>" required></label>
-    <label>Notes<textarea name="notes" rows="3"><%= form.notes || '' %></textarea></label>
+    <label>
+      Student ID<span class="required-note"> *</span>
+      <input name="studentNumber" value="<%= form.studentNumber || '' %>" required>
+    </label>
+    <label>
+      Student full name<span class="required-note"> *</span>
+      <input name="studentName" value="<%= form.studentName || '' %>" required>
+    </label>
+    <label>
+      Coming from<span class="required-note"> *</span>
+      <select name="originLocationId" required>
+        <option value="">Select location</option>
+        <% locations.forEach((location) => { %>
+          <option value="<%= location.id %>" 
+            <%= form.originLocationId === location.id ? 'selected' : '' %>><%= location.name %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+    <label>
+      Going to<span class="required-note"> *</span>
+      <select name="destinationLocationId" required>
+        <option value="">Select location</option>
+        <% locations.forEach((location) => { %>
+          <option value="<%= location.id %>" 
+            <%= form.destinationLocationId === location.id ? 'selected' : '' %>>
+            <%= location.name %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+    <label>
+      Scheduled time<span class="required-note"> *</span>
+      <input type="datetime-local" name="scheduledAt" value="<%= form.scheduledAt || '' %>" required>
+    </label>
+    <label>
+      Notes
+      <textarea name="notes" rows="3">
+        <%= form.notes || '' %>
+      </textarea>
+    </label>
     <button type="submit">Create appointment</button>
   </form>
 </section>

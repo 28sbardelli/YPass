@@ -1,3 +1,4 @@
+/* Theme tokens: shared colors and sizing used throughout the application. */
 :root {
   color-scheme: light;
   --bg: #eceeea;
@@ -11,6 +12,7 @@
   --active: rgb(29, 90, 160);
   --completed: rgb(23, 87, 29);
   --card: #fff;
+  --pass-border: 8px;
   --card-border: rgb(182, 189, 182);
 }
 * {
@@ -26,9 +28,18 @@ body {
   text-decoration: none;
   color: var(--faint-txt);
   font-weight: 500;
+  height: 4rem;
+  width: 6rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 3px solid transparent;
 }
 .header-link:hover {
+  background-color: oklch(from var(--accent) l c h / 20%) !important;
+  margin: 0;
   color: var(--accent);
+  border-bottom: 3px solid var(--accent);
 }
 .header-link.to-be-removed {
   display: none;
@@ -38,14 +49,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0 1.5rem;
   background: var(--card);
 }
 .site-header nav {
   display: flex;
-  gap: 2rem;
   align-items: center;
 }
+
+/* Shared page sizing and account information. */
 .page {
   margin: 4rem auto;
   padding: 0 1rem;
@@ -70,6 +82,8 @@ body {
   border-radius: 8px;
   padding: 8px 10px;
 }
+
+/* Typography and small reusable layout helpers. */
 .passes-header-wrap {
   display: flex; 
   flex-direction: row; 
@@ -104,8 +118,10 @@ h4 {
 }
 label {
   display: block;
-  margin: 0.75rem 0;
+  margin: 0.5rem 0;
 }
+
+/* Shared lists, form controls, buttons, and feedback messages. */
 ul {
   display: flex;
   flex-direction: column;
@@ -159,12 +175,16 @@ button:not(.danger-button):hover, .button:hover {
 .inline {
   display: inline;
 }
+
+/* Authentication page provider links. */
 .auth-providers {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
 }
+
+/* Kiosk page layout, panels, and instructions. */
 .kiosk-page {
   max-width: 66rem;
   margin: 0 auto;
@@ -358,6 +378,8 @@ button:not(.danger-button):hover, .button:hover {
   color: var(--danger);
   border-left-color: var(--danger);
 }
+
+/* Kiosk layout adjustments for narrow screens. */
 @media (max-width: 700px) {
   .kiosk-heading {
     display: block;
@@ -372,6 +394,8 @@ button:not(.danger-button):hover, .button:hover {
     min-height: auto;
   }
 }
+
+/* Teacher and manager staff dashboard layout. */
 .staff-page {
   max-width: 66rem;
   margin: 0 auto;
@@ -406,6 +430,21 @@ button:not(.danger-button):hover, .button:hover {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
+.header-cont {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 2px solid #d6d3d1;
+  padding-bottom: 0.5rem;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+.header-cont h2 {
+  margin: 0;
+}
+.header-cont img {
+  margin-bottom: -5px;
+}
 .staff-section {
   min-width: 0;
 }
@@ -426,6 +465,8 @@ button:not(.danger-button):hover, .button:hover {
 .staff-section[open] summary {
   margin-bottom: 1rem;
 }
+
+/* Staff sorting/filter controls and manager forms. */
 .manager-form + .staff-list,
 .staff-form + .staff-list {
   margin-top: 0.7rem;
@@ -483,10 +524,8 @@ button:not(.danger-button):hover, .button:hover {
   padding-top: 0;
   border-top: 0;
 }
-.staff-section h2 {
-  border-bottom: 2px solid #d6d3d1;
-  padding-bottom: 0.5rem;
-}
+
+/* Shared staff cards, including pass and appointment card layouts. */
 .staff-list {
   display: grid;
   gap: 0.6rem;
@@ -505,6 +544,9 @@ button:not(.danger-button):hover, .button:hover {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
+}
+.appointment-status {
+  justify-self: end;
 }
 .pass-identity,
 .pass-details {
@@ -534,10 +576,11 @@ button:not(.danger-button):hover, .button:hover {
 .staff-row[hidden] {
   display: none;
 }
-/* pass borders */
-:root {
-  --pass-border: 8px;
+.required-note {
+  color: var(--danger);
 }
+
+/* Pass state accents and animations. */
 .staff-row.pending_approval {
   border-left: var(--pass-border) solid var(--pending) !important;
 }
@@ -572,7 +615,8 @@ button:not(.danger-button):hover, .button:hover {
 .staff-row.expired {
   border-left: var(--pass-border) solid var(--expired) !important;
 }
-/* filters */
+
+/* Status filter colors. */
 .filter-pending {
   --filter-color: var(--pending);
 }
@@ -609,6 +653,8 @@ button:not(.danger-button):hover, .button:hover {
 .filter-expired:hover {
   background: var(--expired) !important;
 }
+
+/* Staff card metadata, actions, and destructive action states. */
 .staff-row p {
   margin: 0.35rem 0 0;
   color: #57534e;
@@ -668,58 +714,8 @@ button:not(.danger-button):hover, .button:hover {
   font: inherit;
   padding: 0.4rem;
 }
-.staff-list {
-  display: grid;
-  gap: 0.6rem;
-}
-.staff-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.staff-actions form {
-  margin: 0;
-}
-.danger-button {
-  background: var(--danger);
-}
-.danger-button:hover {
-  animation: button-hover 0.2s forwards ease;
-  background-color: oklch(from var(--danger) calc(l - 0.15) c h);
-}
-.staff-form {
-  display: grid;
-  gap: 0.7rem;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
-}
-.staff-form input,
-.staff-form select,
-.staff-form textarea {
-  width: 100%;
-  font: inherit;
-  padding: 0.55rem;
-}
-.filter-bar {
-  display: flex;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  align-items: end;
-  padding: 1rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
-}
-.filter-bar label {
-  margin: 0;
-}
-.filter-bar input,
-.filter-bar select {
-  display: block;
-  min-height: 2.4rem;
-  font: inherit;
-  padding: 0.4rem;
-}
+
+/* Responsive staff dashboard and card layouts. */
 @media (max-width: 700px) {
   .staff-heading,
   .staff-row {
@@ -739,6 +735,11 @@ button:not(.danger-button):hover, .button:hover {
     grid-column: 2;
     grid-row: 1;
   }
+  .appointment-status {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+  }
   .staff-actions {
     margin-top: 0.8rem;
   }
@@ -755,6 +756,8 @@ button:not(.danger-button):hover, .button:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Wider staff dashboards use a two-column section layout. */
 @media (min-width: 900px) {
   .staff-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -26,7 +26,10 @@
     <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
   <% } %>
   <section class="staff-section">
-    <h2>Location</h2>
+    <div class="header-cont">
+      <img src="/images/location.png" width="20" height="20">
+      <h2>Location</h2>
+    </div>
     <% if (!locations.length) { %>
       <p class="muted">No active locations are assigned to your account.</p>
     <% } else { %>
@@ -39,7 +42,10 @@
   </section>
 
   <section class="staff-section">
-    <h2>Passes</h2>
+    <div class="header-cont">
+      <img src="/images/ticket.svg" width="20" height="20">
+      <h2>Passes</h2>
+    </div>
     <% if (!passes.length) { %>
       <p class="muted">No passes are currently starting at your locations.</p>
     <% } else { %>
@@ -99,22 +105,35 @@
   </section>
 
   <section class="staff-section">
-    <h2>Appointments</h2>
+    <div class="header-cont">
+      <img src="/images/timer.svg" width="20" height="20">
+      <h2>Appointments</h2>
+    </div>
     <% if (!appointments.length) { %>
       <p class="muted">No appointments.</p>
     <% } else { %>
       <div class="staff-sort" role="group" aria-label="Sort appointments">
-        <button type="button" data-sort-control="appointments" data-sort-value="default" aria-pressed="true">Order shown</button>
-        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="false">Status</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="true">Status</button>
         <button type="button" data-sort-control="appointments" data-sort-value="student" aria-pressed="false">Student</button>
         <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest</button>
         <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest</button>
       </div>
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
-          <article class="staff-row" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
-            <div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> → <%= appointment.destination_name %> · <%= appointment.scheduled_at %></p></div>
-            <span class="status-label"><%= appointment.status %></span>
+          <article class="staff-row pass-row appointment-row <%= appointment.status %>" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
+            <div class="pass-identity">
+              <div class="passes-header-wrap">
+                <strong><%= appointment.student_name %></strong>
+              </div>
+              <h4 class="small-muted">🇮🇩 <%= appointment.student_number %></h4>
+            </div>
+            <div class="pass-details">
+              <div class="passes-footer-wrap">
+                <div>Appointment</div>
+                <h4 class="small-muted">⌂ <%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
+              </div>
+            </div>
+            <span class="status-label appointment-status"><%= appointment.status %></span>
           </article>
         <% }) %>
       </div>
