@@ -3,6 +3,7 @@
     <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
     <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
   <% } %>
+  <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
   <div class="staff-heading">
     <div>
@@ -50,7 +51,7 @@
             <div>
               <strong><%= pass.student_name %></strong>
               <span class="muted">ID <%= pass.student_number %></span>
-              <p><%= pass.origin_name %> to <%= pass.destination_name %> · <%= pass.status %></p>
+              <p><%= pass.origin_name %> to <%= pass.destination_name %> · <%= pass.status %><% if (pass.active_live && pass.active_duration) { %> · <span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %> · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
             </div>
             <% if (!['completed', 'cancelled', 'expired'].includes(pass.status)) { %>
               <div class="staff-actions">
@@ -84,7 +85,7 @@
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
           <article class="staff-row" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
-            <div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.scheduled_at %></p></div>
+            <div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.scheduled_at_display %></p></div>
             <span class="status-label"><%= appointment.status %></span>
           </article>
         <% }) %>
