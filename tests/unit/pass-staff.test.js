@@ -214,6 +214,19 @@ describe('staff pass controls', () => {
     });
     expect(approved.status).toBe('active');
     expect(approved.timeout_at).toBeTruthy();
+    await ctx.container.db.knex('students').insert({
+      id: randomUUID(),
+      student_number: '300001',
+      display_name: 'Never Active Student',
+      status: 'active',
+    });
+    const neverActive = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: '300001',
+      studentName: 'Never Active Student',
+      destinationLocationId: counseling.id,
+    });
+    await ctx.container.passService.cancelPass({ passId: neverActive.pass.id, userId: teacherId });
     const retriedApproval = await ctx.container.passService.approvePass({
       passId: requested.pass.id,
       userId: teacherId,
@@ -265,6 +278,9 @@ describe('staff pass controls', () => {
     });
 
     const dashboard = await ctx.container.passService.teacherDashboard(teacherId);
+    const cancelledBeforeApproval = dashboard.passes.find(({ id }) => id === neverActive.pass.id);
+    expect(cancelledBeforeApproval.active_duration).toBeNull();
+    expect(cancelledBeforeApproval.finished_at).toBeNull();
     expect(dashboard.locations.map(({ id }) => id)).toContain(mainOffice.id);
     expect(dashboard.locations.map(({ id }) => id)).not.toContain(counseling.id);
     expect(dashboard.passes.map(({ id }) => id)).toContain(requested.pass.id);
@@ -279,6 +295,12 @@ describe('staff pass controls', () => {
     const manager = await ctx.container.passService.managerDashboard({ status: 'active' });
     expect(manager.passes).toHaveLength(1);
     expect(manager.passes[0].id).toBe(requested.pass.id);
+    expect(manager.passes[0].active_duration).toMatch(/Active for /);
+
+    const teacherDashboard = await ctx.container.passService.teacherDashboard(teacherId);
+    expect(teacherDashboard.passes.find(({ id }) => id === requested.pass.id).active_duration).toMatch(
+      /Active for /,
+    );
 
     await ctx.container.db
       .knex('passes')
@@ -288,6 +310,8 @@ describe('staff pass controls', () => {
     expect(timedOut.passes).toHaveLength(1);
     expect(timedOut.passes[0].id).toBe(requested.pass.id);
     expect(timedOut.passes[0].display_status).toBe('timedout');
+    expect(timedOut.passes[0].active_duration).toBeNull();
+    expect(timedOut.passes[0].finished_at).toBe(new Date(timedOut.passes[0].timeout_at).toISOString());
     expect(timedOut.recentTimedOutPasses).toHaveLength(1);
     expect(timedOut.recentTimedOutPasses[0].id).toBe(requested.pass.id);
     expect(timedOut.recentTimedOutPasses[0].display_status).toBe('timedout');
