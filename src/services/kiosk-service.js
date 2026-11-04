@@ -187,6 +187,53 @@ export function createKioskService({ db, kiosks, clock, audit }) {
     });
   }
 
+  async function settings(kioskId) {
+    const kiosk = await kiosks.findActiveKioskById(kioskId);
+    if (!kiosk) throw new NotFoundError('Kiosk not found or inactive');
+    const [locations, users] = await Promise.all([
+      kiosks.listManagerLocations(),
+      kiosks.listManagerUsers(),
+    ]);
+    return {
+      kiosk: {
+        id: kiosk.id,
+        code: kiosk.kiosk_code,
+        name: kiosk.name,
+        locationId: kiosk.location_id,
+        location: kiosk.location_name,
+        teacherUserId: kiosk.location_teacher_id,
+      },
+      locations: locations.filter((location) => location.active).map((location) => ({
+        id: location.id,
+        name: location.name,
+      })),
+      teachers: users
+        .filter((user) => user.roles.includes('teacher'))
+        .map((user) => ({ id: user.id, name: user.display_name, email: user.primary_email })),
+    };
+  }
+
+  async function updateSettings({ kioskId, locationId, teacherUserId, reqLike }) {
+    await db.transaction(async (trx) => {
+      const kiosk = await kiosks.findKioskById(kioskId, trx);
+      if (!kiosk || !kiosk.active) throw new NotFoundError('Kiosk not found or inactive');
+      const location = await kiosks.findLocationById(locationId, trx);
+      if (!location || !location.active) throw new ValidationError('Choose a valid active location');
+      const teacher = teacherUserId ? await kiosks.findManagerUserById(teacherUserId, trx) : null;
+      if (teacherUserId && (!teacher || !teacher.roles.includes('teacher'))) {
+        throw new ValidationError('Choose an active teacher');
+      }
+      await kiosks.updateKiosk(kioskId, { location_id: locationId }, trx);
+      await kiosks.updateLocation(locationId, { teacher_user_id: teacherUserId || null }, trx);
+    });
+    await writeAudit('KIOSK_SETTINGS_UPDATED', null, reqLike, {
+      kioskId,
+      locationId,
+      teacherUserId: teacherUserId || null,
+    });
+    return settings(kioskId);
+  }
+
   async function writeAudit(eventType, actorUserId, reqLike, metadata) {
     await audit.write({
       id: randomUUID(),
@@ -206,6 +253,8 @@ export function createKioskService({ db, kiosks, clock, audit }) {
     enroll,
     listEnrollmentCodes,
     createCredentialRegenerationCode,
+    settings,
+    updateSettings,
   };
 }
 

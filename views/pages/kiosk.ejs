@@ -79,3 +79,6 @@
 <% if (waitingForApproval && kioskSession) { %>
   <script src="/js/kiosk-pass-status.js?v=3" defer></script>
 <% } %>
+<% if (kioskSession) { %>
+  <script src="/js/kiosk-manager.js?v=2" defer></script>
+<% } %>

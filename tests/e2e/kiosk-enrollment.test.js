@@ -51,6 +51,41 @@ describe('kiosk enrollment', () => {
     expect(replay.status).toBe(409);
   });
 
+  it('generates a unique kiosk code when existing kiosks use custom codes', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
+    const managerId = randomUUID();
+    await ctx.container.db.knex('users').insert({
+      id: managerId,
+      display_name: 'Enrollment Manager',
+      primary_email: `${managerId}@example.test`,
+      status: 'active',
+    });
+    const location = await ctx.container.db.knex('locations').first();
+    const existing = await ctx.container.db.knex('kiosks').where({ kiosk_code: 'KIOSK-001' }).first();
+    if (!existing) {
+      await ctx.container.db.knex('kiosks').insert({
+        id: randomUUID(),
+        location_id: location.id,
+        name: 'Existing numbered kiosk',
+        kiosk_code: 'KIOSK-001',
+        active: true,
+      });
+    }
+    const created = await ctx.container.kioskService.createEnrollmentCode({
+      createdBy: managerId,
+      name: 'Custom code kiosk',
+      locationId: location.id,
+    });
+
+    const enrolled = await ctx.request.post('/api/v1/kiosks/enroll').send({
+      enrollmentCode: created.code,
+      softwareVersion: '1.2.3',
+    });
+
+    expect(enrolled.status).toBe(201);
+    expect(enrolled.body.kiosk.code).toBe('KIOSK-002');
+  });
+
   it('lets an unconfigured kiosk start enrollment and receive credentials after manager completion', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
     const started = await ctx.request.post('/api/v1/kiosks/enrollment/start').send({
