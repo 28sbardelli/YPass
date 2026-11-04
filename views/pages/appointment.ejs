@@ -1,7 +1,8 @@
 <section class="staff-page narrow-page">
   <a class="button" href="/teacher">← Back to dashboard</a>
   <h1>Create appointment</h1>
-  <p class="muted">The student must still scan at a kiosk. An appointment does not create a pass by itself.</p>
+  <div class="h-line"></div>
+  <p class="small-muted">The student must still scan at a kiosk. An appointment does not create a pass by itself.</p>
   <% if (message) { %><p class="flash <%= message === 'Appointment created.' ? 'flash-success' : 'flash-error' %>"><%= message %></p><% } %>
   <form method="post" action="/teacher/appointment" class="staff-form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">

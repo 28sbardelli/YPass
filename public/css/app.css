@@ -697,11 +697,11 @@ button:not(.danger-button):hover, .button:hover {
   background-color: oklch(from var(--danger) l c h / 20%) !important;
 }
 .staff-form {
-  display: grid;
-  gap: 0.7rem;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+  margin-top: 10px;
+  background-color: var(--card);
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
 }
 .staff-form input,
 .staff-form select,
