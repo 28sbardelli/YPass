@@ -41,6 +41,9 @@ describe('SIS administration API', () => {
     const managerPage = await agent.get('/manager');
     const csrf = extractCsrf(managerPage.text);
     expect(managerPage.text).toContain('SIS integrations');
+    expect(managerPage.text).toContain('id="manager-tab-sis"');
+    expect(managerPage.text).toContain('id="manager-panel-sis"');
+    expect(managerPage.text).toContain('/js/sis-manager.js?v=1');
 
     const created = await agent
       .post('/api/v1/admin/sis/connections')
