@@ -184,9 +184,12 @@ export function createPassService({
         pass: { ...currentPass, ...patch },
       };
     });
-    if (result.action === 'completed' && result.pass.journey_type === 'round_trip') {
+    if (
+      result.action === 'completed' &&
+      (result.pass.journey_type === 'round_trip' || result.kiosk.location_type === 'bathroom')
+    ) {
       onPassEnded({
-        teacherUserId: result.kiosk.location_teacher_id,
+        teacherUserId: result.pass.origin_teacher_id,
         passId: result.pass.id,
         originLocationId: result.pass.origin_location_id,
       });
@@ -234,7 +237,10 @@ export function createPassService({
         origin_kiosk_id: kiosk.id,
         destination_location_id: destination.id,
         destination_teacher_id: destination.teacher_user_id || null,
-        journey_type: destination.type === 'round_trip' ? 'round_trip' : 'one_way',
+        journey_type:
+          destination.type === 'round_trip' || destination.type === 'bathroom'
+            ? 'round_trip'
+            : 'one_way',
         status: autoApproved ? 'active' : 'pending_approval',
         appointment_id: appointment?.id || null,
         created_by: actorUserId || null,

@@ -53,6 +53,31 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
+  it('repairs a legacy locations table missing bathroom/default_location columns', async () => {
+    const { buildKnexConfig, createSqlJsKnex } = await import('../../src/database/knex-config.js');
+    const legacyDbPath = `${process.cwd()}/data/test-legacy-location-schema.sqlite`;
+    const config = buildKnexConfig({ database: { provider: 'sqlite', url: legacyDbPath } }, process.env);
+    const knex = await createSqlJsKnex(config);
+    try {
+      await knex.schema.createTable('locations', (table) => {
+        table.uuid('id').primary();
+        table.string('name').notNullable();
+        table.string('type').notNullable();
+        table.uuid('teacher_user_id').nullable();
+        table.boolean('active').notNullable().defaultTo(true);
+      });
+
+      const { up } = await import('../../src/database/migrations/014_fix_missing_location_columns.js');
+      await up(knex);
+
+      await expect(knex.schema.hasColumn('locations', 'bathroom')).resolves.toBe(true);
+      await expect(knex.schema.hasColumn('locations', 'default_location')).resolves.toBe(true);
+    } finally {
+      await knex.destroy();
+      await import('node:fs/promises').then(({ rm }) => rm(legacyDbPath, { force: true }));
+    }
+  });
+
   it('offers active locations without requiring a destination kiosk', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
@@ -181,6 +206,66 @@ describe('staff pass controls', () => {
     await expect(ctx.container.passService.teacherDashboard(mainOffice.teacher_user_id)).resolves.toMatchObject({
       passes: [expect.objectContaining({ id: requested.pass.id, status: 'completed' })],
     });
+    expect(events).toContainEqual({
+      room: `teacher:${mainOffice.teacher_user_id}`,
+      event: 'teacher-pass-ended',
+      payload: { passId: requested.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
+  it('notifies the origin teacher when a bathroom pass ends', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const mainOffice = await knex('locations').where({ name: 'Main Office' }).first();
+    const teacherId = randomUUID();
+    await knex('users').insert({
+      id: teacherId,
+      display_name: 'Origin Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    await knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    mainOffice.teacher_user_id = teacherId;
+    const bathroom = await knex('locations').where({ type: 'bathroom' }).first();
+    const bathroomKiosk = await knex('kiosks').where({ location_id: bathroom.id }).first();
+    const student = await knex('students').where({ student_number: '111111' }).first();
+    const events = [];
+    ctx.container.setRealtime({
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    });
+
+    const requested = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      destinationLocationId: bathroom.id,
+    });
+    await ctx.container.passService.approvePass({
+      passId: requested.pass.id,
+      userId: mainOffice.teacher_user_id,
+    });
+    const arrived = await ctx.container.passService.scanStudent({
+      kioskCode: bathroomKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+    const leaving = await ctx.container.passService.scanStudent({
+      kioskCode: bathroomKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+    const ended = await ctx.container.passService.scanStudent({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+    });
+
+    expect(arrived.action).toBe('arrival');
+    expect(leaving.action).toBe('scan_out');
+    expect(ended.action).toBe('completed');
     expect(events).toContainEqual({
       room: `teacher:${mainOffice.teacher_user_id}`,
       event: 'teacher-pass-ended',

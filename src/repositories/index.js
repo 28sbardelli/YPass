@@ -248,8 +248,10 @@ export function createPassRepository(db) {
     },
     async findCurrentPassForStudent(studentId, trx = knex) {
       return trx('passes')
+        .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .where({ student_id: studentId })
         .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning'])
+        .select('passes.*', 'origin.teacher_user_id as origin_teacher_id')
         .orderBy('requested_at', 'desc')
         .first();
     },
