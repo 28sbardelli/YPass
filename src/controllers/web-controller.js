@@ -366,6 +366,14 @@ export function createWebController(container) {
     async updateManagerStudent(req, res, next) {
       return managerMutation(req, res, next, () => passService.updateManagerStudent(req.body));
     },
+    async deleteManagerStudent(req, res, next) {
+      return managerMutation(req, res, next, () => passService.deleteManagerStudent(req.body));
+    },
+    async updateManagerUserRole(req, res, next) {
+      return managerMutation(req, res, next, () =>
+        userService.setStaffRole(req.body, { userId: req.currentUser.id, ...req }),
+      );
+    },
     async createManagerLocation(req, res, next) {
       return managerMutation(req, res, next, () => passService.createManagerLocation(req.body));
     },
