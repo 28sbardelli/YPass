@@ -106,7 +106,7 @@ components:
       type: object
       required: [provider, connectionName]
       properties:
-        provider: { type: string, enum: [mock, oneroster] }
+        provider: { type: string, enum: [mock, oneroster, skyward, schoology] }
         connectionName: { type: string }
         configuration: { type: object, additionalProperties: true }
         credentials:

@@ -2,11 +2,15 @@ import { ValidationError } from '#errors';
 import { decryptString } from '#utils/crypto.js';
 import { createMockSisProvider } from './providers/mock-provider.js';
 import { createOneRosterProvider } from './providers/oneroster-provider.js';
+import { createSchoologyProvider } from './providers/schoology-provider.js';
+import { createSkywardProvider } from './providers/skyward-provider.js';
 
 export function createSisService({ config, logger = null, providerFactories = {} }) {
   const factories = {
     mock: createMockSisProvider,
     oneroster: createOneRosterProvider,
+    schoology: createSchoologyProvider,
+    skyward: createSkywardProvider,
     ...providerFactories,
   };
 

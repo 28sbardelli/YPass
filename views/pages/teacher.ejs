@@ -7,6 +7,7 @@
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
   <div class="staff-heading">
     <div>
+      <h2>Lehrerseite</h2>
       <h4>
         🗒 <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
       </h4>
@@ -14,6 +15,7 @@
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
       <li class="teacher-data">
         <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
+        <p class="account-info-box">Your locations</p>
         <% if (locations.length) { %>
             <% locations.forEach((location) => { %>
                 <p class="account-info-box">⌂ <%= location.name %></p>

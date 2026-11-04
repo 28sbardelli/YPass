@@ -19,6 +19,9 @@ if (section) {
     const provider = form.get('provider');
     const configuration = {
       baseUrl: form.get('baseUrl'),
+      protocol: form.get('protocol'),
+      platform: form.get('platform'),
+      studentPath: form.get('studentPath'),
       version: form.get('version'),
       authType: form.get('authType'),
     };
@@ -26,6 +29,10 @@ if (section) {
       username: form.get('username'),
       password: form.get('password'),
       token: form.get('token'),
+      consumerKey: form.get('consumerKey'),
+      consumerSecret: form.get('consumerSecret'),
+      tokenSecret: form.get('tokenSecret'),
+      apiKey: form.get('apiKey'),
     };
     try {
       await request('/api/v1/admin/sis/connections', {

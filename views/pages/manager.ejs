@@ -17,13 +17,20 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <strong>Add connection</strong>
       <label>Name<input name="connectionName" required maxlength="120"></label>
-      <label>Provider<select name="provider"><option value="mock">Mock</option><option value="oneroster">OneRoster</option></select></label>
+      <label>Provider<select name="provider"><option value="mock">Mock</option><option value="oneroster">OneRoster</option><option value="skyward">Skyward</option><option value="schoology">Schoology</option></select></label>
       <label>Base URL<input name="baseUrl" type="url" placeholder="https://sis.example.test"></label>
+      <label>Protocol<select name="protocol"><option value="oneroster">OneRoster</option><option value="api">Vendor API</option></select></label>
+      <label>Platform<select name="platform"><option value="qmlativ">Skyward Qmlativ</option><option value="sms20">Skyward SMS 2.0</option></select></label>
+      <label>Student path (optional)<input name="studentPath" placeholder="/api/qmlativ/students"></label>
       <label>OneRoster version<select name="version"><option value="1.1">1.1</option><option value="1.2">1.2</option></select></label>
-      <label>Auth type<select name="authType"><option value="bearer">Bearer token</option><option value="basic">Basic</option></select></label>
+      <label>Auth type<select name="authType"><option value="bearer">Bearer token</option><option value="basic">Basic</option><option value="oauth1">Schoology OAuth 1.0a</option><option value="apiKey">Skyward API key</option></select></label>
       <label>Username<input name="username" autocomplete="off"></label>
       <label>Password<input name="password" type="password" autocomplete="new-password"></label>
       <label>Token<input name="token" type="password" autocomplete="new-password"></label>
+      <label>API key<input name="apiKey" type="password" autocomplete="new-password"></label>
+      <label>Consumer key<input name="consumerKey" autocomplete="off"></label>
+      <label>Consumer secret<input name="consumerSecret" type="password" autocomplete="new-password"></label>
+      <label>Token secret<input name="tokenSecret" type="password" autocomplete="new-password"></label>
       <label>Sync interval (seconds)<input name="syncIntervalSeconds" type="number" min="0" max="86400" value="0"></label>
       <button type="submit">Save connection</button>
       <output data-sis-message class="muted"></output>

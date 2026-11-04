@@ -11,7 +11,7 @@ YPass keeps SIS integration behind provider adapters. Providers return only the 
 }
 ```
 
-The provider contract is implemented in `src/services/sis/providers/sis-provider.js`. The mock adapter is useful for local development and tests. The OneRoster adapter supports OneRoster 1.1 and 1.2 student endpoints, bearer or Basic authentication, pagination, request timeouts, and a configurable minimum request interval.
+The provider contract is implemented in `src/services/sis/providers/sis-provider.js`. The mock adapter is useful for local development and tests. The OneRoster, Skyward, and Schoology adapters return only student ID, first name, last name, and active status. All HTTP adapters support pagination, request timeouts, rate limiting, authentication errors, and malformed-response errors.
 
 ## Enable SIS
 
@@ -30,7 +30,7 @@ Automatic synchronization requires `BACKGROUND_JOBS_ENABLED=true` and the normal
 
 ## Manager workflow
 
-Managers use `/manager` to create a connection, select `mock` or `oneroster`, configure its endpoint and authentication, test it, start a sync, inspect history, or delete it. The API is also available under `/api/v1/admin/sis/connections` and requires the existing authenticated manager authorization and CSRF protection.
+Managers use `/manager` to create a connection, select `mock`, `oneroster`, `skyward`, or `schoology`, configure its endpoint and authentication, test it, start a sync, inspect history, or delete it. The API is also available under `/api/v1/admin/sis/connections` and requires the existing authenticated manager authorization and CSRF protection.
 
 The API never returns `credentials`, `credentials_encrypted`, or raw credential configuration:
 
@@ -55,6 +55,36 @@ Use a connection configuration like this:
 ```
 
 Store the token in the credential fields. For Basic authentication, use `authType: "basic"` and store `username` and `password`. The adapter requests `/ims/oneroster/v1p1/students` or `/ims/oneroster/v1p2/students` and discards all fields other than source ID, given name, family name, and active status.
+
+## Skyward
+
+Skyward access is customer- and product-specific. A district administrator must obtain the appropriate Skyward integration/API entitlement, tenant or district endpoint, and credentials from Skyward or the district's Skyward administrator. Skyward's SMS 2.0 and Qmlativ APIs are separate product surfaces; YPass does not guess their routes or claim access to undocumented endpoints. Use a connection such as:
+
+```json
+{
+  "baseUrl": "https://district.example.edu",
+  "protocol": "oneroster",
+  "version": "1.1",
+  "authType": "bearer"
+}
+```
+
+When the district has an authorized proprietary API endpoint, use `protocol: "api"`, `platform: "sms20"` or `"qmlativ"`, and provide the district-approved `studentPath` if the default path is not correct. Basic, bearer, and API-key credentials are supported. The adapter accepts common `students`, `users`, or `data` arrays and normalizes only ID, names, and status. OneRoster is preferred when the Skyward customer agreement exposes it. Skyward product/API licensing, support, and data-processing terms remain with Skyward and the district.
+
+## Schoology
+
+Schoology's official REST API is an LMS API and is not the same product as Schoology SIS Connect. The REST adapter uses OAuth 1.0a and requires an authorized Schoology developer/application registration plus a district administrator who can grant access to the student user endpoint. Store `consumerKey`, `consumerSecret`, `token`, and `tokenSecret` as encrypted credentials:
+
+```json
+{
+  "baseUrl": "https://schoology.example.edu/v1",
+  "protocol": "api",
+  "studentPath": "/users",
+  "authType": "oauth1"
+}
+```
+
+The adapter requests the student role and retrieves only the fields needed by YPass. A Schoology OneRoster 1.1 endpoint can be selected with `protocol: "oneroster"`, but it must be separately provisioned and authorized by the district; an LMS OAuth credential is not assumed to authorize OneRoster. SIS Connect is a separate Schoology partnership/product arrangement and may require a vendor agreement, district administrator approval, and Schoology onboarding. YPass does not treat SIS Connect feeds, LMS REST credentials, and OneRoster credentials as interchangeable. Confirm Schoology licensing, API terms, privacy terms, and permitted student-data scope with Schoology and the district before enabling a connection.
 
 ## Synchronization behavior
 

@@ -102,7 +102,7 @@ kioskMachine/                 Separate kiosk UI, local proxy, and kiosk-client t
 | Change database connection/provider behavior | `src/database/`, `knexfile.js` | `scripts/db-*.js`, config tests, database integration tests |
 | Change realtime behavior | `src/realtime/index.js` | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external |
 | Change email delivery | `src/integrations/email/` | Local auth service, feature flags, email views, tests |
-| Change SIS integration | `src/services/sis/`, `src/repositories/index.js` | `src/database/migrations/014_sis_integration.js`, `src/routes/api.v1.js`, SIS unit/integration/e2e tests, `wiki/system/sis-integration.md` |
+| Change SIS integration | `src/services/sis/`, `src/repositories/index.js` | `src/database/migrations/014_sis_integration.js`, `src/routes/api.v1.js`, provider unit tests, SIS integration/e2e tests, `wiki/system/sis-integration.md` |
 | Change Redis, rate limits, or distributed sessions | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests |
 | Change request validation | `src/validators/` | Controller, route, error mapping, focused tests |
 | Change error responses | `src/errors/`, `src/middleware/error.js` | Controllers, HTML error views, API/e2e tests |

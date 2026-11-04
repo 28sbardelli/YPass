@@ -3,7 +3,7 @@ import { z } from 'zod';
 const objectValue = z.record(z.string(), z.unknown());
 
 export const sisConnectionCreateSchema = z.object({
-  provider: z.enum(['mock', 'oneroster']),
+  provider: z.enum(['mock', 'oneroster', 'skyward', 'schoology']),
   connectionName: z.string().trim().min(1).max(120),
   configuration: objectValue.default({}),
   credentials: z.record(z.string(), z.string()).default({}),
