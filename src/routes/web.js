@@ -12,6 +12,7 @@ import {
   kioskScanSchema,
   kioskSessionPassSchema,
   kioskSessionScanSchema,
+  kioskSettingsSchema,
 } from '#validators/pass.js';
 import {
   appointmentSchema,
@@ -49,6 +50,13 @@ export function createWebRouter(container) {
     controller.createAppointment,
   );
   router.get('/kiosk', requireAuthentication(), controller.kiosk);
+  router.get('/kiosk/manager', requireKioskSession(container), controller.kioskManager);
+  router.post(
+    '/kiosk/manager',
+    requireKioskSession(container),
+    validate(kioskSettingsSchema),
+    controller.updateKioskManager,
+  );
   router.get('/kiosk/pass', requireKioskSession(container), controller.kioskPass);
   router.get('/kiosk/pass/status', requireKioskSession(container), controller.kioskPassStatus);
   router.post(

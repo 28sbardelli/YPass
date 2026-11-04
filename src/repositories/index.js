@@ -200,8 +200,11 @@ export function createPassRepository(db) {
         .update({ used_at: now });
     },
     async nextKioskCode(trx = knex) {
-      const row = await trx('kiosks').max({ value: 'kiosk_code' }).first();
-      const current = Number(String(row?.value || '').match(/(\d+)$/)?.[1] || 0);
+      const rows = await trx('kiosks').select('kiosk_code');
+      const current = rows.reduce((highest, row) => {
+        const match = /^KIOSK-(\d+)$/i.exec(String(row.kiosk_code || ''));
+        return match ? Math.max(highest, Number(match[1])) : highest;
+      }, 0);
       return `KIOSK-${String(current + 1).padStart(3, '0')}`;
     },
     async listEnrollmentCodes(trx = knex) {
@@ -472,6 +475,20 @@ export function createPassRepository(db) {
         ...user,
         roles: rows.filter((row) => row.id === user.id && row.role).map((row) => row.role),
       }));
+    },
+    async findManagerUserById(id, trx = knex) {
+      const rows = await trx('users')
+        .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
+        .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+        .where({ 'users.id': id, 'users.status': 'active' })
+        .select('users.id', 'users.display_name', 'users.primary_email', 'roles.name as role');
+      if (!rows.length) return null;
+      return {
+        id: rows[0].id,
+        display_name: rows[0].display_name,
+        primary_email: rows[0].primary_email,
+        roles: rows.filter((row) => row.role).map((row) => row.role),
+      };
     },
   };
 }

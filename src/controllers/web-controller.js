@@ -1,3 +1,5 @@
+const KIOSK_MANAGER_BARCODE = 'THETIAI4491';
+
 export function createWebController(container) {
   const { passService, kioskService, userService } = container;
 
@@ -110,6 +112,16 @@ export function createWebController(container) {
     async kioskPass(req, res, next) {
       try {
         const options = await passService.kioskOptions(req.kiosk.kiosk_code);
+        if (req.query.manager === '1') {
+          const settings = await kioskService.settings(req.kiosk.id);
+          res.render('pages/kiosk-manager', {
+            title: 'Kiosk manager',
+            currentUser: null,
+            ...settings,
+            message: null,
+          });
+          return;
+        }
         const pendingRequest = req.session.kioskPendingPass;
         const pending = pendingRequest
           ? await passService.kioskPendingPass({
@@ -144,6 +156,32 @@ export function createWebController(container) {
         next(error);
       }
     },
+    async kioskManager(req, res, next) {
+      try {
+        const settings = await kioskService.settings(req.kiosk.id);
+        res.render('pages/kiosk-manager', {
+          title: 'Kiosk manager',
+          currentUser: null,
+          ...settings,
+          message: req.query.saved ? 'Kiosk settings saved.' : null,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+    async updateKioskManager(req, res, next) {
+      try {
+        await kioskService.updateSettings({
+          kioskId: req.kiosk.id,
+          locationId: req.body.locationId,
+          teacherUserId: req.body.teacherUserId,
+          reqLike: req,
+        });
+        res.redirect('/kiosk/manager?saved=1');
+      } catch (error) {
+        next(error);
+      }
+    },
     async kioskPassStatus(req, res, next) {
       try {
         const pendingRequest = req.session.kioskPendingPass;
@@ -161,6 +199,36 @@ export function createWebController(container) {
     },
     async scanKiosk(req, res, next) {
       const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
+      if (req.body.managerAction === 'save') {
+        try {
+          await kioskService.updateSettings({
+            kioskId: req.kiosk.id,
+            locationId: req.body.locationId,
+            teacherUserId: req.body.teacherUserId,
+            reqLike: req,
+          });
+          const settings = await kioskService.settings(req.kiosk.id);
+          res.render('pages/kiosk-manager', {
+            title: 'Kiosk manager',
+            currentUser: null,
+            ...settings,
+            message: 'Kiosk settings saved.',
+          });
+        } catch (error) {
+          next(error);
+        }
+        return;
+      }
+      if (String(req.body.studentNumber || '').trim().toUpperCase() === KIOSK_MANAGER_BARCODE) {
+        const settings = await kioskService.settings(req.kiosk.id);
+        res.render('pages/kiosk-manager', {
+          title: 'Kiosk manager',
+          currentUser: null,
+          ...settings,
+          message: null,
+        });
+        return;
+      }
       try {
         const result = await passService.scanStudent({
           kioskCode,

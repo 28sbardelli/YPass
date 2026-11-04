@@ -70,6 +70,28 @@ describe('staff pass controls', () => {
     expect(options.destinations.map(({ id }) => id)).toContain(location.id);
   });
 
+  it('updates a kiosk location and its assigned teacher through kiosk settings', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const kiosk = await knex('kiosks').where({ kiosk_code: 'main-office' }).first();
+    const location = await knex('locations').where({ name: 'Counseling Office' }).first();
+
+    const result = await ctx.container.kioskService.updateSettings({
+      kioskId: kiosk.id,
+      locationId: location.id,
+      teacherUserId: '',
+    });
+
+    expect(result.kiosk.locationId).toBe(location.id);
+    expect(result.kiosk.teacherUserId).toBeNull();
+    await expect(knex('kiosks').where({ id: kiosk.id }).first()).resolves.toMatchObject({
+      location_id: location.id,
+    });
+    await expect(knex('locations').where({ id: location.id }).first()).resolves.toMatchObject({
+      teacher_user_id: null,
+    });
+  });
+
   it('notifies the origin teacher when a round-trip pass ends', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
