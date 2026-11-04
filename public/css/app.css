@@ -465,6 +465,50 @@ button:not(.danger-button):hover, .button:hover {
   margin: 0;
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
+.manager-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #d6d3d1;
+}
+.manager-tab {
+    background: var(--card);
+    color: inherit;
+    border: 1px solid var(--card-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+}
+.manager-tab.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.manager-tab img {
+  margin-bottom: -2px;
+}
+button:hover img {
+  filter: invert(1);
+}
+.manager-tab.is-active img {
+  filter: invert(1);
+}
+.manager-tab-panel {
+  display: none;
+}
+.manager-tab-panel.is-active {
+  display: block;
+}
+.manager-tab-panel > .staff-section {
+  margin-top: 0;
+}
+.manager-tab-panel h2,
+.manager-tab-panel h3 {
+  margin: 0 0 1rem;
+}
 .header-cont {
   display: flex;
   flex-direction: row;
