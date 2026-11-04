@@ -227,7 +227,9 @@ export function createWebController(container) {
       }
       if (
         kioskManagerCode &&
-        String(req.body.studentNumber || '').trim().toUpperCase() === kioskManagerCode.toUpperCase()
+        String(req.body.studentNumber || '')
+          .trim()
+          .toUpperCase() === kioskManagerCode.toUpperCase()
       ) {
         const settings = await kioskService.settings(req.kiosk.id);
         res.render('pages/kiosk-manager', {
@@ -378,6 +380,9 @@ export function createWebController(container) {
     },
     async updateManagerKiosk(req, res, next) {
       return managerMutation(req, res, next, () => passService.updateManagerKiosk(req.body));
+    },
+    async updateManagerUserRole(req, res, next) {
+      return managerMutation(req, res, next, () => userService.assignRole(req.body, req));
     },
     async createManagerEnrollmentCode(req, res, next) {
       try {

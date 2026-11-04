@@ -20,7 +20,7 @@
 }
 body {
   margin: 0;
-  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--ink);
 }
@@ -85,8 +85,8 @@ body {
 
 /* Typography and small reusable layout helpers. */
 .passes-header-wrap {
-  display: flex; 
-  flex-direction: row; 
+  display: flex;
+  flex-direction: row;
   gap: 5px;
   margin: 0;
 }
@@ -99,7 +99,11 @@ body {
 .muted {
   margin-bottom: 0;
 }
-h1, h2, h3, h4, h5 {
+h1,
+h2,
+h3,
+h4,
+h5 {
   font-weight: 500;
 }
 h4 {
@@ -152,7 +156,8 @@ button,
   cursor: pointer;
   transition: all 0.2s ease;
 }
-button:not(.danger-button):hover, .button:hover {
+button:not(.danger-button):hover,
+.button:hover {
   animation: button-hover 0.2s forwards ease;
   background-color: oklch(from var(--accent) calc(l - 0.15) c h);
   color: white;
@@ -415,19 +420,22 @@ button:not(.danger-button):hover, .button:hover {
   inset-block-start: 1rem;
   inset-inline-end: 1rem;
   z-index: 10;
+  margin: 0;
   opacity: 0;
   transform: translateX(1.5rem);
   transition:
     opacity 300ms ease-out,
     transform 300ms ease-out;
-  animation: teacher-message-slide-in 300ms ease-out both;
+}
 .teacher-action-message.is-visible {
   opacity: 1;
   transform: translateX(0);
-  animation: teacher-message-slide-out 300ms ease-in both;
+}
 .teacher-action-message.is-dismissing {
   opacity: 0;
   transform: translateX(1.5rem);
+}
+.teacher-data {
   display: flex;
   flex-flow: row wrap;
   align-items: center;
@@ -522,8 +530,8 @@ button:not(.danger-button):hover, .button:hover {
   color: inherit;
   border: 1px solid var(--card-border);
 }
-.staff-sort button[aria-pressed="true"],
-.staff-filter button[aria-pressed="true"] {
+.staff-sort button[aria-pressed='true'],
+.staff-filter button[aria-pressed='true'] {
   background: var(--filter-color, var(--accent));
   color: #fff;
   border-color: var(--filter-color, var(--accent));
@@ -626,7 +634,8 @@ button:not(.danger-button):hover, .button:hover {
   animation: return-blink 1s infinite ease-in-out;
 }
 @keyframes blink {
-  0%, 100% {
+  0%,
+  100% {
     border-left: var(--pass-border) solid var(--active);
   }
   50% {
@@ -634,7 +643,8 @@ button:not(.danger-button):hover, .button:hover {
   }
 }
 @keyframes return-blink {
-  0%, 100% {
+  0%,
+  100% {
     border-left: var(--pass-border) solid var(--return);
   }
   50% {

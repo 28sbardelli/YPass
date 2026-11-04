@@ -52,6 +52,26 @@ export function requireRole(roleName) {
 }
 
 /**
+ * Require a teacher or manager staff role.
+ * @param {'teacher'|'manager'} minimumRole
+ */
+export function requireStaffRole(minimumRole) {
+  return (req, _res, next) => {
+    if (!req.session?.userId) {
+      next(new AuthenticationError());
+      return;
+    }
+    const roles = req.currentUser?.roles || [];
+    const allowed = minimumRole === 'teacher' ? ['teacher', 'manager'] : ['manager'];
+    if (!allowed.some((role) => roles.includes(role))) {
+      next(new AuthorizationError());
+      return;
+    }
+    next();
+  };
+}
+
+/**
  * @param {string} permissionName
  */
 export function requirePermission(permissionName) {
@@ -70,8 +90,8 @@ export function requirePermission(permissionName) {
 }
 
 /**
- * Restrict a route to the email addresses configured in MANAGERS.
- * An empty allowlist denies access to everyone.
+ * Restrict a route to manager-role users or emails configured in MANAGERS.
+ * An empty allowlist still permits users with the manager role.
  * @param {string[]} managerEmails
  */
 export function requireManager(managerEmails) {
@@ -80,8 +100,9 @@ export function requireManager(managerEmails) {
       next(new AuthenticationError());
       return;
     }
+    const hasManagerRole = req.currentUser?.roles?.includes('manager');
     const email = req.currentUser?.primary_email?.trim().toLowerCase();
-    if (!email || !managerEmails.includes(email)) {
+    if (!hasManagerRole && (!email || !managerEmails.includes(email))) {
       next(new AuthorizationError());
       return;
     }
