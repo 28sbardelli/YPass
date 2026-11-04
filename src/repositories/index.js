@@ -120,6 +120,10 @@ export function createRbacRepository(db) {
         .onConflict(['user_id', 'role_id'])
         .ignore();
     },
+    async replaceRoles(userId, roleId, trx = knex) {
+      await trx('user_roles').where({ user_id: userId }).delete();
+      await this.assignRole(userId, roleId, trx);
+    },
     async listRolesForUser(userId, trx = knex) {
       return trx('roles')
         .join('user_roles', 'roles.id', 'user_roles.role_id')
@@ -521,10 +525,31 @@ export function createPassRepository(db) {
         .update({ ...patch, updated_at: trx.fn.now() });
     },
     async listManagerUsers(trx = knex) {
-      return trx('users')
+      const rows = await trx('users')
+        .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
+        .leftJoin('roles', 'user_roles.role_id', 'roles.id')
         .where({ status: 'active' })
         .orderBy('display_name')
-        .select('id', 'display_name', 'primary_email');
+        .select(
+          'users.id',
+          'users.display_name',
+          'users.primary_email',
+          'roles.name as role',
+        );
+      return rows.reduce((users, row) => {
+        let user = users.find((candidate) => candidate.id === row.id);
+        if (!user) {
+          user = {
+            id: row.id,
+            display_name: row.display_name,
+            primary_email: row.primary_email,
+            roles: [],
+          };
+          users.push(user);
+        }
+        if (row.role) user.roles.push(row.role);
+        return users;
+      }, []);
     },
     async findManagerUserById(id, trx = knex) {
       const rows = await trx('users')

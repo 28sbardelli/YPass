@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { ConflictError, ValidationError } from '#errors';
+import { ConflictError, NotFoundError, ValidationError } from '#errors';
 import { hashIp } from '#utils/net.js';
 
 /**
@@ -43,6 +43,23 @@ export function createUserService({
       return users.findById(id).then(withAuthz);
     },
 
+    async assignRole({ userId, roleName }, reqLike = {}) {
+      const [user, role] = await Promise.all([
+        users.findById(userId),
+        rbacRepository.findRoleByName(roleName),
+      ]);
+      if (!user) throw new NotFoundError('User not found');
+      if (!role) throw new ValidationError('Role not found');
+
+      await db.transaction(async (trx) => {
+        await rbacRepository.replaceRoles(userId, role.id, trx);
+      });
+      await writeAudit('user.role.update', reqLike.currentUser?.id, reqLike, {
+        targetUserId: userId,
+        role: roleName,
+      });
+    },
+
     async loginWithExternalIdentity(
       { provider, subject, email, displayName, profile },
       reqLike = {},
@@ -51,7 +68,7 @@ export function createUserService({
       if (existing) {
         let user = await users.findById(existing.user_id);
         if (!user) {
-          const userRole = await rbacRepository.findRoleByName('user');
+          const userRole = await rbacRepository.findRoleByName('student');
           user = await db.transaction(async (trx) => {
             const repaired = {
               id: existing.user_id,
@@ -73,7 +90,7 @@ export function createUserService({
       }
 
       const userId = randomUUID();
-      const userRole = await rbacRepository.findRoleByName('user');
+      const userRole = await rbacRepository.findRoleByName('student');
       const created = {
         id: userId,
         display_name: displayName || `${provider} user`,
