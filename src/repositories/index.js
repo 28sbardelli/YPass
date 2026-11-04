@@ -268,10 +268,55 @@ export function createPassRepository(db) {
         .orderBy('scheduled_at')
         .first();
     },
+    async listUpcomingAppointmentsForStudent(studentId, now, windowHours = 12, trx = knex) {
+      const start = new Date(now);
+      const end = new Date(start.getTime() + windowHours * 60 * 60 * 1000);
+      return trx('appointments')
+        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('users as destination_teacher', 'appointments.destination_teacher_id', 'destination_teacher.id')
+        .where({ 'appointments.student_id': studentId, 'appointments.status': 'scheduled' })
+        .where('appointments.scheduled_at', '>=', start)
+        .where('appointments.scheduled_at', '<=', end)
+        .select(
+          'appointments.*',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+          'destination_teacher.display_name as destination_teacher_name',
+        )
+        .orderBy('appointments.scheduled_at');
+    },
+    async findUpcomingAppointmentForStudent(studentId, appointmentId, now, windowHours = 12, trx = knex) {
+      const start = new Date(now);
+      const end = new Date(start.getTime() + windowHours * 60 * 60 * 1000);
+      return trx('appointments')
+        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('users as destination_teacher', 'appointments.destination_teacher_id', 'destination_teacher.id')
+        .where({
+          'appointments.id': appointmentId,
+          'appointments.student_id': studentId,
+          'appointments.status': 'scheduled',
+        })
+        .where('appointments.scheduled_at', '>=', start)
+        .where('appointments.scheduled_at', '<=', end)
+        .select(
+          'appointments.*',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+          'destination_teacher.display_name as destination_teacher_name',
+        )
+        .first();
+    },
     async markAppointmentUsed(id, usedAt, trx = knex) {
       await trx('appointments')
         .where({ id, status: 'scheduled' })
         .update({ status: 'used', used_at: usedAt, updated_at: trx.fn.now() });
+    },
+    async completeAppointment(id, completedAt, trx = knex) {
+      await trx('appointments')
+        .where({ id, status: 'scheduled' })
+        .update({ status: 'completed', used_at: completedAt, updated_at: trx.fn.now() });
     },
     async createPass(pass, event, trx = knex) {
       await trx('passes').insert(pass);

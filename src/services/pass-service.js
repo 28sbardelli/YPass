@@ -92,6 +92,14 @@ export function createPassService({
     });
   }
 
+  async function listUpcomingAppointments(studentNumber, now = clock.now()) {
+    const student = await passes.findStudentByNumber(studentNumber);
+    if (!student) {
+      return [];
+    }
+    return passes.listUpcomingAppointmentsForStudent(student.id, now, 12);
+  }
+
   async function scanStudent({ kioskCode, studentNumber, studentName, actorUserId }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
@@ -108,8 +116,21 @@ export function createPassService({
       }
 
       const currentPass = await passes.findCurrentPassForStudent(student.id, trx);
+      const upcomingAppointments = await passes.listUpcomingAppointmentsForStudent(
+        student.id,
+        now,
+        12,
+        trx,
+      );
       if (!currentPass) {
-        return { action: 'create', kiosk, destinations, student };
+        return {
+          action: 'create',
+          kiosk,
+          destinations,
+          student,
+          appointmentPrompt: upcomingAppointments.length > 0,
+          appointments: upcomingAppointments,
+        };
       }
       if (currentPass.status === 'pending_approval') {
         return { action: 'pending', kiosk, destinations, student, pass: currentPass };
@@ -195,6 +216,93 @@ export function createPassService({
       });
     }
     return result;
+  }
+
+  async function completeAppointmentForStudent({
+    kioskCode,
+    studentNumber,
+    appointmentId,
+    actorUserId,
+  }) {
+    const now = clock.now();
+    return db.transaction(async (trx) => {
+      const { kiosk } = await kioskOptions(kioskCode, trx);
+      const student = await passes.findStudentByNumber(studentNumber, trx);
+      if (!student) {
+        throw new ValidationError('Student ID was not found');
+      }
+      const appointment = await passes.findUpcomingAppointmentForStudent(
+        student.id,
+        appointmentId,
+        now,
+        12,
+        trx,
+      );
+      if (!appointment) {
+        throw new NotFoundError('No matching appointment is available for this student in the next 12 hours');
+      }
+      const currentPass = await passes.findCurrentPassForStudent(student.id, trx);
+      if (currentPass) {
+        throw new ConflictError('This student already has an active or pending pass');
+      }
+      const destination = await passes.findLocationPair(
+        appointment.origin_location_id,
+        appointment.destination_location_id,
+        trx,
+      );
+      const pass = {
+        id: randomUUID(),
+        student_id: student.id,
+        origin_location_id: appointment.origin_location_id,
+        origin_kiosk_id: kiosk.id,
+        destination_location_id: appointment.destination_location_id,
+        destination_teacher_id: appointment.destination_teacher_id || null,
+        journey_type: destination.destination?.type === 'round_trip' ? 'round_trip' : 'one_way',
+        status: 'active',
+        appointment_id: appointment.id,
+        created_by: actorUserId || null,
+        requested_at: now,
+        approved_by: actorUserId || null,
+        approved_at: now,
+        departed_at: now,
+        timeout_at: new Date(now.getTime() + 30 * 60 * 1000),
+      };
+      await passes.createPass(
+        pass,
+        {
+          id: randomUUID(),
+          pass_id: pass.id,
+          event_type: 'created',
+          kiosk_id: kiosk.id,
+          location_id: kiosk.location_id,
+          actor_user_id: actorUserId || null,
+          occurred_at: now,
+          metadata_json: JSON.stringify({ student_number: student.student_number, appointment_id: appointment.id }),
+        },
+        trx,
+      );
+      await passes.addEvent(
+        {
+          id: randomUUID(),
+          pass_id: pass.id,
+          event_type: 'approved',
+          kiosk_id: kiosk.id,
+          location_id: kiosk.location_id,
+          actor_user_id: actorUserId || null,
+          occurred_at: now,
+          metadata_json: JSON.stringify({ appointment_id: appointment.id, automatic: true }),
+        },
+        trx,
+      );
+      await passes.completeAppointment(appointment.id, now, trx);
+      return {
+        pass,
+        student,
+        kiosk,
+        appointment: { ...appointment, status: 'completed', used_at: now },
+        destination: destination.destination,
+      };
+    });
   }
 
   async function requestPass({
@@ -595,6 +703,8 @@ export function createPassService({
     kioskOptions,
     kioskPendingPass,
     scanStudent,
+    listUpcomingAppointments,
+    completeAppointmentForStudent,
     requestPass,
     teacherDashboard,
     approvePass,
