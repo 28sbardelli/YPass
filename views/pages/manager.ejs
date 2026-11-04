@@ -1,6 +1,7 @@
 <% const activeFilters = filters || {}; %>
 <section class="staff-page">
   <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
+  <% if (sisEnabled) { %><script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=1" defer></script><% } %>
   <div class="staff-heading"><div><p class="kiosk-kicker">Administration</p><h1>Manager-Bereich</h1><p class="muted">System-wide history and reference data.</p></div></div>
   <form method="get" action="/manager" class="filter-bar">
     <label>Pass status<select name="status"><option value="">All pass statuses</option><% ['pending_approval', 'active', 'arrived', 'timedout', 'completed', 'cancelled', 'expired'].forEach((status) => { %><option value="<%= status %>" <%= activeFilters.status === status ? 'selected' : '' %>><%= status %></option><% }) %></select></label>
@@ -8,6 +9,42 @@
     <label>Student ID<input name="studentNumber" value="<%= activeFilters.studentNumber || '' %>"></label>
     <button type="submit">Filter</button>
   </form>
+
+  <% if (sisEnabled) { %>
+  <details class="staff-section" open>
+    <summary>SIS integrations</summary>
+    <form class="staff-form manager-form" data-sis-create>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <strong>Add connection</strong>
+      <label>Name<input name="connectionName" required maxlength="120"></label>
+      <label>Provider<select name="provider"><option value="mock">Mock</option><option value="oneroster">OneRoster</option><option value="skyward">Skyward</option><option value="schoology">Schoology</option></select></label>
+      <label>Base URL<input name="baseUrl" type="url" placeholder="https://sis.example.test"></label>
+      <label>Protocol<select name="protocol"><option value="oneroster">OneRoster</option><option value="api">Vendor API</option></select></label>
+      <label>Platform<select name="platform"><option value="qmlativ">Skyward Qmlativ</option><option value="sms20">Skyward SMS 2.0</option></select></label>
+      <label>Student path (optional)<input name="studentPath" placeholder="/api/qmlativ/students"></label>
+      <label>OneRoster version<select name="version"><option value="1.1">1.1</option><option value="1.2">1.2</option></select></label>
+      <label>Auth type<select name="authType"><option value="bearer">Bearer token</option><option value="basic">Basic</option><option value="oauth1">Schoology OAuth 1.0a</option><option value="apiKey">Skyward API key</option></select></label>
+      <label>Username<input name="username" autocomplete="off"></label>
+      <label>Password<input name="password" type="password" autocomplete="new-password"></label>
+      <label>Token<input name="token" type="password" autocomplete="new-password"></label>
+      <label>API key<input name="apiKey" type="password" autocomplete="new-password"></label>
+      <label>Consumer key<input name="consumerKey" autocomplete="off"></label>
+      <label>Consumer secret<input name="consumerSecret" type="password" autocomplete="new-password"></label>
+      <label>Token secret<input name="tokenSecret" type="password" autocomplete="new-password"></label>
+      <label>Sync interval (seconds)<input name="syncIntervalSeconds" type="number" min="0" max="86400" value="0"></label>
+      <button type="submit">Save connection</button>
+      <output data-sis-message class="muted"></output>
+    </form>
+    <div class="staff-list" data-sis-list>
+      <% sisConnections.forEach((connection) => { %>
+      <article class="staff-row" data-sis-connection data-connection-id="<%= connection.id %>">
+        <div><strong><%= connection.connection_name %></strong><p><%= connection.provider %> · <%= connection.active ? 'Active' : 'Inactive' %> · Last sync: <%= connection.last_synced_at || 'Never' %></p><pre data-sis-history hidden></pre></div>
+        <span class="manager-form"><button type="button" data-sis-test>Test</button><button type="button" data-sis-sync>Sync</button><button type="button" data-sis-history-toggle>History</button><button type="button" data-sis-delete>Delete</button></span>
+      </article>
+      <% }) %>
+    </div>
+  </details>
+  <% } %>
 
   <details class="staff-section" open><summary>Students</summary>
     <form method="post" action="/manager/students/create" class="staff-form manager-form">
@@ -39,10 +76,8 @@
   <details class="staff-section" open><summary>Kiosks</summary>
     <% if (enrollmentCode) { %><div class="status success"><strong>Enrollment code:</strong> <code><%= enrollmentCode %></code><span class="muted"> Expires in 10 minutes. Enter it on the new kiosk.</span></div><% } %>
     <form method="post" action="/manager/kiosks/enrollment/complete" class="staff-form manager-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><strong>Register kiosk</strong><label>Enrollment code<input name="enrollmentCode" required maxlength="16" placeholder="8K4P-29QX" autocomplete="off"></label><label>Kiosk name<input name="name" required maxlength="120"></label><label>Location<select name="locationId" required><% locations.filter((location) => location.active).forEach((location) => { %><option value="<%= location.id %>"><%= location.name %></option><% }) %></select></label></label><button type="submit">Register kiosk</button></form>
-    <form method="post" action="/manager/kiosks/enrollment-codes/create" class="staff-form manager-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><strong>Create legacy enrollment code</strong><label>Kiosk name<input name="name" required maxlength="120"></label><label>Location<select name="locationId" required><% locations.filter((location) => location.active).forEach((location) => { %><option value="<%= location.id %>"><%= location.name %></option><% }) %></select></label><button type="submit">Create legacy code</button></form>
     <% if (enrollmentCodes.length) { %><div class="staff-list"><% enrollmentCodes.slice(0, 10).forEach((code) => { %><article class="staff-row"><div><strong><%= code.name || 'Unconfigured kiosk' %></strong><p><%= code.type %> · <%= code.used_at ? 'Used' : 'Available' %></p></div><time><%= code.expires_at %></time></article><% }) %></div><% } %>
-    <form method="post" action="/manager/kiosks/create" class="staff-form manager-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><strong>Add kiosk</strong><label>Name<input name="name" required maxlength="120"></label><label>Code<input name="kioskCode" required maxlength="64"></label><label>Secret<input name="kioskSecret" type="password" minlength="16" maxlength="255" required></label><label>Location<select name="locationId" required><% locations.forEach((location) => { %><option value="<%= location.id %>"><%= location.name %></option><% }) %></select></label><label>Active<select name="active"><option value="true">Active</option><option value="false">Inactive</option></select></label><button type="submit">Add kiosk</button></form>
-    <div class="staff-list"><% kiosks.forEach((kiosk) => { %><form method="post" action="/manager/kiosks/update" class="staff-row manager-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= kiosk.id %>"><label>Name<input name="name" value="<%= kiosk.name %>" required maxlength="120"></label><label>Code<input name="kioskCode" value="<%= kiosk.kiosk_code %>" required maxlength="64"></label><label>Location<select name="locationId" required><% locations.forEach((location) => { %><option value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option><% }) %></select></label><label>Active<select name="active"><option value="true" <%= kiosk.active ? 'selected' : '' %>>Active</option><option value="false" <%= !kiosk.active ? 'selected' : '' %>>Inactive</option></select></label><span><%= kiosk.display_status %></span><span><%= kiosk.last_seen_at || kiosk.last_seen || 'Never' %></span><button type="submit">Save</button></form><form method="post" action="/manager/kiosks/credentials/regenerate" class="manager-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="kioskId" value="<%= kiosk.id %>"><button type="submit">Regenerate credentials</button></form><% }) %></div>
+    
   </details>
 
   <details class="staff-section" open><summary>Recent timed-out passes</summary><% if (!recentTimedOutPasses.length) { %><p class="muted">No timed-out passes.</p><% } %><div class="staff-list"><% recentTimedOutPasses.forEach((pass) => { %><article class="staff-row"><div><strong><%= pass.student_name %></strong><span class="muted"> ID <%= pass.student_number %></span><p><%= pass.origin_name %> to <%= pass.destination_name %> · timedout<% if (pass.finished_at) { %> · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p></div><time><%= pass.requested_at %></time></article><% }) %></div><button type="button" class="link-button" data-timeout-modal-open>Show all timed out passes</button></details>

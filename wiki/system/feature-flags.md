@@ -8,3 +8,4 @@ Examples:
 - `SOCKET_IO_ENABLED` + workers>1 needs Redis
 - `BACKGROUND_JOBS_ENABLED` needs Redis in production
 - `API_DOCS_ENABLED` needs `API_ENABLED`
+- `SIS_ENABLED` enables SIS management and provider construction. Automatic synchronization additionally requires `BACKGROUND_JOBS_ENABLED`.
