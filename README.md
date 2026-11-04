@@ -49,11 +49,14 @@ Configuration is loaded from `.env`, parsed and validated at startup, and contro
 | `ENTRA_AUTH_ENABLED`   | Enable Microsoft Entra login                         |
 | `DATABASE_PROVIDER`    | `sqlite` locally or `postgres` in production         |
 | `API_ENABLED`          | Enable `/api/v1` and kiosk transport                 |
+| `SIS_ENABLED`          | Enable SIS adapters, management API, and manager UI  |
 | `SOCKET_IO_ENABLED`    | Enable realtime updates                              |
 | `REDIS_ENABLED`        | Enable Redis-backed shared state and scaling support |
 | `MANAGERS`             | Comma-separated manager email addresses              |
 
 Feature dependencies and production restrictions are documented in [`wiki/system/feature-flags.md`](wiki/system/feature-flags.md). Never commit `.env`, credentials, logs, `kiosk-config.json`, or runtime files under `data/`.
+
+SIS setup, OneRoster configuration, synchronization behavior, and provider development are documented in [`wiki/system/sis-integration.md`](wiki/system/sis-integration.md).
 
 ## Commands
 

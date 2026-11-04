@@ -1,6 +1,8 @@
 /**
  * User persistence. Keep SQL inside this module.
  */
+import { randomUUID } from 'node:crypto';
+
 export function createUserRepository(db) {
   const knex = db.knex;
 
@@ -272,10 +274,55 @@ export function createPassRepository(db) {
         .orderBy('scheduled_at')
         .first();
     },
+    async listUpcomingAppointmentsForStudent(studentId, now, windowHours = 12, trx = knex) {
+      const start = new Date(now);
+      const end = new Date(start.getTime() + windowHours * 60 * 60 * 1000);
+      return trx('appointments')
+        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('users as destination_teacher', 'appointments.destination_teacher_id', 'destination_teacher.id')
+        .where({ 'appointments.student_id': studentId, 'appointments.status': 'scheduled' })
+        .where('appointments.scheduled_at', '>=', start)
+        .where('appointments.scheduled_at', '<=', end)
+        .select(
+          'appointments.*',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+          'destination_teacher.display_name as destination_teacher_name',
+        )
+        .orderBy('appointments.scheduled_at');
+    },
+    async findUpcomingAppointmentForStudent(studentId, appointmentId, now, windowHours = 12, trx = knex) {
+      const start = new Date(now);
+      const end = new Date(start.getTime() + windowHours * 60 * 60 * 1000);
+      return trx('appointments')
+        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('users as destination_teacher', 'appointments.destination_teacher_id', 'destination_teacher.id')
+        .where({
+          'appointments.id': appointmentId,
+          'appointments.student_id': studentId,
+          'appointments.status': 'scheduled',
+        })
+        .where('appointments.scheduled_at', '>=', start)
+        .where('appointments.scheduled_at', '<=', end)
+        .select(
+          'appointments.*',
+          'origin.name as origin_name',
+          'destination.name as destination_name',
+          'destination_teacher.display_name as destination_teacher_name',
+        )
+        .first();
+    },
     async markAppointmentUsed(id, usedAt, trx = knex) {
       await trx('appointments')
         .where({ id, status: 'scheduled' })
         .update({ status: 'used', used_at: usedAt, updated_at: trx.fn.now() });
+    },
+    async completeAppointment(id, completedAt, trx = knex) {
+      await trx('appointments')
+        .where({ id, status: 'scheduled' })
+        .update({ status: 'completed', used_at: completedAt, updated_at: trx.fn.now() });
     },
     async createPass(pass, event, trx = knex) {
       await trx('passes').insert(pass);
@@ -415,6 +462,11 @@ export function createPassRepository(db) {
         .where({ id })
         .update({ ...patch, updated_at: trx.fn.now() });
     },
+    async deleteStudent(id, trx = knex) {
+      await trx('students')
+        .where({ id })
+        .delete();
+    },
     async listManagerLocations(trx = knex) {
       return trx('locations')
         .leftJoin('users', 'locations.teacher_user_id', 'users.id')
@@ -512,6 +564,84 @@ export function createPassRepository(db) {
         primary_email: rows[0].primary_email,
         roles: rows.filter((row) => row.role).map((row) => row.role),
       };
+    },
+  };
+}
+
+export function createSisRepository(db) {
+  const knex = db.knex;
+
+  return {
+    async createConnection(row, trx = knex) {
+      await trx('sis_connections').insert(row);
+      return row;
+    },
+    async listConnections(trx = knex) {
+      return trx('sis_connections').select(
+        'id',
+        'provider',
+        'connection_name',
+        'configuration_json',
+        'active',
+        'sync_interval_seconds',
+        'last_synced_at',
+        'created_at',
+        'updated_at',
+      ).orderBy('connection_name');
+    },
+    async findConnection(id, trx = knex) {
+      return trx('sis_connections').where({ id }).first();
+    },
+    async updateConnection(id, patch, trx = knex) {
+      await trx('sis_connections').where({ id }).update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async deleteConnection(id, trx = knex) {
+      await trx('sis_connections').where({ id }).delete();
+    },
+    async createSyncHistory(row, trx = knex) {
+      await trx('sis_sync_history').insert(row);
+      return row;
+    },
+    async completeSyncHistory(id, patch, trx = knex) {
+      await trx('sis_sync_history').where({ id }).update(patch);
+    },
+    async listSyncHistory(connectionId, limit = 50, trx = knex) {
+      return trx('sis_sync_history')
+        .where({ connection_id: connectionId })
+        .orderBy('started_at', 'desc')
+        .limit(limit);
+    },
+    async upsertStudent(connectionId, student, trx = knex) {
+      const existing = await trx('students')
+        .where({ sis_connection_id: connectionId, sis_student_id: student.sisId })
+        .first();
+      const patch = {
+        first_name: student.firstName,
+        last_name: student.lastName,
+        display_name: `${student.firstName} ${student.lastName}`.trim(),
+        status: student.active ? 'active' : 'inactive',
+        updated_at: trx.fn.now(),
+      };
+      if (existing) {
+        await trx('students').where({ id: existing.id }).update(patch);
+        return { created: false, updated: true, student: { ...existing, ...patch } };
+      }
+      const created = {
+        id: randomUUID(),
+        student_number: student.sisId,
+        sis_connection_id: connectionId,
+        sis_student_id: student.sisId,
+        ...patch,
+      };
+      await trx('students').insert(created);
+      return { created: true, updated: false, student: created };
+    },
+    async markMissingStudentsInactive(connectionId, seenIds, trx = knex) {
+      const query = trx('students')
+        .where({ sis_connection_id: connectionId, status: 'active' })
+        .whereNotNull('sis_student_id');
+      if (seenIds.size > 0) query.whereNotIn('sis_student_id', [...seenIds]);
+      return query.update({ status: 'inactive', updated_at: trx.fn.now() });
     },
   };
 }
