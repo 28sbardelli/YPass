@@ -421,10 +421,12 @@ button:not(.danger-button):hover, .button:hover {
     opacity 300ms ease-out,
     transform 300ms ease-out;
   animation: teacher-message-slide-in 300ms ease-out both;
+}
 .teacher-action-message.is-visible {
   opacity: 1;
   transform: translateX(0);
   animation: teacher-message-slide-out 300ms ease-in both;
+}
 .teacher-action-message.is-dismissing {
   opacity: 0;
   transform: translateX(1.5rem);
@@ -474,13 +476,26 @@ button:not(.danger-button):hover, .button:hover {
   border-bottom: 2px solid #d6d3d1;
 }
 .manager-tab {
-    background: var(--card);
-    color: inherit;
-    border: 1px solid var(--card-border);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
+  appearance: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: black;
+}
+.manager-tab:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.manager-tab:hover img {
+  filter: invert(1);
+}
+.manager-tab:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }
 .manager-tab.is-active {
   background: var(--accent);
@@ -489,9 +504,6 @@ button:not(.danger-button):hover, .button:hover {
 }
 .manager-tab img {
   margin-bottom: -2px;
-}
-button:hover img {
-  filter: invert(1);
 }
 .manager-tab.is-active img {
   filter: invert(1);

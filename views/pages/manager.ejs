@@ -23,6 +23,9 @@
     <button id="manager-tab-kiosks" type="button" class="manager-tab" role="tab" data-tab="kiosks" aria-controls="manager-panel-kiosks" aria-selected="false" tabindex="-1"><img src="/images/kiosk.svg" width="15" height="15">Kiosks</button>
     <button id="manager-tab-passes" type="button" class="manager-tab" role="tab" data-tab="passes" aria-controls="manager-panel-passes" aria-selected="false" tabindex="-1"><img src="/images/ticket.svg" width="15" height="15">Passes</button>
     <button id="manager-tab-appointments" type="button" class="manager-tab" role="tab" data-tab="appointments" aria-controls="manager-panel-appointments" aria-selected="false" tabindex="-1"><img src="/images/timer.svg" width="15" height="15">Appointments</button>
+    <% if (sisEnabled) { %>
+      <button id="manager-tab-sis" type="button" class="manager-tab" role="tab" data-tab="sis" aria-controls="manager-panel-sis" aria-selected="false" tabindex="-1"><img src="/images/roles.svg" width="17" height="17">SIS integrations</button>
+    <% } %>
     <button id="manager-tab-user-roles" type="button" class="manager-tab" role="tab" data-tab="user-roles" aria-controls="manager-panel-user-roles" aria-selected="false" tabindex="-1"><img src="/images/roles.svg" width="17" height="17">User roles</button>
   </nav>
   <div id="manager-panel-students" class="manager-tab-panel is-active" role="tabpanel" aria-labelledby="manager-tab-students" tabindex="0" data-panel="students">
@@ -431,6 +434,121 @@
       </div>
     </section>
   </div>
+  <% if (sisEnabled) { %>
+    <div id="manager-panel-sis" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-sis" tabindex="0" data-panel="sis">
+      <section class="staff-section">
+        <h2>SIS integrations</h2>
+        <form method="post" class="staff-form manager-form" data-sis-create>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <strong>Add connection</strong>
+          <label>
+            Name
+            <input name="connectionName" required maxlength="120">
+          </label>
+          <label>
+            Provider
+            <select name="provider">
+              <option value="mock">Mock</option>
+              <option value="oneroster">OneRoster</option>
+              <option value="skyward">Skyward</option>
+              <option value="schoology">Schoology</option>
+            </select>
+          </label>
+          <label>
+            Base URL
+            <input name="baseUrl" type="url" placeholder="https://sis.example.test">
+          </label>
+          <label>
+            Protocol
+            <select name="protocol">
+              <option value="oneroster">OneRoster</option>
+              <option value="api">Vendor API</option>
+            </select>
+          </label>
+          <label>
+            Platform
+            <select name="platform">
+              <option value="qmlativ">Skyward Qmlativ</option>
+              <option value="sms20">Skyward SMS 2.0</option>
+            </select>
+          </label>
+          <label>
+            Student path (optional)
+            <input name="studentPath" placeholder="/api/qmlativ/students">
+          </label>
+          <label>
+            OneRoster version
+            <select name="version">
+              <option value="1.1">1.1</option>
+              <option value="1.2">1.2</option>
+            </select>
+          </label>
+          <label>
+            Auth type
+            <select name="authType">
+              <option value="bearer">Bearer token</option>
+              <option value="basic">Basic</option>
+              <option value="oauth1">Schoology OAuth 1.0a</option>
+              <option value="apiKey">Skyward API key</option>
+            </select>
+          </label>
+          <label>
+            Username
+            <input name="username" autocomplete="off">
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            Token
+            <input name="token" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            API key
+            <input name="apiKey" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            Consumer key
+            <input name="consumerKey" autocomplete="off">
+          </label>
+          <label>
+            Consumer secret
+            <input name="consumerSecret" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            Token secret
+            <input name="tokenSecret" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            Sync interval (seconds)
+            <input name="syncIntervalSeconds" type="number" min="0" max="86400" value="0">
+          </label>
+          <button type="submit">Save connection</button>
+          <output data-sis-message class="muted"></output>
+        </form>
+
+        <div class="staff-list" data-sis-list>
+          <% sisConnections.forEach((connection) => { %>
+            <article class="staff-row" data-sis-connection data-connection-id="<%= connection.id %>">
+              <div>
+                <strong><%= connection.connection_name %></strong>
+                <p><%= connection.provider %> · <%= connection.active ? 'Active' : 'Inactive' %> · Last sync: <%= connection.last_synced_at || 'Never' %></p>
+                <pre data-sis-history hidden></pre>
+              </div>
+              <span class="manager-form">
+                <button type="button" data-sis-test>Test</button>
+                <button type="button" data-sis-sync>Sync</button>
+                <button type="button" data-sis-history-toggle>History</button>
+                <button type="button" data-sis-delete>Delete</button>
+              </span>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    </div>
+    <script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=1" defer></script>
+  <% } %>
   <div id="manager-panel-user-roles" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-user-roles" tabindex="0" data-panel="user-roles">
     <section class="staff-section">
       <div class="staff-list">
