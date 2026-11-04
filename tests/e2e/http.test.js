@@ -58,6 +58,10 @@ describe('http skeleton', () => {
     });
     expect(register.status).toBe(302);
 
+    const user = await ctx.container.db.knex('users').where({ primary_email: 'teacher-page@example.test' }).first();
+    const teacherRole = await ctx.container.db.knex('roles').where({ name: 'teacher' }).first();
+    await ctx.container.db.knex('user_roles').insert({ user_id: user.id, role_id: teacherRole.id });
+
     const loginPage = await agent.get('/auth/login');
     const login = await agent.post('/auth/login').type('form').send({
       _csrf: extractCsrf(loginPage.text),
@@ -83,6 +87,14 @@ describe('http skeleton', () => {
       password: 'correct-horse-battery',
       displayName: 'Teacher Action User',
     });
+    const registeredUser = await ctx.container.db
+      .knex('users')
+      .where({ primary_email: 'teacher-action@example.test' })
+      .first();
+    const teacherRole = await ctx.container.db.knex('roles').where({ name: 'teacher' }).first();
+    await ctx.container.db
+      .knex('user_roles')
+      .insert({ user_id: registeredUser.id, role_id: teacherRole.id });
     const loginPage = await agent.get('/auth/login');
     await agent.post('/auth/login').type('form').send({
       _csrf: extractCsrf(loginPage.text),
@@ -116,8 +128,8 @@ describe('http skeleton', () => {
       action: 'approve',
     });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toBe('/teacher');
+    expect(response.status).toBe(200);
+    expect(response.text).toContain('Pass approved.');
   });
 
   it('does not register API routes when API_ENABLED is false', async () => {
