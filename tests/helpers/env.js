@@ -22,6 +22,7 @@ export function validTestEnv(overrides = {}) {
     API_ENABLED: 'true',
     API_DOCS_ENABLED: 'false',
     BACKGROUND_JOBS_ENABLED: 'false',
+    SIS_ENABLED: 'false',
     LOCAL_AUTH_EMAIL_FLOW: 'disabled',
     FORMBAR_OAUTH_MODE: 'authorization_code',
     SESSION_SECRET: 'test-session-secret-must-be-32-chars+',

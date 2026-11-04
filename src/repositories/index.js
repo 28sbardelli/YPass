@@ -1,6 +1,8 @@
 /**
  * User persistence. Keep SQL inside this module.
  */
+import { randomUUID } from 'node:crypto';
+
 export function createUserRepository(db) {
   const knex = db.knex;
 
@@ -490,6 +492,84 @@ export function createPassRepository(db) {
         ...user,
         roles: rows.filter((row) => row.id === user.id && row.role).map((row) => row.role),
       }));
+    },
+  };
+}
+
+export function createSisRepository(db) {
+  const knex = db.knex;
+
+  return {
+    async createConnection(row, trx = knex) {
+      await trx('sis_connections').insert(row);
+      return row;
+    },
+    async listConnections(trx = knex) {
+      return trx('sis_connections').select(
+        'id',
+        'provider',
+        'connection_name',
+        'configuration_json',
+        'active',
+        'sync_interval_seconds',
+        'last_synced_at',
+        'created_at',
+        'updated_at',
+      ).orderBy('connection_name');
+    },
+    async findConnection(id, trx = knex) {
+      return trx('sis_connections').where({ id }).first();
+    },
+    async updateConnection(id, patch, trx = knex) {
+      await trx('sis_connections').where({ id }).update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async deleteConnection(id, trx = knex) {
+      await trx('sis_connections').where({ id }).delete();
+    },
+    async createSyncHistory(row, trx = knex) {
+      await trx('sis_sync_history').insert(row);
+      return row;
+    },
+    async completeSyncHistory(id, patch, trx = knex) {
+      await trx('sis_sync_history').where({ id }).update(patch);
+    },
+    async listSyncHistory(connectionId, limit = 50, trx = knex) {
+      return trx('sis_sync_history')
+        .where({ connection_id: connectionId })
+        .orderBy('started_at', 'desc')
+        .limit(limit);
+    },
+    async upsertStudent(connectionId, student, trx = knex) {
+      const existing = await trx('students')
+        .where({ sis_connection_id: connectionId, sis_student_id: student.sisId })
+        .first();
+      const patch = {
+        first_name: student.firstName,
+        last_name: student.lastName,
+        display_name: `${student.firstName} ${student.lastName}`.trim(),
+        status: student.active ? 'active' : 'inactive',
+        updated_at: trx.fn.now(),
+      };
+      if (existing) {
+        await trx('students').where({ id: existing.id }).update(patch);
+        return { created: false, updated: true, student: { ...existing, ...patch } };
+      }
+      const created = {
+        id: randomUUID(),
+        student_number: student.sisId,
+        sis_connection_id: connectionId,
+        sis_student_id: student.sisId,
+        ...patch,
+      };
+      await trx('students').insert(created);
+      return { created: true, updated: false, student: created };
+    },
+    async markMissingStudentsInactive(connectionId, seenIds, trx = knex) {
+      const query = trx('students')
+        .where({ sis_connection_id: connectionId, status: 'active' })
+        .whereNotNull('sis_student_id');
+      if (seenIds.size > 0) query.whereNotIn('sis_student_id', [...seenIds]);
+      return query.update({ status: 'inactive', updated_at: trx.fn.now() });
     },
   };
 }

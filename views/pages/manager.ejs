@@ -1,6 +1,7 @@
 <% const activeFilters = filters || {}; %>
 <section class="staff-page">
   <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
+  <% if (sisEnabled) { %><script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=1" defer></script><% } %>
   <div class="staff-heading"><div><p class="kiosk-kicker">Administration</p><h1>Manager-Bereich</h1><p class="muted">System-wide history and reference data.</p></div></div>
   <form method="get" action="/manager" class="filter-bar">
     <label>Pass status<select name="status"><option value="">All pass statuses</option><% ['pending_approval', 'active', 'arrived', 'timedout', 'completed', 'cancelled', 'expired'].forEach((status) => { %><option value="<%= status %>" <%= activeFilters.status === status ? 'selected' : '' %>><%= status %></option><% }) %></select></label>
@@ -8,6 +9,35 @@
     <label>Student ID<input name="studentNumber" value="<%= activeFilters.studentNumber || '' %>"></label>
     <button type="submit">Filter</button>
   </form>
+
+  <% if (sisEnabled) { %>
+  <details class="staff-section" open>
+    <summary>SIS integrations</summary>
+    <form class="staff-form manager-form" data-sis-create>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <strong>Add connection</strong>
+      <label>Name<input name="connectionName" required maxlength="120"></label>
+      <label>Provider<select name="provider"><option value="mock">Mock</option><option value="oneroster">OneRoster</option></select></label>
+      <label>Base URL<input name="baseUrl" type="url" placeholder="https://sis.example.test"></label>
+      <label>OneRoster version<select name="version"><option value="1.1">1.1</option><option value="1.2">1.2</option></select></label>
+      <label>Auth type<select name="authType"><option value="bearer">Bearer token</option><option value="basic">Basic</option></select></label>
+      <label>Username<input name="username" autocomplete="off"></label>
+      <label>Password<input name="password" type="password" autocomplete="new-password"></label>
+      <label>Token<input name="token" type="password" autocomplete="new-password"></label>
+      <label>Sync interval (seconds)<input name="syncIntervalSeconds" type="number" min="0" max="86400" value="0"></label>
+      <button type="submit">Save connection</button>
+      <output data-sis-message class="muted"></output>
+    </form>
+    <div class="staff-list" data-sis-list>
+      <% sisConnections.forEach((connection) => { %>
+      <article class="staff-row" data-sis-connection data-connection-id="<%= connection.id %>">
+        <div><strong><%= connection.connection_name %></strong><p><%= connection.provider %> · <%= connection.active ? 'Active' : 'Inactive' %> · Last sync: <%= connection.last_synced_at || 'Never' %></p><pre data-sis-history hidden></pre></div>
+        <span class="manager-form"><button type="button" data-sis-test>Test</button><button type="button" data-sis-sync>Sync</button><button type="button" data-sis-history-toggle>History</button><button type="button" data-sis-delete>Delete</button></span>
+      </article>
+      <% }) %>
+    </div>
+  </details>
+  <% } %>
 
   <details class="staff-section" open><summary>Students</summary>
     <form method="post" action="/manager/students/create" class="staff-form manager-form">

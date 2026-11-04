@@ -24,6 +24,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /admin/sis/connections:
+    get:
+      summary: List SIS connections
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: SIS connection metadata }
+        '401': { description: Authentication required }
+        '403': { description: Manager authorization required }
+    post:
+      summary: Create an SIS connection
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SisConnectionCreate' }
+      responses:
+        '201': { description: SIS connection metadata }
+        '400': { description: Invalid request }
+        '403': { description: Manager authorization required }
+  /admin/sis/connections/{connectionId}/test:
+    post:
+      summary: Test an SIS connection
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: connectionId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Connection test result }
+        '403': { description: Manager authorization required }
+  /admin/sis/connections/{connectionId}/sync:
+    post:
+      summary: Synchronize students
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: connectionId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Synchronization result }
+        '409': { description: Synchronization already running }
+        '403': { description: Manager authorization required }
+  /admin/sis/connections/{connectionId}/sync-history:
+    get:
+      summary: List synchronization history
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: connectionId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Synchronization history }
+        '403': { description: Manager authorization required }
 components:
   securitySchemes:
     cookieAuth:
@@ -54,3 +102,14 @@ components:
           properties:
             code: { type: string }
             message: { type: string }
+    SisConnectionCreate:
+      type: object
+      required: [provider, connectionName]
+      properties:
+        provider: { type: string, enum: [mock, oneroster] }
+        connectionName: { type: string }
+        configuration: { type: object, additionalProperties: true }
+        credentials:
+          type: object
+          additionalProperties: { type: string, writeOnly: true }
+        syncIntervalSeconds: { type: integer, minimum: 0, maximum: 86400 }

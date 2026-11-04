@@ -52,6 +52,10 @@ const rawSchema = z.object({
   API_ENABLED: bool(true),
   API_DOCS_ENABLED: bool(false),
   BACKGROUND_JOBS_ENABLED: bool(false),
+  SIS_ENABLED: bool(false),
+  SIS_HTTP_TIMEOUT_MS: int(15_000),
+  SIS_PAGE_SIZE: int(100),
+  SIS_RATE_LIMIT_MS: int(0),
   LOAD_TEST_FEATURES_ENABLED: bool(false),
   LOCAL_AUTH_EMAIL_FLOW: z.enum(['required', 'disabled']).default('disabled'),
   FORMBAR_OAUTH_MODE: z
@@ -190,6 +194,7 @@ export function parseConfig(source) {
       apiDocs:
         env === 'production' ? raw.API_DOCS_ENABLED && raw.API_ENABLED : raw.API_DOCS_ENABLED,
       backgroundJobs: raw.BACKGROUND_JOBS_ENABLED,
+      sis: raw.SIS_ENABLED,
       loadTestFeatures: env === 'production' ? false : raw.LOAD_TEST_FEATURES_ENABLED,
       formbarOauthMode: raw.FORMBAR_OAUTH_MODE,
       localAuthEmailFlow:
@@ -239,6 +244,12 @@ export function parseConfig(source) {
       ssl: raw.DATABASE_SSL,
       sslCa: raw.DATABASE_SSL_CA || '',
       migrateOnStart: env === 'production' ? false : raw.DATABASE_MIGRATE_ON_START,
+    },
+    sis: {
+      timeoutMs: raw.SIS_HTTP_TIMEOUT_MS,
+      pageSize: raw.SIS_PAGE_SIZE,
+      minIntervalMs: raw.SIS_RATE_LIMIT_MS,
+      encryptionKey: raw.TOKEN_ENCRYPTION_KEY,
     },
     redis: {
       url: raw.REDIS_URL,

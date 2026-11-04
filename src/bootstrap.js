@@ -50,6 +50,8 @@ export async function startServer({ config, logger }) {
   container.jobs = await createJobs(config, logger, {
     challengeRepository: container.challenges,
     clock: container.clock,
+    sisRepository: container.sisRepository,
+    sisSyncService: container.sisSyncService,
   });
 
   if (container.formbarWs) {

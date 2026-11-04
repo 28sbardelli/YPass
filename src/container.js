@@ -15,6 +15,7 @@ import {
   createRbacRepository,
   createAuditRepository,
   createPassRepository,
+  createSisRepository,
 } from '#repositories/index.js';
 import { createRbac } from '#authorization/rbac.js';
 import { createTokenService } from '#auth/tokens.js';
@@ -31,6 +32,8 @@ import { createFormbarHttpExample } from '#integrations/formbar/examples/http-ex
 import { createEntraProvider } from '#integrations/entra/index.js';
 import { createPassService } from '#services/pass-service.js';
 import { createKioskService } from '#services/kiosk-service.js';
+import { createSisService } from '#services/sis/sis-service.js';
+import { createSisSyncService } from '#services/sis/sis-sync-service.js';
 
 export async function createContainer({ config, logger }) {
   const auditLogger = createAuditLogger(logger);
@@ -50,6 +53,7 @@ export async function createContainer({ config, logger }) {
   const rbacRepository = createRbacRepository(db);
   const auditRepo = createAuditRepository(db);
   const passRepository = createPassRepository(db);
+  const sisRepository = config.features.sis ? createSisRepository(db) : null;
   const rbac = createRbac({ rbacRepository });
   const tokens = createTokenService(challenges, clock);
 
@@ -107,6 +111,13 @@ export async function createContainer({ config, logger }) {
     audit: auditRepo,
   });
 
+  const sisService = config.features.sis
+    ? createSisService({ config, logger })
+    : null;
+  const sisSyncService = config.features.sis
+    ? createSisSyncService({ db, sisService, repository: sisRepository, clock, logger })
+    : null;
+
   const formbarOAuth = config.features.formbarAuth ? createFormbarOAuth({ config, logger }) : null;
   const formbarHttp = config.formbar.baseUrl ? createFormbarHttpClient({ config, logger }) : null;
   const formbarHttpExample =
@@ -146,6 +157,9 @@ export async function createContainer({ config, logger }) {
     passRepository,
     passService,
     kioskService,
+    sisRepository,
+    sisService,
+    sisSyncService,
     formbarOAuth,
     formbarHttp,
     formbarHttpExample,
