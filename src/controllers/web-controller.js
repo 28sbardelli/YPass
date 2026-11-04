@@ -161,12 +161,65 @@ export function createWebController(container) {
     },
     async scanKiosk(req, res, next) {
       const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
+      const appointmentAction = req.body.appointmentAction;
+      const appointmentId = req.body.appointmentId;
       try {
+        if (appointmentAction === 'complete' && appointmentId) {
+          const result = await passService.completeAppointmentForStudent({
+            kioskCode,
+            studentNumber: req.body.studentNumber,
+            appointmentId,
+            actorUserId: req.currentUser?.id,
+          });
+          renderKiosk(res, {
+            ...result,
+            kioskCode,
+            kioskSession: Boolean(req.kiosk),
+            form: {},
+            message: {
+              type: 'success',
+              text: `Appointment completed and a pass was approved for ${result.student.display_name}.`,
+            },
+            appointmentPrompt: false,
+            appointments: [],
+            appointmentChoices: [],
+          });
+          return;
+        }
+        if (appointmentAction === 'show') {
+          const appointments = await passService.listUpcomingAppointments(
+            req.body.studentNumber,
+          );
+          const student = await passService.kioskOptions(kioskCode).then(({ kiosk, destinations }) => ({
+            kiosk,
+            destinations,
+            student: { display_name: req.body.studentName || 'Student' },
+          }));
+          renderKiosk(res, {
+            kiosk: student.kiosk,
+            destinations: student.destinations,
+            student: student.student,
+            kioskCode,
+            kioskSession: Boolean(req.kiosk),
+            form: { studentNumber: req.body.studentNumber },
+            message: {
+              type: 'info',
+              text: 'Choose the appointment you want to complete now.',
+            },
+            appointmentPrompt: false,
+            appointmentChoices: appointments,
+          });
+          return;
+        }
         const result = await passService.scanStudent({
           kioskCode,
           studentNumber: req.body.studentNumber,
           actorUserId: req.currentUser?.id,
         });
+        if (appointmentAction === 'decline') {
+          result.appointmentPrompt = false;
+          result.appointments = [];
+        }
         const message = scanMessage(result);
         renderKiosk(res, {
           ...result,
@@ -356,14 +409,18 @@ export function createWebController(container) {
       title: 'Student Pass Kiosk',
       currentUser: res.req.currentUser || null,
       action: null,
-      student: null,
-      destinations: [],
-      kiosk: null,
-      form: {},
-      message: null,
-      kioskSession: false,
-      ...viewData,
-    });
+    pass: null,
+    student: null,
+    destinations: [],
+    kiosk: null,
+    form: {},
+    message: null,
+    kioskSession: false,
+    appointmentPrompt: false,
+    appointments: [],
+    appointmentChoices: [],
+    ...viewData,
+  });
   }
 }
 

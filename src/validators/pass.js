@@ -20,6 +20,8 @@ export const kioskEnrollmentStatusSchema = z.object({
 export const kioskScanSchema = z.object({
   kioskCode,
   studentNumber,
+  appointmentAction: z.enum(['show', 'decline', 'complete']).optional(),
+  appointmentId: z.string().uuid().optional(),
   _csrf: z.string().optional(),
 });
 

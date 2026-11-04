@@ -34,6 +34,50 @@
       <p class="scanner-note"><%= waitingForApproval ? 'This kiosk is locked until the teacher accepts or cancels the pass.' : 'A USB barcode scanner works like a keyboard. Keep this field focused.' %></p>
     </section>
 
+    <% if (appointmentPrompt) { %>
+      <section class="kiosk-panel kiosk-appointment-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Upcoming appointment</h2>
+            <p>Would you like to go to the appointment now?</p>
+          </div>
+        </div>
+        <form method="post" action="/kiosk/scan" class="kiosk-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
+          <input type="hidden" name="studentNumber" value="<%= student?.student_number || form.studentNumber || '' %>">
+          <div class="appointment-actions">
+            <button type="submit" class="secondary-button" name="appointmentAction" value="decline">No</button>
+            <button type="submit" class="primary-button" name="appointmentAction" value="show">Yes</button>
+          </div>
+        </form>
+      </section>
+    <% } %>
+
+    <% if (appointmentChoices && appointmentChoices.length) { %>
+      <section class="kiosk-panel kiosk-appointment-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Choose appointment</h2>
+            <p>Select the appointment to complete now.</p>
+          </div>
+        </div>
+        <% appointmentChoices.forEach((appointment) => { %>
+          <form method="post" action="/kiosk/scan" class="kiosk-form appointment-choice-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% if (!kioskSession) { %><input type="hidden" name="kioskCode" value="<%= kioskCode %>"><% } %>
+            <input type="hidden" name="studentNumber" value="<%= form.studentNumber || student?.student_number || appointment.student_id || '' %>">
+            <input type="hidden" name="appointmentAction" value="complete">
+            <input type="hidden" name="appointmentId" value="<%= appointment.id %>">
+            <button type="submit" class="appointment-choice-button">
+              <strong><%= appointment.origin_name %> to <%= appointment.destination_name %></strong>
+              <span><%= new Date(appointment.scheduled_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) %></span>
+            </button>
+          </form>
+        <% }) %>
+      </section>
+    <% } %>
+
     <% if (action === 'create' || action === 'pending' || pass?.status === 'pending_approval') { %>
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">

@@ -2,6 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../helpers/app.js';
 
+function extractCsrf(html) {
+  const match = html.match(/name="_csrf" value="([^"]+)"/);
+  return match ? match[1] : '';
+}
+
 describe('staff pass controls', () => {
   let ctx;
 
@@ -211,6 +216,85 @@ describe('staff pass controls', () => {
       event: 'teacher-pass-ended',
       payload: { passId: requested.pass.id, originLocationId: mainOffice.id },
     });
+  });
+
+  it('offers kiosk appointment choices and completes the selected appointment into an active pass', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
+    const agent = (await import('supertest')).default.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'appointment-kiosk-user',
+      email: 'appointment-kiosk-user@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Appointment User',
+    });
+    const loginPage = await agent.get('/auth/login');
+    await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'appointment-kiosk-user',
+      password: 'correct-horse-battery',
+    });
+
+    const teacherId = randomUUID();
+    await ctx.container.db.knex('users').insert({
+      id: teacherId,
+      display_name: 'Appointment Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    const mainOffice = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const counseling = await ctx.container.db.knex('locations').where({ name: 'Counseling Office' }).first();
+    await ctx.container.db.knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    await ctx.container.db.knex('locations').where({ id: counseling.id }).update({ teacher_user_id: teacherId });
+
+    const student = await ctx.container.db.knex('students').where({ student_number: '111111' }).first();
+    const appointment = await ctx.container.passService.createAppointment({
+      userId: teacherId,
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      originLocationId: mainOffice.id,
+      destinationLocationId: counseling.id,
+      scheduledAt: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
+      notes: 'Follow-up appointment',
+    });
+
+    const kioskPage = await agent.get('/kiosk?kiosk=main-office');
+    const scan = await agent.post('/kiosk/scan').type('form').send({
+      _csrf: extractCsrf(kioskPage.text),
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+    });
+    expect(scan.status).toBe(200);
+    expect(scan.text).toContain('Upcoming appointment');
+
+    const showAppointments = await agent.post('/kiosk/scan').type('form').send({
+      _csrf: extractCsrf(scan.text),
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      appointmentAction: 'show',
+    });
+    expect(showAppointments.status).toBe(200);
+    expect(showAppointments.text).toContain('Choose appointment');
+    expect(showAppointments.text).toContain(appointment.appointment.id);
+
+    const selected = await agent.post('/kiosk/scan').type('form').send({
+      _csrf: extractCsrf(showAppointments.text),
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      appointmentAction: 'complete',
+      appointmentId: appointment.appointment.id,
+    });
+    expect(selected.status).toBe(200);
+    expect(selected.text).toContain('Appointment completed');
+
+    const found = await ctx.container.db.knex('appointments').where({ id: appointment.appointment.id }).first();
+    expect(found.status).toBe('completed');
+    const pass = await ctx.container.db.knex('passes').where({ appointment_id: appointment.appointment.id }).first();
+    expect(pass).toMatchObject({ status: 'active', student_id: student.id, destination_location_id: counseling.id });
+
+    const passRow = await ctx.container.db.knex('passes').where({ appointment_id: appointment.appointment.id }).first();
+    expect(passRow.status).toBe('active');
   });
 
   it('limits pass actions to the origin teacher and supports appointments', async () => {
