@@ -1,40 +1,139 @@
+/* Theme tokens: shared colors and sizing used throughout the application. */
 :root {
   color-scheme: light;
-  --bg: #f4f1ea;
+  --bg: #eceeea;
   --ink: #1c1917;
-  --accent: #0f766e;
+  --accent: #586a4d;
+  --faint-txt: rgb(98, 102, 95);
   --danger: #b91c1c;
+  --pending: rgb(158, 126, 22);
+  --expired: rgb(73, 24, 24);
+  --return: rgb(97, 41, 119);
+  --active: rgb(29, 90, 160);
+  --completed: rgb(23, 87, 29);
   --card: #fff;
+  --pass-border: 8px;
+  --card-border: rgb(182, 189, 182);
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--ink);
+}
+.header-link {
+  text-decoration: none;
+  color: var(--faint-txt);
+  font-weight: 500;
+  height: 4rem;
+  width: 6rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 3px solid transparent;
+}
+.header-link:hover {
+  background-color: oklch(from var(--accent) l c h / 20%) !important;
+  margin: 0;
+  color: var(--accent);
+  border-bottom: 3px solid var(--accent);
+}
+.header-link.to-be-removed {
+  display: none;
 }
 .site-header,
 .site-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0 1.5rem;
   background: var(--card);
 }
 .site-header nav {
   display: flex;
-  gap: 1rem;
   align-items: center;
 }
+
+/* Shared page sizing and account information. */
 .page {
-  margin: 2rem auto;
+  margin: 4rem auto;
   padding: 0 1rem;
+}
+.account-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.account-info-box {
+  background-color: var(--card);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+.link-account-btn {
+  text-decoration: none;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+/* Typography and small reusable layout helpers. */
+.passes-header-wrap {
+  display: flex; 
+  flex-direction: row; 
+  gap: 5px;
+  margin: 0;
+}
+.passes-footer-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+.muted {
+  margin-bottom: 0;
+}
+h1, h2, h3, h4, h5 {
+  font-weight: 500;
+}
+h4 {
+  color: var(--faint-txt);
+  margin-top: 0;
+}
+.small-muted {
+  margin-bottom: 0;
+  color: var(--accent);
+}
+.h-line {
+  width: 40px;
+  height: 3px;
+  background-color: var(--accent);
+  border-radius: 2px;
 }
 label {
   display: block;
-  margin: 0.75rem 0;
+  margin: 0.5rem 0;
+}
+
+/* Shared lists, form controls, buttons, and feedback messages. */
+ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+}
+li {
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
 }
 input,
 button {
@@ -46,15 +145,25 @@ button,
   background: var(--accent);
   color: #fff;
   border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
   text-decoration: none;
   display: inline-block;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
-.button-disabled {
-  background: #a8a29e;
-  color: #57534e;
-  cursor: not-allowed;
-  pointer-events: none;
+button:not(.danger-button):hover, .button:hover {
+  animation: button-hover 0.2s forwards ease;
+  background-color: oklch(from var(--accent) calc(l - 0.15) c h);
+  color: white;
+}
+@keyframes button-hover {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-1px);
+  }
 }
 .flash {
   padding: 0.75rem;
@@ -66,12 +175,16 @@ button,
 .inline {
   display: inline;
 }
+
+/* Authentication page provider links. */
 .auth-providers {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
 }
+
+/* Kiosk page layout, panels, and instructions. */
 .kiosk-page {
   max-width: 66rem;
   margin: 0 auto;
@@ -265,6 +378,8 @@ button,
   color: var(--danger);
   border-left-color: var(--danger);
 }
+
+/* Kiosk layout adjustments for narrow screens. */
 @media (max-width: 700px) {
   .kiosk-heading {
     display: block;
@@ -279,6 +394,8 @@ button,
     min-height: auto;
   }
 }
+
+/* Teacher and manager staff dashboard layout. */
 .staff-page {
   max-width: 66rem;
   margin: 0 auto;
@@ -289,6 +406,21 @@ button,
   inset-inline-end: 1rem;
   z-index: 10;
   margin: 0;
+}
+.teacher-data {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 10px 0;
+}
+.teacher-data > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.teacher-data > p {
+  margin: 5px 0px;
 }
 .staff-page > .staff-section {
   margin-top: 1rem;
@@ -313,6 +445,21 @@ button,
   margin: 0;
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
+.header-cont {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 2px solid #d6d3d1;
+  padding-bottom: 0.5rem;
+  margin-bottom: 20px;
+  gap: 5px;
+}
+.header-cont h2 {
+  margin: 0;
+}
+.header-cont img {
+  margin-bottom: -5px;
+}
 .staff-section {
   min-width: 0;
 }
@@ -333,12 +480,38 @@ button,
 .staff-section[open] summary {
   margin-bottom: 1rem;
 }
+
+/* Staff sorting/filter controls and manager forms. */
 .manager-form + .staff-list,
 .staff-form + .staff-list {
   margin-top: 0.7rem;
 }
 .staff-section > .staff-list {
   min-width: 0;
+}
+.staff-sort,
+.staff-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.staff-sort button,
+.staff-filter button {
+  background: var(--card);
+  color: inherit;
+  border: 1px solid var(--card-border);
+}
+.staff-sort button[aria-pressed="true"],
+.staff-filter button[aria-pressed="true"] {
+  background: var(--filter-color, var(--accent));
+  color: #fff;
+  border-color: var(--filter-color, var(--accent));
+}
+.staff-sort button:focus-visible,
+.staff-filter button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 .manager-form {
   display: grid;
@@ -366,10 +539,8 @@ button,
   padding-top: 0;
   border-top: 0;
 }
-.staff-section h2 {
-  border-bottom: 2px solid #d6d3d1;
-  padding-bottom: 0.5rem;
-}
+
+/* Shared staff cards, including pass and appointment card layouts. */
 .staff-list {
   display: grid;
   gap: 0.6rem;
@@ -380,130 +551,125 @@ button,
   gap: 1rem;
   align-items: center;
   padding: 1rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+  background-color: var(--card);
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
 }
-.staff-row p {
-  margin: 0.35rem 0 0;
-  color: #57534e;
-}
-.staff-row time,
-.status-label {
-  color: #57534e;
-  font-size: 0.9rem;
-}
-.staff-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.staff-actions form {
-  margin: 0;
-}
-.danger-button {
-  background: var(--danger);
-}
-.staff-form {
+.staff-row.pass-row {
   display: grid;
-  gap: 0.7rem;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
 }
-.staff-form input,
-.staff-form select,
-.staff-form textarea {
-  width: 100%;
-  font: inherit;
-  padding: 0.55rem;
+.appointment-status {
+  justify-self: end;
 }
-.filter-bar {
+.pass-identity,
+.pass-details {
+  min-width: 0;
+}
+.pass-details {
   display: flex;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  align-items: end;
-  padding: 1rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+  flex-direction: column;
+  align-items: left;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
 }
-.filter-bar label {
+.passes-footer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: flex-start;
+}
+.pass-details > * {
+  max-width: 100%;
+}
+.pass-actions {
+  justify-content: flex-end;
   margin: 0;
 }
-.filter-bar input,
-.filter-bar select {
-  display: block;
-  min-height: 2.4rem;
-  font: inherit;
-  padding: 0.4rem;
-}
-.link-button {
-  margin-top: 0.8rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
-}
-.modal-open {
-  overflow: hidden;
-}
-.timeout-modal[hidden] {
+.staff-row[hidden] {
   display: none;
 }
-.timeout-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
+.required-note {
+  color: var(--danger);
 }
-.timeout-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgb(28 25 23 / 60%);
+
+/* Pass state accents and animations. */
+.staff-row.pending_approval {
+  border-left: var(--pass-border) solid var(--pending) !important;
 }
-.timeout-modal-panel {
-  position: relative;
-  width: min(100%, 56rem);
-  max-height: min(90vh, 48rem);
-  overflow: auto;
-  padding: 1.5rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
-  box-shadow: 0 1rem 3rem rgb(28 25 23 / 25%);
+.staff-row.active {
+  animation: blink 1s infinite ease-in-out;
 }
-.timeout-modal-panel h2 {
-  margin: 0 2.5rem 1rem 0;
+.staff-row.returning {
+  animation: return-blink 1s infinite ease-in-out;
 }
-.timeout-modal-close {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: 1.75rem/1 Georgia, 'Times New Roman', serif;
-  cursor: pointer;
+@keyframes blink {
+  0%, 100% {
+    border-left: var(--pass-border) solid var(--active);
+  }
+  50% {
+    border-left: var(--pass-border) solid rgba(66, 66, 66, 0.205);
+  }
 }
-.staff-list {
-  display: grid;
-  gap: 0.6rem;
+@keyframes return-blink {
+  0%, 100% {
+    border-left: var(--pass-border) solid var(--return);
+  }
+  50% {
+    border-left: var(--pass-border) solid rgba(66, 66, 66, 0.205);
+  }
 }
-.staff-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+.staff-row.completed {
+  border-left: var(--pass-border) solid var(--completed) !important;
 }
+.staff-row.cancelled {
+  border-left: var(--pass-border) solid var(--danger) !important;
+}
+.staff-row.expired {
+  border-left: var(--pass-border) solid var(--expired) !important;
+}
+
+/* Status filter colors. */
+.filter-pending {
+  --filter-color: var(--pending);
+}
+.filter-pending:hover {
+  background: var(--pending) !important;
+}
+.filter-active {
+  --filter-color: var(--active);
+}
+.filter-active:hover {
+  background: var(--active) !important;
+}
+.filter-returning {
+  --filter-color: var(--return);
+}
+.filter-returning:hover {
+  background: var(--return) !important;
+}
+.filter-completed {
+  --filter-color: var(--completed);
+}
+.filter-completed:hover {
+  background: var(--completed) !important;
+}
+.filter-cancelled {
+  --filter-color: var(--danger);
+}
+.filter-cancelled:hover {
+  background: var(--danger) !important;
+}
+.filter-expired {
+  --filter-color: var(--expired);
+}
+.filter-expired:hover {
+  background: var(--expired) !important;
+}
+
+/* Staff card metadata, actions, and destructive action states. */
 .staff-row p {
   margin: 0.35rem 0 0;
   color: #57534e;
@@ -522,14 +688,20 @@ button,
   margin: 0;
 }
 .danger-button {
-  background: var(--danger);
+  background: transparent !important;
+  color: var(--faint-txt) !important;
+  font-weight: 700;
+}
+.danger-button.decline:hover {
+  color: var(--danger) !important;
+  background-color: oklch(from var(--danger) l c h / 20%) !important;
 }
 .staff-form {
-  display: grid;
-  gap: 0.7rem;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid #d6d3d1;
+  margin-top: 10px;
+  background-color: var(--card);
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
 }
 .staff-form input,
 .staff-form select,
@@ -557,13 +729,42 @@ button,
   font: inherit;
   padding: 0.4rem;
 }
+
+/* Responsive staff dashboard and card layouts. */
 @media (max-width: 700px) {
   .staff-heading,
   .staff-row {
     display: block;
   }
+  .teacher-data {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .staff-row.pass-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .pass-details {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .pass-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .appointment-status {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+  }
   .staff-actions {
     margin-top: 0.8rem;
+  }
+  .pass-actions {
+    margin-top: 0;
   }
   .staff-row time,
   .status-label {
@@ -575,6 +776,8 @@ button,
     grid-template-columns: 1fr;
   }
 }
+
+/* Wider staff dashboards use a two-column section layout. */
 @media (min-width: 900px) {
   .staff-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));

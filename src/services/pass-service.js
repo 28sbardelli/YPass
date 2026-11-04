@@ -173,12 +173,12 @@ export function createPassService({
         updated_at: now,
         ...(completed
           ? {
-            status: eventType === 'ended' ? 'cancelled' : 'completed',
-            ended_at: now,
-            ended_location_id: kiosk.location_id,
-            ended_kiosk_id: kiosk.id,
-            ended_teacher_id: kiosk.location_teacher_id || null,
-          }
+              status: eventType === 'ended' ? 'cancelled' : 'completed',
+              ended_at: now,
+              ended_location_id: kiosk.location_id,
+              ended_kiosk_id: kiosk.id,
+              ended_teacher_id: kiosk.location_teacher_id || null,
+            }
           : {}),
         ...(arrived ? { status: 'arrived', arrived_at: now } : {}),
         ...(leaving ? { status: 'returning' } : {}),
@@ -205,9 +205,12 @@ export function createPassService({
         pass: { ...currentPass, ...patch },
       };
     });
-    if (result.action === 'completed' && result.pass.journey_type === 'round_trip') {
+    if (
+      result.action === 'completed' &&
+      (result.pass.journey_type === 'round_trip' || result.kiosk.location_type === 'bathroom')
+    ) {
       onPassEnded({
-        teacherUserId: result.kiosk.location_teacher_id,
+        teacherUserId: result.pass.origin_teacher_id,
         passId: result.pass.id,
         originLocationId: result.pass.origin_location_id,
       });
@@ -342,7 +345,10 @@ export function createPassService({
         origin_kiosk_id: kiosk.id,
         destination_location_id: destination.id,
         destination_teacher_id: destination.teacher_user_id || null,
-        journey_type: destination.type === 'round_trip' ? 'round_trip' : 'one_way',
+        journey_type:
+          destination.type === 'round_trip' || destination.type === 'bathroom'
+            ? 'round_trip'
+            : 'one_way',
         status: autoApproved ? 'active' : 'pending_approval',
         appointment_id: appointment?.id || null,
         created_by: actorUserId || null,
@@ -433,13 +439,13 @@ export function createPassService({
       const patch =
         action === 'approve'
           ? {
-            status: 'active',
-            approved_by: userId,
-            approved_at: now,
-            departed_at: now,
-            timeout_at: new Date(now.getTime() + 30 * 60 * 1000),
-            updated_at: now,
-          }
+              status: 'active',
+              approved_by: userId,
+              approved_at: now,
+              departed_at: now,
+              timeout_at: new Date(now.getTime() + 30 * 60 * 1000),
+              updated_at: now,
+            }
           : { status: 'cancelled', ended_at: now, ended_teacher_id: userId, updated_at: now };
       await passesRepository.updatePass(passId, patch, trx);
       await passesRepository.addEvent(
@@ -476,20 +482,12 @@ export function createPassService({
   }) {
     const when = new Date(scheduledAt);
     if (Number.isNaN(when.getTime())) throw new ValidationError('Choose a valid appointment time');
+    if (when <= clock.now()) throw new ValidationError('Appointment time must be in the future');
     return db.transaction(async (trx) => {
       const student = await passesRepository.findStudentByNumber(studentNumber, trx);
       if (!student) throw new ValidationError('Student ID was not found');
       if (student.display_name.trim().toLowerCase() !== studentName.trim().toLowerCase())
         throw new ValidationError('Student name does not match that student ID');
-      if (when <= clock.now()) throw new ValidationError('Appointment time must be in the future');
-      const existingAppointment = await passesRepository.findAppointmentForStudentAtTime(
-        student.id,
-        when,
-        trx,
-      );
-      if (existingAppointment) {
-        throw new ConflictError('This student already has an appointment at that time');
-      }
       const { origin, destination } = await passesRepository.findLocationPair(
         originLocationId,
         destinationLocationId,
@@ -519,9 +517,8 @@ export function createPassService({
 
   async function managerDashboard(filters = {}) {
     const now = clock.now();
-    const [passRows, timedOutRows, appointmentRows, students, locations, kiosks, users] = await Promise.all([
+    const [passRows, appointmentRows, students, locations, kiosks, users] = await Promise.all([
       passesRepository.listManagerPasses({ ...filters, now }),
-      passesRepository.listManagerPasses({ status: 'timedout', now }),
       passesRepository.listManagerAppointments(filters),
       passesRepository.listManagerStudents(),
       passesRepository.listManagerLocations(),
@@ -540,20 +537,39 @@ export function createPassService({
       bathroom_name: bathroomsById.get(location.bathroom)?.name || null,
     }));
 
-    const passesWithTimeoutStatus = passRows.map((pass) => ({
-      ...pass,
-      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
-    }));
-    const timedOutPasses = timedOutRows.map((pass) => ({
-      ...pass,
-      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
-    }));
+    const passesWithTimeoutStatus = passRows.map((pass) => {
+      const timedOut = isTimedOut(pass, now);
+      return {
+        ...decorateActivePass(
+          {
+            ...pass,
+            status: timedOut ? 'timedout' : pass.status,
+          },
+          now,
+          timedOut ? pass.timeout_at : null,
+        ),
+        display_status: timedOut ? 'timedout' : pass.status,
+      };
+    });
+    const timedOutPasses = passRows
+      .filter((pass) => isTimedOut(pass, now))
+      .map((pass) => ({
+        ...decorateActivePass(
+          {
+            ...pass,
+            status: 'timedout',
+          },
+          now,
+          pass.timeout_at,
+        ),
+        display_status: 'timedout',
+      }));
     const kiosksWithStatus = kiosks.map((kiosk) => ({
       ...kiosk,
       display_status:
         kiosk.active &&
-          kiosk.last_seen_at &&
-          now.getTime() - new Date(kiosk.last_seen_at).getTime() < 60 * 1000
+        kiosk.last_seen_at &&
+        now.getTime() - new Date(kiosk.last_seen_at).getTime() < 60 * 1000
           ? 'online'
           : 'offline',
     }));
@@ -596,6 +612,14 @@ export function createPassService({
       display_name: studentName,
       status,
     });
+  }
+  async function deleteManagerStudent({ id, studentNumber}) {
+    const student = await passesRepository.findStudentById(id);
+    if (!student) throw new NotFoundError('Student not found');
+    const existing = await passesRepository.findStudentByNumber(studentNumber);
+    if (existing && existing.id !== id)
+      throw new ConflictError('A student with that ID already exists');
+    await passesRepository.deleteStudent(id);
   }
 
   async function createManagerLocation({
@@ -674,50 +698,6 @@ export function createPassService({
     });
   }
 
-  async function endExpiredPasses() {
-  return db.transaction(async (trx) => {
-    const allPasses = await passes.listPasses(trx);
-    const now = clock.now();
-    const expiredPasses = [];
-
-    for (const pass of allPasses) {
-      if (
-        ['active', 'arrived', 'returning'].includes(pass.status) &&
-        pass.timeout_at &&
-        new Date(pass.timeout_at) <= now
-      ) {
-        expiredPasses.push(pass);
-      }
-    }
-
-    for (const pass of expiredPasses) {
-      const patch = {
-        status: 'expired',
-        ended_at: now,
-        updated_at: now,
-      };
-
-      await passes.updatePass(pass.id, patch, trx);
-      await passes.addEvent(
-        {
-          id: randomUUID(),
-          pass_id: pass.id,
-          event_type: 'expired',
-          actor_user_id: null,
-          occurred_at: now,
-          metadata_json: JSON.stringify({ reason: 'timeout' }),
-        },
-        trx,
-      );
-    }
-
-    return {
-      expiredCount: expiredPasses.length,
-      passes: expiredPasses.map((pass) => ({ ...pass, status: 'expired', ended_at: now })),
-    };
-  });
-}
-
   const passesRepository = passes;
   return {
     kioskOptions,
@@ -734,11 +714,11 @@ export function createPassService({
     managerDashboard,
     createManagerStudent,
     updateManagerStudent,
+    deleteManagerStudent,
     createManagerLocation,
     updateManagerLocation,
     createManagerKiosk,
     updateManagerKiosk,
-    endExpiredPasses,
   };
 }
 
@@ -772,4 +752,3 @@ function transitionForScan(pass, kioskLocationId) {
   }
   return 'ended';
 }
-

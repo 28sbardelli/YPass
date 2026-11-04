@@ -1,17 +1,13 @@
 import { Router } from 'express';
 import { createWebController } from '#controllers/web-controller.js';
-import {
-  requireAuthentication,
-  requireKioskSession,
-  requireManager,
-  requireStaffRole,
-} from '#middleware/auth.js';
+import { requireAuthentication, requireKioskSession, requireManager } from '#middleware/auth.js';
 import { validate } from '#middleware/validate.js';
 import {
   createPassRequestSchema,
   kioskScanSchema,
   kioskSessionPassSchema,
   kioskSessionScanSchema,
+  kioskSettingsSchema,
 } from '#validators/pass.js';
 import {
   appointmentSchema,
@@ -25,7 +21,6 @@ import {
   managerLocationUpdateSchema,
   managerStudentCreateSchema,
   managerStudentUpdateSchema,
-  managerUserRoleSchema,
   passActionSchema,
 } from '#validators/staff.js';
 
@@ -34,21 +29,28 @@ export function createWebRouter(container) {
   const controller = createWebController(container);
   router.get('/', controller.home);
   router.get('/example', requireAuthentication(), controller.example);
-  router.get('/teacher', requireStaffRole('teacher'), controller.teacher);
+  router.get('/teacher', requireAuthentication(), controller.teacher);
   router.post(
     '/teacher/pass',
-    requireStaffRole('teacher'),
+    requireAuthentication(),
     validate(passActionSchema),
     controller.teacherAction,
   );
-  router.get('/teacher/appointment', requireStaffRole('teacher'), controller.appointment);
+  router.get('/teacher/appointment', requireAuthentication(), controller.appointment);
   router.post(
     '/teacher/appointment',
-    requireStaffRole('teacher'),
+    requireAuthentication(),
     validate(appointmentSchema),
     controller.createAppointment,
   );
   router.get('/kiosk', requireAuthentication(), controller.kiosk);
+  router.get('/kiosk/manager', requireKioskSession(container), controller.kioskManager);
+  router.post(
+    '/kiosk/manager',
+    requireKioskSession(container),
+    validate(kioskSettingsSchema),
+    controller.updateKioskManager,
+  );
   router.get('/kiosk/pass', requireKioskSession(container), controller.kioskPass);
   router.get('/kiosk/pass/status', requireKioskSession(container), controller.kioskPassStatus);
   router.post(
@@ -90,16 +92,16 @@ export function createWebRouter(container) {
     controller.createManagerStudent,
   );
   router.post(
+    '/manager/students/delete',
+    ...manager,
+    validate(managerStudentUpdateSchema),
+    controller.deleteManagerStudent,
+  )
+  router.post(
     '/manager/students/update',
     ...manager,
     validate(managerStudentUpdateSchema),
     controller.updateManagerStudent,
-  );
-  router.post(
-    '/manager/users/role',
-    ...manager,
-    validate(managerUserRoleSchema),
-    controller.updateManagerUserRole,
   );
   router.post(
     '/manager/locations/create',

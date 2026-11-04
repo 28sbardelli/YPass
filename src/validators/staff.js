@@ -40,11 +40,6 @@ export const managerStudentCreateSchema = z.object({
   _csrf: z.string().optional(),
 });
 export const managerStudentUpdateSchema = managerStudentCreateSchema.extend({ id: managerId });
-export const managerUserRoleSchema = z.object({
-  userId: managerId,
-  roleName: z.enum(['student', 'teacher', 'manager']),
-  _csrf: z.string().optional(),
-});
 
 export const managerLocationCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),

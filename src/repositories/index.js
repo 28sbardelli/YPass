@@ -118,12 +118,6 @@ export function createRbacRepository(db) {
         .onConflict(['user_id', 'role_id'])
         .ignore();
     },
-    async removeRoles(userId, roleNames, trx = knex) {
-      await trx('user_roles')
-        .where('user_roles.user_id', userId)
-        .whereIn('user_roles.role_id', trx('roles').select('id').whereIn('name', roleNames))
-        .delete();
-    },
     async listRolesForUser(userId, trx = knex) {
       return trx('roles')
         .join('user_roles', 'roles.id', 'user_roles.role_id')
@@ -200,8 +194,11 @@ export function createPassRepository(db) {
         .update({ used_at: now });
     },
     async nextKioskCode(trx = knex) {
-      const row = await trx('kiosks').max({ value: 'kiosk_code' }).first();
-      const current = Number(String(row?.value || '').match(/(\d+)$/)?.[1] || 0);
+      const rows = await trx('kiosks').select('kiosk_code');
+      const current = rows.reduce((highest, row) => {
+        const match = /^KIOSK-(\d+)$/i.exec(String(row.kiosk_code || ''));
+        return match ? Math.max(highest, Number(match[1])) : highest;
+      }, 0);
       return `KIOSK-${String(current + 1).padStart(3, '0')}`;
     },
     async listEnrollmentCodes(trx = knex) {
@@ -245,8 +242,10 @@ export function createPassRepository(db) {
     },
     async findCurrentPassForStudent(studentId, trx = knex) {
       return trx('passes')
+        .join('locations as origin', 'passes.origin_location_id', 'origin.id')
         .where({ student_id: studentId })
         .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning'])
+        .select('passes.*', 'origin.teacher_user_id as origin_teacher_id')
         .orderBy('requested_at', 'desc')
         .first();
     },
@@ -327,9 +326,6 @@ export function createPassRepository(db) {
     async updatePass(id, patch, trx = knex) {
       await trx('passes').where({ id }).update(patch);
     },
-    async listPasses(trx = knex){
-      return trx('passes').orderBy('requested_at')
-    },
     async addEvent(event, trx = knex) {
       await trx('pass_events').insert(event);
     },
@@ -380,9 +376,6 @@ export function createPassRepository(db) {
         destination: rows.find((row) => row.id === destinationId),
       };
     },
-    async findAppointmentForStudentAtTime(studentId, scheduledAt, trx = knex) {
-      return trx('appointments').where({ student_id: studentId, scheduled_at: scheduledAt }).first();
-    },
     async createAppointment(appointment, trx = knex) {
       await trx('appointments').insert(appointment);
       return appointment;
@@ -430,9 +423,7 @@ export function createPassRepository(db) {
         query.where('passes.status', filters.status);
       }
       if (filters.studentNumber) query.where('students.student_number', filters.studentNumber);
-      query.orderBy('passes.requested_at', 'desc');
-      if (filters.limit) query.limit(filters.limit);
-      return query;
+      return query.orderBy('passes.requested_at', 'desc');
     },
     async listManagerAppointments(filters = {}, trx = knex) {
       const query = trx('appointments')
@@ -464,6 +455,11 @@ export function createPassRepository(db) {
       await trx('students')
         .where({ id })
         .update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async deleteStudent(id, trx = knex) {
+      await trx('students')
+        .where({ id })
+        .delete();
     },
     async listManagerLocations(trx = knex) {
       return trx('locations')
@@ -523,16 +519,24 @@ export function createPassRepository(db) {
         .update({ ...patch, updated_at: trx.fn.now() });
     },
     async listManagerUsers(trx = knex) {
+      return trx('users')
+        .where({ status: 'active' })
+        .orderBy('display_name')
+        .select('id', 'display_name', 'primary_email');
+    },
+    async findManagerUserById(id, trx = knex) {
       const rows = await trx('users')
         .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
         .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-        .where({ status: 'active' })
-        .orderBy('display_name')
+        .where({ 'users.id': id, 'users.status': 'active' })
         .select('users.id', 'users.display_name', 'users.primary_email', 'roles.name as role');
-      return [...new Map(rows.map((row) => [row.id, { ...row, roles: [] }])).values()].map((user) => ({
-        ...user,
-        roles: rows.filter((row) => row.id === user.id && row.role).map((row) => row.role),
-      }));
+      if (!rows.length) return null;
+      return {
+        id: rows[0].id,
+        display_name: rows[0].display_name,
+        primary_email: rows[0].primary_email,
+        roles: rows.filter((row) => row.role).map((row) => row.role),
+      };
     },
   };
 }
