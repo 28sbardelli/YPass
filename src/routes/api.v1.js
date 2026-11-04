@@ -2,6 +2,7 @@ import { Router } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { createApiController } from '#controllers/api-controller.js';
+import { createSisController } from '#controllers/sis-controller.js';
 import { requireAuthentication, requireManager } from '#middleware/auth.js';
 import { sha256, safeEqual } from '#utils/crypto.js';
 import { AuthenticationError } from '#errors';
@@ -13,6 +14,7 @@ import {
   kioskSettingsSchema,
 } from '#validators/pass.js';
 import { managerEnrollmentCompleteSchema } from '#validators/staff.js';
+import { sisConnectionCreateSchema, sisConnectionIdSchema } from '#validators/sis.js';
 
 export function createApiV1Router(container) {
   if (!container.config.features.api) {
@@ -21,6 +23,7 @@ export function createApiV1Router(container) {
 
   const router = Router();
   const api = createApiController(container);
+  const sis = container.config.features.sis ? createSisController(container) : null;
   const requireKiosk = async (req, _res, next) => {
     try {
       const code = req.get('x-kiosk-code');
@@ -81,6 +84,47 @@ export function createApiV1Router(container) {
   router.post('/kiosks/heartbeat', requireKiosk, api.kioskHeartbeat);
   router.post('/kiosks/scan', requireKiosk, api.kioskScan);
   router.post('/kiosks/request-pass', requireKiosk, api.kioskRequestPass);
+
+  if (sis) {
+    const manager = [requireAuthentication(), requireManager(container.config.managers)];
+    router.get('/admin/sis/connections', ...manager, sis.listConnections);
+    router.post(
+      '/admin/sis/connections',
+      ...manager,
+      validate(sisConnectionCreateSchema),
+      sis.createConnection,
+    );
+    router.get(
+      '/admin/sis/connections/:connectionId',
+      ...manager,
+      validate(sisConnectionIdSchema, 'params'),
+      sis.getConnection,
+    );
+    router.post(
+      '/admin/sis/connections/:connectionId/test',
+      ...manager,
+      validate(sisConnectionIdSchema, 'params'),
+      sis.testConnection,
+    );
+    router.post(
+      '/admin/sis/connections/:connectionId/sync',
+      ...manager,
+      validate(sisConnectionIdSchema, 'params'),
+      sis.syncConnection,
+    );
+    router.get(
+      '/admin/sis/connections/:connectionId/sync-history',
+      ...manager,
+      validate(sisConnectionIdSchema, 'params'),
+      sis.syncHistory,
+    );
+    router.delete(
+      '/admin/sis/connections/:connectionId',
+      ...manager,
+      validate(sisConnectionIdSchema, 'params'),
+      sis.deleteConnection,
+    );
+  }
 
   if (container.config.features.formbarHttpExample && container.formbarHttpExample) {
     router.get('/examples/formbar', requireAuthentication(), api.exampleFormbarHttp);

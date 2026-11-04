@@ -35,6 +35,7 @@ export function createWebController(container) {
           title: 'Teacher panel',
           currentUser: req.currentUser,
           message: approved ? 'Pass approved.' : 'Pass cancelled.',
+          messageType: approved ? 'success' : 'error',
           ...dashboard,
         });
       } catch (error) {
@@ -400,12 +401,17 @@ export function createWebController(container) {
       try {
         const manager = await passService.managerDashboard(req.query);
         const enrollmentCodes = await kioskService.listEnrollmentCodes();
+        const sisConnections = container.config.features.sis
+          ? await container.sisRepository.listConnections()
+          : [];
         res.render('pages/manager', {
           title: 'Manager panel',
           currentUser: req.currentUser,
           ...manager,
           enrollmentCodes,
           enrollmentCode: req.query.enrollmentCode || null,
+          sisConnections,
+          sisEnabled: container.config.features.sis,
         });
       } catch (error) {
         next(error);

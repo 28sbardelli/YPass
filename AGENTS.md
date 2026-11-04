@@ -64,7 +64,7 @@ src/authorization/            RBAC and Formbar permission mapping
 src/middleware/               Sessions, CSRF, auth, validation, errors, readiness
 src/integrations/             Formbar, Entra, email, Redis clients
 src/realtime/                 This application's Socket.IO server
-src/jobs/                     Optional BullMQ/background job setup
+src/services/sis/             SIS provider contracts, adapters, normalization, and synchronization
 src/database/                 Knex setup, sql.js adapter, migrations, seeds
 src/validators/                Zod request/event schemas
 src/errors/                   Typed application errors and error mapping
@@ -102,6 +102,7 @@ kioskMachine/                 Separate kiosk UI, local proxy, and kiosk-client t
 | Change database connection/provider behavior | `src/database/`, `knexfile.js` | `scripts/db-*.js`, config tests, database integration tests |
 | Change realtime behavior | `src/realtime/index.js` | `src/bootstrap.js`, session/config dependencies, Formbar WS only if external |
 | Change email delivery | `src/integrations/email/` | Local auth service, feature flags, email views, tests |
+| Change SIS integration | `src/services/sis/`, `src/repositories/index.js` | `src/database/migrations/014_sis_integration.js`, `src/routes/api.v1.js`, provider unit tests, SIS integration/e2e tests, `wiki/system/sis-integration.md` |
 | Change Redis, rate limits, or distributed sessions | `src/integrations/redis.js`, `src/middleware/rate-limit.js`, `src/middleware/session.js` | `src/config/features.js`, deployment docs, ops tests |
 | Change request validation | `src/validators/` | Controller, route, error mapping, focused tests |
 | Change error responses | `src/errors/`, `src/middleware/error.js` | Controllers, HTML error views, API/e2e tests |
@@ -180,3 +181,5 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 - The kiosk UI may collect student details and destination selections, but it must display central responses and must not implement pass approval, completion, expiration, or state transitions.
 
 Focused hall-pass verification: `npx vitest run tests/unit/pass-staff.test.js tests/e2e/kiosk.test.js tests/e2e/kiosk-enrollment.test.js` and `npm --prefix kioskMachine test`.
+
+Focused SIS verification: `npx vitest run tests/unit/sis-normalizer.test.js tests/unit/sis-provider.test.js tests/unit/oneroster-provider.test.js tests/unit/sis-service.test.js tests/unit/sis-sync.test.js tests/integration/sis.test.js tests/e2e/sis.test.js`.

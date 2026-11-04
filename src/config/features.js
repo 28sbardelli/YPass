@@ -20,6 +20,7 @@
  * @property {boolean} api
  * @property {boolean} apiDocs
  * @property {boolean} backgroundJobs
+ * @property {boolean} sis
  * @property {boolean} loadTestFeatures
  * @property {'authorization_code'|'legacy_redirect'} formbarOauthMode
  * @property {'required'|'disabled'} localAuthEmailFlow

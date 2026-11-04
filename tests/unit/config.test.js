@@ -10,6 +10,8 @@ describe('parseConfig', () => {
     expect(config.features.localAuth).toBe(true);
     expect(config.database.provider).toBe('sqlite');
     expect(config.session.cookieName).toBe('fbapp.sid');
+    expect(config.features.sis).toBe(false);
+    expect(config.sis.timeoutMs).toBe(15_000);
   });
 
   it('fails when SESSION_SECRET is too short', () => {
