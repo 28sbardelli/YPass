@@ -59,7 +59,7 @@ describe('kiosk pass flow', () => {
     expect(scan.text).toContain('id="destinationSearch"');
     expect(scan.text).toContain('name="destinationLocationId"');
     expect(scan.text).toContain('data-destination-option');
-    expect(scan.text).toContain('data-destination-list hidden');
+    expect(scan.text).toContain('data-destination-list');
     expect(scan.text).not.toContain('>Confirm full name</label>');
     expect(scan.text).not.toContain('id="studentName"');
 

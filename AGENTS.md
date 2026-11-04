@@ -170,7 +170,8 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 - Teacher dashboards and pass actions are authorized by the assigned teacher of the pass's origin location; destination-location assignment does not grant pass access.
 - Pending pass requests notify the assigned origin teacher through the server-side Socket.IO room `teacher:<userId>` after the database transaction commits; the teacher page may subscribe only when Socket.IO is enabled.
 - `src/repositories/index.js` owns hall-pass, appointment, location, kiosk, event, and heartbeat queries. The partial unique index `passes_one_active_per_student` is the database concurrency guard.
-- Migrations `002_pass_system.js` through `006_returning_pass_state.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, and the returning-state concurrency guard.
+- Locations have a persisted `default_location` flag managed by the manager panel; kiosk options expose it so default destinations are immediately selectable while all active destinations remain searchable.
+- Migrations `002_pass_system.js` through `013_default_locations.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, the returning-state concurrency guard, and persisted default locations.
 - `src/database/seeds/002_pass_system.js` creates the standard and sample hall-pass locations with their demo kiosks; rerun `npm run db:seed` to apply seed additions safely.
 - `/api/v1/kiosks/enroll` accepts a short-lived manager-generated enrollment code and returns the kiosk code plus one secret. Enrollment codes expire after 10 minutes and can be used once.
 - `/api/v1/kiosks/options`, `/heartbeat`, `/scan`, and `/request-pass` are authenticated with `x-kiosk-code` and `x-kiosk-secret`. Only the hash is persisted centrally; the secret is returned once during enrollment.
