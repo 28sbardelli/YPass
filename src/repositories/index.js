@@ -422,6 +422,11 @@ export function createPassRepository(db) {
         .where({ id })
         .update({ ...patch, updated_at: trx.fn.now() });
     },
+    async deleteStudent(id, trx = knex) {
+      await trx('students')
+        .where({ id })
+        .delete();
+    },
     async listManagerLocations(trx = knex) {
       return trx('locations')
         .leftJoin('users', 'locations.teacher_user_id', 'users.id')

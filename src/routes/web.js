@@ -90,6 +90,12 @@ export function createWebRouter(container) {
     controller.createManagerStudent,
   );
   router.post(
+    '/manager/students/delete',
+    ...manager,
+    validate(managerStudentUpdateSchema),
+    controller.deleteManagerStudent,
+  )
+  router.post(
     '/manager/students/update',
     ...manager,
     validate(managerStudentUpdateSchema),

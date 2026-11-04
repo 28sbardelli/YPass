@@ -495,6 +495,14 @@ export function createPassService({
       status,
     });
   }
+  async function deleteManagerStudent({ id, studentNumber}) {
+    const student = await passesRepository.findStudentById(id);
+    if (!student) throw new NotFoundError('Student not found');
+    const existing = await passesRepository.findStudentByNumber(studentNumber);
+    if (existing && existing.id !== id)
+      throw new ConflictError('A student with that ID already exists');
+    await passesRepository.deleteStudent(id);
+  }
 
   async function createManagerLocation({
     name,
@@ -630,6 +638,7 @@ export function createPassService({
     managerDashboard,
     createManagerStudent,
     updateManagerStudent,
+    deleteManagerStudent,
     createManagerLocation,
     updateManagerLocation,
     createManagerKiosk,
