@@ -7,60 +7,89 @@
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
   <div class="staff-heading">
     <div>
-      <p class="kiosk-kicker">Staff workspace</p>
-      <h1>Lehrerseite</h1>
-      <p class="muted">Review passes that start at your assigned locations.</p>
+      <h4>
+        🗒 <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
+      </h4>
+      <div class="h-line"></div>
+      <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
+      <li class="teacher-data">
+        <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
+        <% if (locations.length) { %>
+            <% locations.forEach((location) => { %>
+                <p class="account-info-box">⌂ <%= location.name %></p>
+            <% }) %>
+        <% } %>
+        <form class="inline" method="post" action="/auth/logout">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+          <button type="submit">Sign out</button>
+        </form>
+      </li>
     </div>
-    <a class="button" href="/teacher/appointment">Create appointment</a>
+    <a class="button" href="/teacher/appointment">+ Create appointment</a>
   </div>
 
   <% if (message) { %>
     <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
   <% } %>
-  <section class="staff-section">
-    <h2>Your locations</h2>
-    <% if (!locations.length) { %>
-      <p class="muted">No active locations are assigned to your account.</p>
-    <% } else { %>
-      <ul>
-        <% locations.forEach((location) => { %>
-          <li><%= location.name %></li>
-        <% }) %>
-      </ul>
-    <% } %>
-  </section>
 
   <section class="staff-section">
-    <h2>Passes from your locations</h2>
+    <div class="header-cont">
+      <img src="/images/ticket.svg" width="20" height="20">
+      <h2>Passes</h2>
+    </div>
     <% if (!passes.length) { %>
       <p class="muted">No passes are currently starting at your locations.</p>
     <% } else { %>
-      <div class="staff-sort">
-        <label for="pass-sort">Sort passes</label>
-        <select id="pass-sort" data-sort-control="passes">
-          <option value="default">Order shown</option>
-          <option value="status">Status</option>
-          <option value="student">Student (A-Z)</option>
-          <option value="date-desc">Newest first</option>
-          <option value="date-asc">Oldest first</option>
-        </select>
+      <div class="staff-filter" role="group" aria-label="Filter passes by status">
+        <button class="filter-pending" type="button" data-filter-control="passes" data-filter-value="pending_approval" aria-pressed="false">Pending</button>
+        <button class="filter-active" type="button" data-filter-control="passes" data-filter-value="active" aria-pressed="false">Active</button>
+        <button class="filter-returning" type="button" data-filter-control="passes" data-filter-value="returning" aria-pressed="false">Returning</button>
+        <button class="filter-completed" type="button" data-filter-control="passes" data-filter-value="completed" aria-pressed="false">Completed</button>
+        <button class="filter-cancelled" type="button" data-filter-control="passes" data-filter-value="cancelled" aria-pressed="false">Cancelled</button>
+        <button class="filter-expired" type="button" data-filter-control="passes" data-filter-value="expired" aria-pressed="false">Expired</button>
+      </div>
+      <div class="staff-sort" role="group" aria-label="Sort passes">
+        <button type="button" data-sort-control="passes" data-sort-value="status" aria-pressed="true">Status</button>
+        <button type="button" data-sort-control="passes" data-sort-value="student" aria-pressed="false">Student</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-desc" aria-pressed="false">Newest</button>
+        <button type="button" data-sort-control="passes" data-sort-value="date-asc" aria-pressed="false">Oldest</button>
       </div>
       <div class="staff-list" data-sort-list="passes">
         <% passes.forEach((pass) => { %>
-          <article class="staff-row" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
-            <div>
-              <strong><%= pass.student_name %></strong>
-              <span class="muted">ID <%= pass.student_number %></span>
-              <p><%= pass.origin_name %> to <%= pass.destination_name %> · <%= pass.status %><% if (pass.active_live && pass.active_duration) { %> · <span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %> · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
-            </div>
-            <% if (!['completed', 'cancelled', 'expired'].includes(pass.status)) { %>
-              <div class="staff-actions">
-                <% if (pass.status === 'pending_approval') { %>
-                  <form method="post" action="/teacher/pass"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="passId" value="<%= pass.id %>"><input type="hidden" name="action" value="approve"><button type="submit">Approve</button></form>
-                <% } %>
-                <form method="post" action="/teacher/pass"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="passId" value="<%= pass.id %>"><input type="hidden" name="action" value="cancel"><button type="submit" class="danger-button">Cancel</button></form>
+          <article class="staff-row pass-row <%= pass.status %>" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
+            <div class="pass-identity">
+              <div class="passes-header-wrap">
+                <strong><%= pass.student_name %></strong>
               </div>
+              <p><% if (pass.active_live && pass.active_duration) { %><span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %><time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
+              <h4 class="small-muted">🇮🇩 <%= pass.student_number %></h4>
+            </div>
+            <div class="pass-details">
+              <div class="passes-footer-wrap">
+                <div>Destination</div>
+                <h4 class="small-muted">⌂ <%= pass.destination_name %></h4>
+              </div>
+            </div>
+            <div class="staff-actions pass-actions">
+            <% if (!['completed', 'cancelled', 'expired'].includes(pass.status)) { %>
+              
+                <% if (pass.status === 'pending_approval') { %>
+                  <form method="post" action="/teacher/pass">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="passId" value="<%= pass.id %>">
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit">✓ Approve</button>
+                  </form>
+                <% } %>
+                <form method="post" action="/teacher/pass"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="passId" value="<%= pass.id %>">
+                  <input type="hidden" name="action" value="cancel">
+                  <button type="submit" class="danger-button decline">
+                    <%= pass.status === "pending_approval" ? "✕" : "✕" %>
+                  </button>
+                </form>
             <% } %>
+            </div>
           </article>
         <% }) %>
       </div>
@@ -68,25 +97,35 @@
   </section>
 
   <section class="staff-section">
-    <h2>Your appointments</h2>
+    <div class="header-cont">
+      <img src="/images/timer.svg" width="20" height="20">
+      <h2>Appointments</h2>
+    </div>
     <% if (!appointments.length) { %>
       <p class="muted">No appointments.</p>
     <% } else { %>
-      <div class="staff-sort">
-        <label for="appointment-sort">Sort appointments</label>
-        <select id="appointment-sort" data-sort-control="appointments">
-          <option value="default">Order shown</option>
-          <option value="status">Status (A-Z)</option>
-          <option value="student">Student (A-Z)</option>
-          <option value="date-asc">Soonest first</option>
-          <option value="date-desc">Latest first</option>
-        </select>
+      <div class="staff-sort" role="group" aria-label="Sort appointments">
+        <button type="button" data-sort-control="appointments" data-sort-value="status" aria-pressed="true">Status</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="student" aria-pressed="false">Student</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest</button>
+        <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest</button>
       </div>
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
-          <article class="staff-row" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
-            <div><strong><%= appointment.student_name %></strong><span class="muted"> ID <%= appointment.student_number %></span><p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.scheduled_at_display %></p></div>
-            <span class="status-label"><%= appointment.status %></span>
+          <article class="staff-row pass-row appointment-row <%= appointment.status %>" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
+            <div class="pass-identity">
+              <div class="passes-header-wrap">
+                <strong><%= appointment.student_name %></strong>
+              </div>
+              <h4 class="small-muted">🇮🇩 <%= appointment.student_number %></h4>
+            </div>
+            <div class="pass-details">
+              <div class="passes-footer-wrap">
+                <div>Appointment</div>
+                <h4 class="small-muted">⌂ <%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
+              </div>
+            </div>
+            <span class="status-label appointment-status">⏱︎ <%= appointment.status %></span>
           </article>
         <% }) %>
       </div>
