@@ -30,7 +30,13 @@ export function createWebController(container) {
         const approved = req.body.action === 'approve';
         const action = approved ? passService.approvePass : passService.cancelPass;
         await action({ passId: req.body.passId, userId: req.currentUser.id });
-        res.redirect('/teacher');
+        const dashboard = await passService.teacherDashboard(req.currentUser.id);
+        res.render('pages/teacher', {
+          title: 'Teacher panel',
+          currentUser: req.currentUser,
+          message: approved ? 'Pass approved.' : 'Pass cancelled.',
+          ...dashboard,
+        });
       } catch (error) {
         next(error);
       }
@@ -359,11 +365,6 @@ export function createWebController(container) {
     },
     async updateManagerStudent(req, res, next) {
       return managerMutation(req, res, next, () => passService.updateManagerStudent(req.body));
-    },
-    async updateManagerUserRole(req, res, next) {
-      return managerMutation(req, res, next, () =>
-        userService.setStaffRole(req.body, { userId: req.currentUser.id, ...req }),
-      );
     },
     async createManagerLocation(req, res, next) {
       return managerMutation(req, res, next, () => passService.createManagerLocation(req.body));
