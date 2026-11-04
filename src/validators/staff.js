@@ -79,3 +79,9 @@ export const managerKioskCredentialRotationSchema = z.object({
   kioskId: managerId,
   _csrf: z.string().optional(),
 });
+
+export const managerUserRoleSchema = z.object({
+  userId: managerId,
+  roleName: z.enum(['student', 'teacher', 'manager']),
+  _csrf: z.string().optional(),
+});
