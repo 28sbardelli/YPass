@@ -20,10 +20,24 @@ export const kioskEnrollmentStatusSchema = z.object({
 export const kioskScanSchema = z.object({
   kioskCode,
   studentNumber,
+  appointmentAction: z.enum(['show', 'decline', 'complete']).optional(),
+  appointmentId: z.string().uuid().optional(),
   _csrf: z.string().optional(),
 });
 
-export const kioskSessionScanSchema = kioskScanSchema.omit({ kioskCode: true });
+export const kioskSessionScanSchema = kioskScanSchema
+  .omit({ kioskCode: true })
+  .extend({
+    managerAction: z.literal('save').optional(),
+    locationId: z.string().uuid().optional(),
+    teacherUserId: z.string().uuid().optional().or(z.literal('')),
+  });
+
+export const kioskSettingsSchema = z.object({
+  locationId: z.string().uuid(),
+  teacherUserId: z.string().uuid().optional().or(z.literal('')),
+  _csrf: z.string().optional(),
+});
 
 export const createPassRequestSchema = z.object({
   kioskCode,

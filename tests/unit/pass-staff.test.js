@@ -2,6 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../helpers/app.js';
 
+function extractCsrf(html) {
+  const match = html.match(/name="_csrf" value="([^"]+)"/);
+  return match ? match[1] : '';
+}
+
 describe('staff pass controls', () => {
   let ctx;
 

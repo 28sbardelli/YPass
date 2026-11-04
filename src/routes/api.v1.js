@@ -11,6 +11,7 @@ import {
   kioskEnrollmentSchema,
   kioskEnrollmentStartSchema,
   kioskEnrollmentStatusSchema,
+  kioskSettingsSchema,
 } from '#validators/pass.js';
 import { managerEnrollmentCompleteSchema } from '#validators/staff.js';
 import { sisConnectionCreateSchema, sisConnectionIdSchema } from '#validators/sis.js';
@@ -78,6 +79,8 @@ export function createApiV1Router(container) {
   );
   router.post('/kiosks/session', requireKiosk, api.kioskSession);
   router.get('/kiosks/options', requireKiosk, api.kioskOptions);
+  router.get('/kiosks/settings', requireKiosk, api.kioskSettings);
+  router.post('/kiosks/settings', requireKiosk, validate(kioskSettingsSchema), api.updateKioskSettings);
   router.post('/kiosks/heartbeat', requireKiosk, api.kioskHeartbeat);
   router.post('/kiosks/scan', requireKiosk, api.kioskScan);
   router.post('/kiosks/request-pass', requireKiosk, api.kioskRequestPass);

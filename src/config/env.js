@@ -38,6 +38,7 @@ const rawSchema = z.object({
   TRUST_PROXY: z.string().default('0'),
   WEB_CONCURRENCY: int(1),
   MANAGERS: z.string().optional().default(''),
+  KIOSK_MANAGER_CODE: z.string().min(1).default(''),
 
   LOCAL_AUTH_ENABLED: bool(true),
   FORMBAR_AUTH_ENABLED: bool(true),
@@ -313,6 +314,7 @@ export function parseConfig(source) {
       allowProduction: raw.LOADTEST_ALLOW_PRODUCTION,
     },
     managers: parseList(raw.MANAGERS).map((email) => email.toLowerCase()),
+    kioskManagerCode: raw.KIOSK_MANAGER_CODE,
   };
 
   const dependencyErrors = validateFeatureDependencies(config);

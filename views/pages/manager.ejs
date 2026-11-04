@@ -57,6 +57,7 @@
     <div class="staff-list"><% students.forEach((student) => { %><form method="post" action="/manager/students/update" class="staff-row manager-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="id" value="<%= student.id %>">
       <label>ID<input name="studentNumber" value="<%= student.student_number %>" required maxlength="64"></label><label>Name<input name="studentName" value="<%= student.display_name %>" required maxlength="120"></label><label>Status<select name="status"><option value="active" <%= student.status === 'active' ? 'selected' : '' %>>Active</option><option value="inactive" <%= student.status === 'inactive' ? 'selected' : '' %>>Inactive</option></select></label><button type="submit">Save</button>
+      <button type="submit" formaction="/manager/students/delete" formmethod="POST"> Remove Student </button>
     </form><% }) %></div>
   </details>
 
