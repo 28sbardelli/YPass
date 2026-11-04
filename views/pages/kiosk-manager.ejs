@@ -1,0 +1,38 @@
+<section class="kiosk-page">
+  <div class="kiosk-heading">
+    <div>
+      <p class="kiosk-kicker">Kiosk administration</p>
+      <h1><%= kiosk.name %></h1>
+      <p class="kiosk-subtitle">Change this kiosk's location and assigned teacher.</p>
+    </div>
+    <a class="secondary-button" href="/kiosk/pass">Lock manager</a>
+  </div>
+
+  <% if (message) { %><div class="kiosk-message kiosk-message-success" role="status"><%= message %></div><% } %>
+
+  <section class="kiosk-panel">
+    <form method="post" action="/kiosk/scan" class="kiosk-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="managerAction" value="save">
+      <input type="hidden" name="studentNumber" value="manager-settings">
+      <label for="locationSearch">Location</label>
+      <input id="locationSearch" type="search" placeholder="Search locations" autocomplete="off" data-manager-search="location">
+      <select id="locationId" name="locationId" required>
+        <% locations.forEach((location) => { %>
+          <option value="<%= location.id %>" <%= location.id === kiosk.locationId ? 'selected' : '' %>><%= location.name %></option>
+        <% }) %>
+      </select>
+
+      <label for="teacherSearch">Teacher</label>
+      <input id="teacherSearch" type="search" placeholder="Search teachers" autocomplete="off" data-manager-search="teacher">
+      <select id="teacherUserId" name="teacherUserId">
+        <option value="">Unassigned</option>
+        <% teachers.forEach((teacher) => { %>
+          <option value="<%= teacher.id %>" <%= teacher.id === kiosk.teacherUserId ? 'selected' : '' %>><%= teacher.name %><%= teacher.email ? ` (${teacher.email})` : '' %></option>
+        <% }) %>
+      </select>
+
+      <button type="submit" class="primary-button">Save settings</button>
+    </form>
+  </section>
+</section>

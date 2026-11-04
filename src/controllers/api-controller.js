@@ -109,6 +109,25 @@ export function createApiController(container) {
         next(error);
       }
     },
+    async kioskSettings(req, res, next) {
+      try {
+        res.json({ data: await kioskService.settings(req.kiosk.id) });
+      } catch (error) {
+        next(error);
+      }
+    },
+    async updateKioskSettings(req, res, next) {
+      try {
+        const result = await kioskService.updateSettings({
+          kioskId: req.kiosk.id,
+          ...req.body,
+          reqLike: req,
+        });
+        res.json({ data: result });
+      } catch (error) {
+        next(error);
+      }
+    },
     async kioskScan(req, res, next) {
       try {
         const result = await passService.scanStudent({

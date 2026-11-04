@@ -67,6 +67,7 @@
                 <option value="inactive" <%= student.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
               </select>
             </label>
+            <button type="submit" formaction="/manager/students/delete" formmethod="POST"> Remove Student </button>
             <button type="submit">Save</button>
           </form>
         <% }) %>
