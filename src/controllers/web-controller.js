@@ -35,6 +35,7 @@ export function createWebController(container) {
           title: 'Teacher panel',
           currentUser: req.currentUser,
           message: approved ? 'Pass approved.' : 'Pass cancelled.',
+          messageType: approved ? 'success' : 'error',
           ...dashboard,
         });
       } catch (error) {

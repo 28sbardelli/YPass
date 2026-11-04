@@ -172,6 +172,16 @@ button:not(.danger-button):hover, .button:hover {
 .flash-error {
   color: var(--danger);
 }
+.teacher-action-message.flash-success,
+.teacher-action-message.flash-error {
+  color: #fff;
+}
+.teacher-action-message.flash-success {
+  background: var(--accent);
+}
+.teacher-action-message.flash-error {
+  background: var(--danger);
+}
 .inline {
   display: inline;
 }
@@ -405,9 +415,19 @@ button:not(.danger-button):hover, .button:hover {
   inset-block-start: 1rem;
   inset-inline-end: 1rem;
   z-index: 10;
-  margin: 0;
-}
-.teacher-data {
+  opacity: 0;
+  transform: translateX(1.5rem);
+  transition:
+    opacity 300ms ease-out,
+    transform 300ms ease-out;
+  animation: teacher-message-slide-in 300ms ease-out both;
+.teacher-action-message.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+  animation: teacher-message-slide-out 300ms ease-in both;
+.teacher-action-message.is-dismissing {
+  opacity: 0;
+  transform: translateX(1.5rem);
   display: flex;
   flex-flow: row wrap;
   align-items: center;

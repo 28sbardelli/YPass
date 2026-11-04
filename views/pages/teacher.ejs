@@ -5,6 +5,7 @@
   <% } %>
   <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/teacher-action-message.js?v=3" defer></script>
   <div class="staff-heading">
     <div>
       <h4>
@@ -29,7 +30,7 @@
   </div>
 
   <% if (message) { %>
-    <p class="flash flash-success teacher-action-message" role="status" aria-live="polite"><%= message %></p>
+    <p class="flash flash-<%= messageType %> teacher-action-message" role="status" aria-live="polite"><%= message %></p>
   <% } %>
 
   <section class="staff-section">
