@@ -1,7 +1,6 @@
-const KIOSK_MANAGER_BARCODE = 'THETIAI4491';
-
 export function createWebController(container) {
   const { passService, kioskService, userService } = container;
+  const kioskManagerCode = container.config.kioskManagerCode;
 
   return {
     home(req, res) {
@@ -219,7 +218,10 @@ export function createWebController(container) {
         }
         return;
       }
-      if (String(req.body.studentNumber || '').trim().toUpperCase() === KIOSK_MANAGER_BARCODE) {
+      if (
+        kioskManagerCode &&
+        String(req.body.studentNumber || '').trim().toUpperCase() === kioskManagerCode.toUpperCase()
+      ) {
         const settings = await kioskService.settings(req.kiosk.id);
         res.render('pages/kiosk-manager', {
           title: 'Kiosk manager',
