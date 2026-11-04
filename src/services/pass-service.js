@@ -2,6 +2,65 @@ import { randomUUID } from 'node:crypto';
 import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from '#errors';
 import { sha256 } from '#utils/crypto.js';
 
+function formatActiveDuration(pass, now, endedAt = null) {
+  if (endedAt || !['active', 'arrived', 'returning'].includes(pass.status)) return null;
+  const activeSince = pass.departed_at || pass.approved_at;
+  const startedAt = new Date(activeSince);
+  if (!activeSince || Number.isNaN(startedAt.getTime())) return null;
+
+  const end = endedAt ? new Date(endedAt) : now;
+  if (Number.isNaN(end.getTime())) return null;
+  const totalSeconds = Math.max(0, Math.floor((end.getTime() - startedAt.getTime()) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const label = endedAt ? 'Was active for' : 'Active for';
+  return `${label} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatFinishedAt(timestamp) {
+  if (!timestamp) return null;
+  const finishedAt = new Date(timestamp);
+  if (Number.isNaN(finishedAt.getTime())) return null;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(finishedAt);
+}
+
+function formatAppointmentAt(timestamp) {
+  const scheduledAt = new Date(timestamp);
+  if (Number.isNaN(scheduledAt.getTime())) return timestamp;
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(scheduledAt);
+}
+
+function decorateActivePass(pass, now, forcedEndedAt = null) {
+  const activeSince = pass.departed_at || pass.approved_at;
+  const recordedEndedAt = forcedEndedAt || pass.ended_at || null;
+  const timeoutAt = pass.timeout_at ? new Date(pass.timeout_at) : null;
+  const recordedEnd = recordedEndedAt ? new Date(recordedEndedAt) : null;
+  const endedAt =
+    timeoutAt && recordedEnd && timeoutAt < recordedEnd ? pass.timeout_at : recordedEndedAt;
+  const activeLive = !endedAt && ['active', 'arrived', 'returning'].includes(pass.status);
+  const activeDuration = activeLive ? formatActiveDuration(pass, now) : null;
+  return {
+    ...pass,
+    active_duration: activeDuration,
+    active_duration_label: 'Active for',
+    active_live: activeLive,
+    active_since: activeSince ? new Date(activeSince).toISOString() : null,
+    finished_at: activeSince && endedAt ? new Date(endedAt).toISOString() : null,
+    finished_at_display: activeSince && endedAt ? formatFinishedAt(endedAt) : null,
+  };
+}
+
 export function createPassService({
   db,
   passes,
@@ -125,9 +184,12 @@ export function createPassService({
         pass: { ...currentPass, ...patch },
       };
     });
-    if (result.action === 'completed' && result.pass.journey_type === 'round_trip') {
+    if (
+      result.action === 'completed' &&
+      (result.pass.journey_type === 'round_trip' || result.kiosk.location_type === 'bathroom')
+    ) {
       onPassEnded({
-        teacherUserId: result.kiosk.location_teacher_id,
+        teacherUserId: result.pass.origin_teacher_id,
         passId: result.pass.id,
         originLocationId: result.pass.origin_location_id,
       });
@@ -175,7 +237,10 @@ export function createPassService({
         origin_kiosk_id: kiosk.id,
         destination_location_id: destination.id,
         destination_teacher_id: destination.teacher_user_id || null,
-        journey_type: destination.type === 'round_trip' ? 'round_trip' : 'one_way',
+        journey_type:
+          destination.type === 'round_trip' || destination.type === 'bathroom'
+            ? 'round_trip'
+            : 'one_way',
         status: autoApproved ? 'active' : 'pending_approval',
         appointment_id: appointment?.id || null,
         created_by: actorUserId || null,
@@ -228,12 +293,20 @@ export function createPassService({
   }
 
   async function teacherDashboard(userId) {
+    const now = clock.now();
     const [locations, passes, appointments] = await Promise.all([
       passesRepository.listTeacherLocations(userId),
       passesRepository.listTeacherPasses(userId),
       passesRepository.listAppointmentsForTeacher(userId),
     ]);
-    return { locations, passes, appointments };
+    return {
+      locations,
+      passes: passes.map((pass) => decorateActivePass(pass, now)),
+      appointments: appointments.map((appointment) => ({
+        ...appointment,
+        scheduled_at_display: formatAppointmentAt(appointment.scheduled_at),
+      })),
+    };
   }
 
   async function approvePass({ passId, userId }) {
@@ -344,7 +417,23 @@ export function createPassService({
       passesRepository.listManagerKiosks(),
       passesRepository.listManagerUsers(),
     ]);
+
+    const bathrooms = locations.filter(
+    (location) => location.type === 'bathroom'
+    );
+    const bathroomsById = new Map(
+    bathrooms.map((bathroom) => [bathroom.id, bathroom])
+    );
+    const locationsWithBathrooms = locations.map((location) => ({
+      ...location,
+      bathroom_name: bathroomsById.get(location.bathroom)?.name || null,
+    }));
+
     const passesWithTimeoutStatus = passRows.map((pass) => ({
+      ...pass,
+      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
+    }));
+    const timedOutPasses = timedOutRows.map((pass) => ({
       ...pass,
       display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
     }));
@@ -359,10 +448,16 @@ export function createPassService({
     }));
     return {
       passes: passesWithTimeoutStatus,
-      appointments: appointmentRows,
+      recentTimedOutPasses: timedOutPasses.slice(0, 5),
+      timedOutPasses,
+      appointments: appointmentRows.map((appointment) => ({
+        ...appointment,
+        scheduled_at_display: formatAppointmentAt(appointment.scheduled_at),
+      })),
       filters,
       students,
-      locations,
+      locations: locationsWithBathrooms,
+      bathrooms,
       kiosks: kiosksWithStatus,
       users,
     };
@@ -392,19 +487,36 @@ export function createPassService({
     });
   }
 
-  async function createManagerLocation({ name, type, teacherUserId, active }) {
+  async function createManagerLocation({
+    name,
+    type,
+    bathroom,
+    teacherUserId,
+    defaultLocation,
+    active,
+  }) {
     if (await passesRepository.findLocationByName(name))
       throw new ConflictError('A location with that name already exists');
     return passesRepository.createLocation({
       id: randomUUID(),
       name,
       type,
+      bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
+      default_location: defaultLocation,
       active,
     });
   }
 
-  async function updateManagerLocation({ id, name, type, teacherUserId, active }) {
+  async function updateManagerLocation({
+    id,
+    name,
+    type,
+    bathroom,
+    teacherUserId,
+    defaultLocation,
+    active,
+  }) {
     if (!(await passesRepository.findLocationById(id)))
       throw new NotFoundError('Location not found');
     const existing = await passesRepository.findLocationByName(name);
@@ -413,7 +525,9 @@ export function createPassService({
     await passesRepository.updateLocation(id, {
       name,
       type,
+      bathroom: bathroom || null,
       teacher_user_id: teacherUserId || null,
+      default_location: defaultLocation,
       active,
     });
   }

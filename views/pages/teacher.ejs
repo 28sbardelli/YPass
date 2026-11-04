@@ -3,7 +3,8 @@
     <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
     <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
   <% } %>
-  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=7" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
   <div class="staff-heading">
     <div>
       <h4>
@@ -60,6 +61,7 @@
               <div class="passes-header-wrap">
                 <strong><%= pass.student_name %></strong>
               </div>
+              <p><% if (pass.active_live && pass.active_duration) { %> · <span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %> · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
               <h4 class="small-muted">🇮🇩 <%= pass.student_number %></h4>
             </div>
             <div class="pass-details">

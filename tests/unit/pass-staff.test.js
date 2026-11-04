@@ -53,6 +53,31 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
+  it('repairs a legacy locations table missing bathroom/default_location columns', async () => {
+    const { buildKnexConfig, createSqlJsKnex } = await import('../../src/database/knex-config.js');
+    const legacyDbPath = `${process.cwd()}/data/test-legacy-location-schema.sqlite`;
+    const config = buildKnexConfig({ database: { provider: 'sqlite', url: legacyDbPath } }, process.env);
+    const knex = await createSqlJsKnex(config);
+    try {
+      await knex.schema.createTable('locations', (table) => {
+        table.uuid('id').primary();
+        table.string('name').notNullable();
+        table.string('type').notNullable();
+        table.uuid('teacher_user_id').nullable();
+        table.boolean('active').notNullable().defaultTo(true);
+      });
+
+      const { up } = await import('../../src/database/migrations/014_fix_missing_location_columns.js');
+      await up(knex);
+
+      await expect(knex.schema.hasColumn('locations', 'bathroom')).resolves.toBe(true);
+      await expect(knex.schema.hasColumn('locations', 'default_location')).resolves.toBe(true);
+    } finally {
+      await knex.destroy();
+      await import('node:fs/promises').then(({ rm }) => rm(legacyDbPath, { force: true }));
+    }
+  });
+
   it('offers active locations without requiring a destination kiosk', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
@@ -68,6 +93,51 @@ describe('staff pass controls', () => {
     const options = await ctx.container.passService.kioskOptions('main-office');
 
     expect(options.destinations.map(({ id }) => id)).toContain(location.id);
+  });
+
+  it('marks manager-selected default locations in kiosk options', async () => {
+    ctx = await createTestApp();
+    const bathroom = await ctx.container.passService.createManagerLocation({
+      name: 'North Hall Bathroom',
+      type: 'bathroom',
+      teacherUserId: '',
+      defaultLocation: false,
+      active: true,
+    });
+    await ctx.container.db.knex('locations').where({ name: 'Main Office' }).update({
+      bathroom: bathroom.id,
+    });
+    const location = await ctx.container.passService.createManagerLocation({
+      name: 'Quick Destination',
+      type: 'one_way',
+      bathroom: bathroom.id,
+      teacherUserId: '',
+      active: true,
+      defaultLocation: true,
+    });
+
+    const options = await ctx.container.passService.kioskOptions('main-office');
+    expect(options.destinations.find(({ id }) => id === location.id)).toMatchObject({
+      default_location: 1,
+      bathroom_name: 'North Hall Bathroom',
+    });
+    expect(options.destinations[0]).toMatchObject({
+      id: bathroom.id,
+      name: 'North Hall Bathroom',
+      assigned_bathroom: 1,
+    });
+
+    await ctx.container.passService.updateManagerLocation({
+      id: location.id,
+      name: location.name,
+      type: location.type,
+      teacherUserId: '',
+      active: true,
+      defaultLocation: false,
+    });
+    await expect(ctx.container.db.knex('locations').where({ id: location.id }).first()).resolves.toMatchObject({
+      default_location: 0,
+    });
   });
 
   it('notifies the origin teacher when a round-trip pass ends', async () => {
@@ -136,6 +206,66 @@ describe('staff pass controls', () => {
     await expect(ctx.container.passService.teacherDashboard(mainOffice.teacher_user_id)).resolves.toMatchObject({
       passes: [expect.objectContaining({ id: requested.pass.id, status: 'completed' })],
     });
+    expect(events).toContainEqual({
+      room: `teacher:${mainOffice.teacher_user_id}`,
+      event: 'teacher-pass-ended',
+      payload: { passId: requested.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
+  it('notifies the origin teacher when a bathroom pass ends', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const mainOffice = await knex('locations').where({ name: 'Main Office' }).first();
+    const teacherId = randomUUID();
+    await knex('users').insert({
+      id: teacherId,
+      display_name: 'Origin Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    await knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    mainOffice.teacher_user_id = teacherId;
+    const bathroom = await knex('locations').where({ type: 'bathroom' }).first();
+    const bathroomKiosk = await knex('kiosks').where({ location_id: bathroom.id }).first();
+    const student = await knex('students').where({ student_number: '111111' }).first();
+    const events = [];
+    ctx.container.setRealtime({
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    });
+
+    const requested = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      destinationLocationId: bathroom.id,
+    });
+    await ctx.container.passService.approvePass({
+      passId: requested.pass.id,
+      userId: mainOffice.teacher_user_id,
+    });
+    const arrived = await ctx.container.passService.scanStudent({
+      kioskCode: bathroomKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+    const leaving = await ctx.container.passService.scanStudent({
+      kioskCode: bathroomKiosk.kiosk_code,
+      studentNumber: student.student_number,
+    });
+    const ended = await ctx.container.passService.scanStudent({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+    });
+
+    expect(arrived.action).toBe('arrival');
+    expect(leaving.action).toBe('scan_out');
+    expect(ended.action).toBe('completed');
     expect(events).toContainEqual({
       room: `teacher:${mainOffice.teacher_user_id}`,
       event: 'teacher-pass-ended',
@@ -214,6 +344,19 @@ describe('staff pass controls', () => {
     });
     expect(approved.status).toBe('active');
     expect(approved.timeout_at).toBeTruthy();
+    await ctx.container.db.knex('students').insert({
+      id: randomUUID(),
+      student_number: '300001',
+      display_name: 'Never Active Student',
+      status: 'active',
+    });
+    const neverActive = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: '300001',
+      studentName: 'Never Active Student',
+      destinationLocationId: counseling.id,
+    });
+    await ctx.container.passService.cancelPass({ passId: neverActive.pass.id, userId: teacherId });
     const retriedApproval = await ctx.container.passService.approvePass({
       passId: requested.pass.id,
       userId: teacherId,
@@ -253,6 +396,9 @@ describe('staff pass controls', () => {
     });
 
     const dashboard = await ctx.container.passService.teacherDashboard(teacherId);
+    const cancelledBeforeApproval = dashboard.passes.find(({ id }) => id === neverActive.pass.id);
+    expect(cancelledBeforeApproval.active_duration).toBeNull();
+    expect(cancelledBeforeApproval.finished_at).toBeNull();
     expect(dashboard.locations.map(({ id }) => id)).toContain(mainOffice.id);
     expect(dashboard.locations.map(({ id }) => id)).not.toContain(counseling.id);
     expect(dashboard.passes.map(({ id }) => id)).toContain(requested.pass.id);
@@ -267,6 +413,12 @@ describe('staff pass controls', () => {
     const manager = await ctx.container.passService.managerDashboard({ status: 'active' });
     expect(manager.passes).toHaveLength(1);
     expect(manager.passes[0].id).toBe(requested.pass.id);
+    expect(manager.passes[0].active_duration).toMatch(/Active for /);
+
+    const teacherDashboard = await ctx.container.passService.teacherDashboard(teacherId);
+    expect(teacherDashboard.passes.find(({ id }) => id === requested.pass.id).active_duration).toMatch(
+      /Active for /,
+    );
 
     await ctx.container.db
       .knex('passes')
@@ -276,6 +428,13 @@ describe('staff pass controls', () => {
     expect(timedOut.passes).toHaveLength(1);
     expect(timedOut.passes[0].id).toBe(requested.pass.id);
     expect(timedOut.passes[0].display_status).toBe('timedout');
+    expect(timedOut.passes[0].active_duration).toBeNull();
+    expect(timedOut.passes[0].finished_at).toBe(new Date(timedOut.passes[0].timeout_at).toISOString());
+    expect(timedOut.recentTimedOutPasses).toHaveLength(1);
+    expect(timedOut.recentTimedOutPasses[0].id).toBe(requested.pass.id);
+    expect(timedOut.recentTimedOutPasses[0].display_status).toBe('timedout');
+    expect(timedOut.timedOutPasses).toHaveLength(1);
+    expect(timedOut.timedOutPasses[0].id).toBe(requested.pass.id);
   });
 
   it('lets managers create and update students, locations, and kiosks', async () => {
@@ -307,11 +466,20 @@ describe('staff pass controls', () => {
       status: 'inactive',
     });
 
+    const bathroom = await ctx.container.passService.createManagerLocation({
+      name: 'Bathroom',
+      type: 'bathroom',
+      active: true,
+      defaultLocation: false,
+    });
+
     const location = await ctx.container.passService.createManagerLocation({
       name: 'New Location',
       type: 'one_way',
+      bathroom: bathroom.id,
       teacherUserId: teacherId,
       active: true,
+      defaultLocation: true,
     });
     const kiosk = await ctx.container.passService.createManagerKiosk({
       name: 'New Kiosk',
@@ -323,8 +491,10 @@ describe('staff pass controls', () => {
       id: location.id,
       name: 'Updated Location',
       type: 'round_trip',
+      bathroom: bathroom.id,
       teacherUserId: '',
       active: false,
+      defaultLocation: false,
     });
     await ctx.container.passService.updateManagerKiosk({
       id: kiosk.id,
@@ -344,7 +514,9 @@ describe('staff pass controls', () => {
       ctx.container.db.knex('locations').where({ id: location.id }).first(),
     ).resolves.toMatchObject({
       name: 'Updated Location',
+      bathroom: bathroom.id,
       active: 0,
+      default_location: 0,
     });
     await expect(
       ctx.container.db.knex('kiosks').where({ id: kiosk.id }).first(),
