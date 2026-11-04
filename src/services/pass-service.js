@@ -429,14 +429,33 @@ export function createPassService({
       bathroom_name: bathroomsById.get(location.bathroom)?.name || null,
     }));
 
-    const passesWithTimeoutStatus = passRows.map((pass) => ({
-      ...pass,
-      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
-    }));
-    const timedOutPasses = timedOutRows.map((pass) => ({
-      ...pass,
-      display_status: isTimedOut(pass, now) ? 'timedout' : pass.status,
-    }));
+    const passesWithTimeoutStatus = passRows.map((pass) => {
+      const timedOut = isTimedOut(pass, now);
+      return {
+        ...decorateActivePass(
+          {
+            ...pass,
+            status: timedOut ? 'timedout' : pass.status,
+          },
+          now,
+          timedOut ? pass.timeout_at : null,
+        ),
+        display_status: timedOut ? 'timedout' : pass.status,
+      };
+    });
+    const timedOutPasses = passRows
+      .filter((pass) => isTimedOut(pass, now))
+      .map((pass) => ({
+        ...decorateActivePass(
+          {
+            ...pass,
+            status: 'timedout',
+          },
+          now,
+          pass.timeout_at,
+        ),
+        display_status: 'timedout',
+      }));
     const kiosksWithStatus = kiosks.map((kiosk) => ({
       ...kiosk,
       display_status:
