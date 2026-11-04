@@ -1,21 +1,12 @@
 <header class="site-header">
   <a class="brand" href="/"><%= typeof appName !== 'undefined' ? appName : 'App' %></a>
   <nav>
-    <a href="/">Home</a>
+    <a class="header-link to-be-removed" href="/">Home</a>
     <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-      <a href="/example">Example</a>
-      <a href="/account">Account</a>
-      <% if (currentUser.roles?.includes('admin') || currentUser.roles?.includes('manager')) { %>
-        <a href="/manager">Manager</a>
-      <% } %>
-      <% if (currentUser.roles?.includes('admin') || currentUser.roles?.includes('teacher') || currentUser.roles?.includes('manager')) { %>
-        <a href="/teacher">Teacher</a>
-      <% } %>
-      
-      <form class="inline" method="post" action="/auth/logout">
-        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
-        <button type="submit">Sign out</button>
-      </form>
+      <a class="header-link to-be-removed" href="/example">Example</a>
+      <a class="header-link" href="/manager">Manager</a>
+      <a class="header-link" href="/teacher">Teacher</a>
+      <a class="header-link to-be-removed" href="/account"><%= currentUser.display_name %></a>
     <% } else { %>
       <a href="/auth/login">Sign in</a>
     <% } %>

@@ -64,7 +64,6 @@ export async function createContainer({ config, logger }) {
     rbac,
     tokens,
     audit: auditRepo,
-    managerEmails: config.managers,
   });
 
   const localAuth = config.features.localAuth

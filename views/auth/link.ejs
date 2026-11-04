@@ -1,36 +1,47 @@
-<h1>Account</h1>
-<p>Signed in as <%= currentUser.display_name %> (<%= currentUser.primary_email || 'no email' %>)</p>
+<div class="account-content">
+  <h4>
+    <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
+  </h4>
+  <h1><%= currentUser.display_name %></h1>
+  <li>
+    <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
+    <form class="inline" method="post" action="/auth/logout">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+      <button type="submit">Sign out</button>
+    </form>
+  </li>
 
-<h2>Sign-in methods</h2>
-<ul>
-  <% identities.forEach((identity) => { %>
-    <li>
-      <%= identity.provider %> · <%= identity.subject %>
-      <form class="inline" method="post" action="/account/unlink">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="identityId" value="<%= identity.id %>" />
-        <% if (features.localAuth) { %>
-          <input name="currentPassword" type="password" placeholder="Current password to confirm" />
-        <% } %>
-        <button type="submit">Unlink</button>
-      </form>
-    </li>
-  <% }) %>
-</ul>
+  <h2>Sign-in methods</h2>
+  <ul>
+    <% identities.forEach((identity) => { %>
+      <li>
+        <div class="account-info-box"><strong><%= identity.provider %></strong> · <%= identity.subject %></div>
+        <form class="inline" method="post" action="/account/unlink">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="identityId" value="<%= identity.id %>" />
+          <% if (features.localAuth) { %>
+            <input name="currentPassword" type="password" placeholder="Current password to confirm" />
+          <% } %>
+          <button type="submit">Unlink</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
+  <br>
+  <% if (features.formbarAuth) { %>
+    <p><a class="link-account-btn" href="/auth/formbar?link=1">🔗 Link Formbar</a></p>
+  <% } %>
+  <% if (features.entraAuth) { %>
+    <p><a class="link-account-btn" href="/auth/entra?link=1"><img src="/images/microsoft-transparent.png" width="12" height="12"> Link Microsoft</a></p>
+  <% } %>
 
-<% if (features.formbarAuth) { %>
-  <p><a href="/auth/formbar?link=1">Link Formbar</a></p>
-<% } %>
-<% if (features.entraAuth) { %>
-  <p><a href="/auth/entra?link=1">Link Microsoft</a></p>
-<% } %>
-
-<% if (features.localAuth) { %>
-  <h2>Change password</h2>
-  <form method="post" action="/account/password">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label>Current password <input name="currentPassword" type="password" required /></label>
-    <label>New password <input name="newPassword" type="password" required minlength="12" /></label>
-    <button type="submit">Update password</button>
-  </form>
-<% } %>
+  <% if (features.localAuth) { %>
+    <h2>Change password</h2>
+    <form method="post" action="/account/password">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Current password <input name="currentPassword" type="password" required /></label>
+      <label>New password <input name="newPassword" type="password" required minlength="12" /></label>
+      <button type="submit">Update password</button>
+    </form>
+  <% } %>
+</div>
