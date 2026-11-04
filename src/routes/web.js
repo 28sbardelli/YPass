@@ -1,11 +1,6 @@
 import { Router } from 'express';
 import { createWebController } from '#controllers/web-controller.js';
-import {
-  requireAuthentication,
-  requireKioskSession,
-  requireManager,
-  requireStaffRole,
-} from '#middleware/auth.js';
+import { requireAuthentication, requireKioskSession, requireManager } from '#middleware/auth.js';
 import { validate } from '#middleware/validate.js';
 import {
   createPassRequestSchema,
@@ -25,7 +20,6 @@ import {
   managerLocationUpdateSchema,
   managerStudentCreateSchema,
   managerStudentUpdateSchema,
-  managerUserRoleSchema,
   passActionSchema,
 } from '#validators/staff.js';
 
@@ -34,17 +28,17 @@ export function createWebRouter(container) {
   const controller = createWebController(container);
   router.get('/', controller.home);
   router.get('/example', requireAuthentication(), controller.example);
-  router.get('/teacher', requireStaffRole('teacher'), controller.teacher);
+  router.get('/teacher', requireAuthentication(), controller.teacher);
   router.post(
     '/teacher/pass',
-    requireStaffRole('teacher'),
+    requireAuthentication(),
     validate(passActionSchema),
     controller.teacherAction,
   );
-  router.get('/teacher/appointment', requireStaffRole('teacher'), controller.appointment);
+  router.get('/teacher/appointment', requireAuthentication(), controller.appointment);
   router.post(
     '/teacher/appointment',
-    requireStaffRole('teacher'),
+    requireAuthentication(),
     validate(appointmentSchema),
     controller.createAppointment,
   );
@@ -94,12 +88,6 @@ export function createWebRouter(container) {
     ...manager,
     validate(managerStudentUpdateSchema),
     controller.updateManagerStudent,
-  );
-  router.post(
-    '/manager/users/role',
-    ...manager,
-    validate(managerUserRoleSchema),
-    controller.updateManagerUserRole,
   );
   router.post(
     '/manager/locations/create',

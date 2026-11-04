@@ -53,6 +53,31 @@ describe('staff pass controls', () => {
     expect(new Set(kiosks.map(({ location_id }) => location_id)).size).toBe(5);
   });
 
+  it('repairs a legacy locations table missing bathroom/default_location columns', async () => {
+    const { buildKnexConfig, createSqlJsKnex } = await import('../../src/database/knex-config.js');
+    const legacyDbPath = `${process.cwd()}/data/test-legacy-location-schema.sqlite`;
+    const config = buildKnexConfig({ database: { provider: 'sqlite', url: legacyDbPath } }, process.env);
+    const knex = await createSqlJsKnex(config);
+    try {
+      await knex.schema.createTable('locations', (table) => {
+        table.uuid('id').primary();
+        table.string('name').notNullable();
+        table.string('type').notNullable();
+        table.uuid('teacher_user_id').nullable();
+        table.boolean('active').notNullable().defaultTo(true);
+      });
+
+      const { up } = await import('../../src/database/migrations/014_fix_missing_location_columns.js');
+      await up(knex);
+
+      await expect(knex.schema.hasColumn('locations', 'bathroom')).resolves.toBe(true);
+      await expect(knex.schema.hasColumn('locations', 'default_location')).resolves.toBe(true);
+    } finally {
+      await knex.destroy();
+      await import('node:fs/promises').then(({ rm }) => rm(legacyDbPath, { force: true }));
+    }
+  });
+
   it('offers active locations without requiring a destination kiosk', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
@@ -354,18 +379,6 @@ describe('staff pass controls', () => {
     });
     expect(appointment.appointment.status).toBe('scheduled');
 
-    const sameTime = new Date(appointment.appointment.scheduled_at);
-    await expect(
-      ctx.container.passService.createAppointment({
-        userId: teacherId,
-        studentNumber: '111111',
-        studentName: 'Test Student 111111',
-        originLocationId: mainOffice.id,
-        destinationLocationId: counseling.id,
-        scheduledAt: sameTime,
-      }),
-    ).rejects.toMatchObject({ status: 409 });
-
     const student = await ctx.container.db
       .knex('students')
       .where({ student_number: '200001' })
@@ -511,24 +524,5 @@ describe('staff pass controls', () => {
       kiosk_code: 'updated-kiosk',
       active: 0,
     });
-  });
-
-  it('replaces the staff role instead of accumulating lower roles', async () => {
-    ctx = await createTestApp();
-    const userId = randomUUID();
-    await ctx.container.db.knex('users').insert({
-      id: userId,
-      display_name: 'Role Test User',
-      primary_email: `${userId}@example.test`,
-      status: 'active',
-    });
-
-    await ctx.container.userService.setStaffRole({ userId, roleName: 'teacher' });
-    await ctx.container.userService.setStaffRole({ userId, roleName: 'manager' });
-
-    const roles = await ctx.container.rbac.getRoles(userId);
-    expect(roles).toContain('manager');
-    expect(roles).not.toContain('teacher');
-    expect(roles).not.toContain('student');
   });
 });

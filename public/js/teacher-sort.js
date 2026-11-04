@@ -46,19 +46,33 @@ function compareStatuses(left, right, isPassList) {
   return leftStatus.localeCompare(rightStatus, undefined, { sensitivity: 'base' });
 }
 
-document.querySelectorAll('[data-sort-control]').forEach((control) => {
-  const list = document.querySelector(`[data-sort-list="${control.dataset.sortControl}"]`);
+const sortStateByList = new Map();
+
+document.querySelectorAll('[data-sort-control][data-sort-value]').forEach((control) => {
+  const listName = control.dataset.sortControl;
+  const list = document.querySelector(`[data-sort-list="${listName}"]`);
   if (!list) return;
 
-  const rows = Array.from(list.children);
-  const originalOrder = new Map(rows.map((row, index) => [row, index]));
+  if (!sortStateByList.has(listName)) {
+    const rows = Array.from(list.children);
+    sortStateByList.set(listName, {
+      rows,
+      originalOrder: new Map(rows.map((row, index) => [row, index])),
+    });
+  }
+  const { rows, originalOrder } = sortStateByList.get(listName);
 
-  control.addEventListener('change', () => {
-    const sortBy = control.value;
+  const applySort = () => {
+    document
+      .querySelectorAll(`[data-sort-control="${listName}"][data-sort-value]`)
+      .forEach((button) => button.setAttribute('aria-pressed', String(button === control)));
+
+    const sortBy = control.dataset.sortValue;
+    const stableOrder = new Map(Array.from(list.children).map((row, index) => [row, index]));
     const sortedRows = [...rows].sort((left, right) => {
       if (sortBy === 'default') return originalOrder.get(left) - originalOrder.get(right);
       if (sortBy === 'status') {
-        return compareStatuses(left, right, control.dataset.sortControl === 'passes');
+        return compareStatuses(left, right, listName === 'passes');
       }
       if (sortBy === 'student') {
         return left.dataset[`sort${sortBy[0].toUpperCase()}${sortBy.slice(1)}`].localeCompare(
@@ -68,11 +82,39 @@ document.querySelectorAll('[data-sort-control]').forEach((control) => {
         );
       }
 
-      if (sortBy === 'date-desc') return compareNewestFirst(left, right, originalOrder);
-      if (sortBy === 'date-asc') return compareOldestFirst(left, right, originalOrder);
+      if (sortBy === 'date-desc') return compareNewestFirst(left, right, stableOrder);
+      if (sortBy === 'date-asc') return compareOldestFirst(left, right, stableOrder);
       return 0;
     });
 
     sortedRows.forEach((row) => list.append(row));
+  };
+
+  control.addEventListener('click', applySort);
+  if (control.getAttribute('aria-pressed') === 'true') applySort();
+});
+
+document.querySelectorAll('[data-filter-control][data-filter-value]').forEach((control) => {
+  const filterName = control.dataset.filterControl;
+  const list = document.querySelector(`[data-sort-list="${filterName}"]`);
+  if (!list) return;
+
+  const rows = Array.from(list.children);
+  control.addEventListener('click', () => {
+    control.setAttribute(
+      'aria-pressed',
+      String(control.getAttribute('aria-pressed') !== 'true'),
+    );
+    const selectedStatuses = new Set(
+      Array.from(
+        document.querySelectorAll(`[data-filter-control="${filterName}"][data-filter-value]`),
+      )
+        .filter((button) => button.getAttribute('aria-pressed') === 'true')
+        .map((button) => button.dataset.filterValue),
+    );
+
+    rows.forEach((row) => {
+      row.hidden = selectedStatuses.size > 0 && !selectedStatuses.has(row.dataset.sortStatus);
+    });
   });
 });
