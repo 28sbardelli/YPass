@@ -9,7 +9,7 @@
       <div class="h-line"></div>
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
       <li class="teacher-data">
-        <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %> (admin)</p>
+        <div class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %> <span class="small-muted">(admin)</span></div>
         <form class="inline" method="post" action="/auth/logout">
           <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
           <button type="submit">Sign out</button>
@@ -18,12 +18,12 @@
     </div>
   </div>
   <nav class="manager-tabs" role="tablist" aria-label="Manager sections">
-    <button id="manager-tab-students" type="button" class="manager-tab is-active" role="tab" data-tab="students" aria-controls="manager-panel-students" aria-selected="true" tabindex="0">Students</button>
-    <button id="manager-tab-locations" type="button" class="manager-tab" role="tab" data-tab="locations" aria-controls="manager-panel-locations" aria-selected="false" tabindex="-1">Locations</button>
-    <button id="manager-tab-kiosks" type="button" class="manager-tab" role="tab" data-tab="kiosks" aria-controls="manager-panel-kiosks" aria-selected="false" tabindex="-1">Kiosks</button>
-    <button id="manager-tab-passes" type="button" class="manager-tab" role="tab" data-tab="passes" aria-controls="manager-panel-passes" aria-selected="false" tabindex="-1">Passes</button>
-    <button id="manager-tab-appointments" type="button" class="manager-tab" role="tab" data-tab="appointments" aria-controls="manager-panel-appointments" aria-selected="false" tabindex="-1">Appointments</button>
-    <button id="manager-tab-user-roles" type="button" class="manager-tab" role="tab" data-tab="user-roles" aria-controls="manager-panel-user-roles" aria-selected="false" tabindex="-1">User roles</button>
+    <button id="manager-tab-students" type="button" class="manager-tab is-active" role="tab" data-tab="students" aria-controls="manager-panel-students" aria-selected="true" tabindex="0"><img src="/images/person.svg" width="15" height="15">Students</button>
+    <button id="manager-tab-locations" type="button" class="manager-tab" role="tab" data-tab="locations" aria-controls="manager-panel-locations" aria-selected="false" tabindex="-1"><img src="/images/location.svg" width="20" height="20">Locations</button>
+    <button id="manager-tab-kiosks" type="button" class="manager-tab" role="tab" data-tab="kiosks" aria-controls="manager-panel-kiosks" aria-selected="false" tabindex="-1"><img src="/images/kiosk.svg" width="15" height="15">Kiosks</button>
+    <button id="manager-tab-passes" type="button" class="manager-tab" role="tab" data-tab="passes" aria-controls="manager-panel-passes" aria-selected="false" tabindex="-1"><img src="/images/ticket.svg" width="15" height="15">Passes</button>
+    <button id="manager-tab-appointments" type="button" class="manager-tab" role="tab" data-tab="appointments" aria-controls="manager-panel-appointments" aria-selected="false" tabindex="-1"><img src="/images/timer.svg" width="15" height="15">Appointments</button>
+    <button id="manager-tab-user-roles" type="button" class="manager-tab" role="tab" data-tab="user-roles" aria-controls="manager-panel-user-roles" aria-selected="false" tabindex="-1"><img src="/images/roles.svg" width="17" height="17">User roles</button>
   </nav>
   <div id="manager-panel-students" class="manager-tab-panel is-active" role="tabpanel" aria-labelledby="manager-tab-students" tabindex="0" data-panel="students">
     <section class="staff-section">

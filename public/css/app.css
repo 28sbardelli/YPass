@@ -457,11 +457,24 @@ button:not(.danger-button):hover, .button:hover {
     background: var(--card);
     color: inherit;
     border: 1px solid var(--card-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
 }
 .manager-tab.is-active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+.manager-tab img {
+  margin-bottom: -2px;
+}
+button:hover img {
+  filter: invert(1);
+}
+.manager-tab.is-active img {
+  filter: invert(1);
 }
 .manager-tab-panel {
   display: none;
