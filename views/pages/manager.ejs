@@ -207,23 +207,6 @@
         </label>
         <button type="submit">Register kiosk</button>
       </form>
-      <form method="post" action="/manager/kiosks/enrollment-codes/create" class="staff-form manager-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Create legacy enrollment code</strong>
-        <label>
-          Kiosk name
-          <input name="name" required maxlength="120">
-        </label>
-        <label>
-          Location
-          <select name="locationId" required>
-            <% locations.filter((location) => location.active).forEach((location) => { %>
-              <option value="<%= location.id %>"><%= location.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <button type="submit">Create legacy code</button>
-      </form>
       <% if (enrollmentCodes.length) { %>
         <div class="staff-list">
           <% enrollmentCodes.slice(0, 10).forEach((code) => { %>
@@ -237,38 +220,6 @@
           <% }) %>
         </div>
       <% } %>
-      <form method="post" action="/manager/kiosks/create" class="staff-form manager-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Add kiosk</strong>
-        <label>
-          Name
-          <input name="name" required maxlength="120">
-        </label>
-        <label>
-          Code
-          <input name="kioskCode" required maxlength="64">
-        </label>
-        <label>
-          Secret
-          <input name="kioskSecret" type="password" minlength="16" maxlength="255" required>
-        </label>
-        <label>
-          Location
-          <select name="locationId" required>
-            <% locations.forEach((location) => { %>
-              <option value="<%= location.id %>"><%= location.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Active
-          <select name="active">
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-        </label>
-        <button type="submit">Add kiosk</button>
-      </form>
       <div class="staff-list">
         <% kiosks.forEach((kiosk) => { %>
           <form method="post" action="/manager/kiosks/update" class="staff-row manager-form">
@@ -437,7 +388,6 @@
   <% if (sisEnabled) { %>
     <div id="manager-panel-sis" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-sis" tabindex="0" data-panel="sis">
       <section class="staff-section">
-        <h2>SIS integrations</h2>
         <form method="post" class="staff-form manager-form" data-sis-create>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <strong>Add connection</strong>
