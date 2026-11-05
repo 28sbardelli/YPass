@@ -16,6 +16,7 @@ import {
 } from '#validators/pass.js';
 import {
   appointmentSchema,
+  appointmentStudentLookupSchema,
   managerFilterSchema,
   managerKioskCreateSchema,
   managerKioskUpdateSchema,
@@ -43,6 +44,12 @@ export function createWebRouter(container) {
     controller.teacherAction,
   );
   router.get('/teacher/appointment', requireStaffRole('teacher'), controller.appointment);
+  router.get(
+    '/teacher/appointment/student',
+    requireStaffRole('teacher'),
+    validate(appointmentStudentLookupSchema, 'query'),
+    controller.appointmentStudent,
+  );
   router.post(
     '/teacher/appointment',
     requireStaffRole('teacher'),
