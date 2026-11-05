@@ -3,7 +3,7 @@
     <div>
       <p class="kiosk-kicker">Kiosk administration</p>
       <h1><%= kiosk.name %></h1>
-      <p class="kiosk-subtitle">Change this kiosk's location and assigned teacher.</p>
+      <p class="kiosk-subtitle">Change this kiosk's location and assigned staff member.</p>
     </div>
     <a class="secondary-button" href="/kiosk/pass">Lock manager</a>
   </div>
@@ -23,12 +23,12 @@
         <% }) %>
       </select>
 
-      <label for="teacherSearch">Teacher</label>
-      <input id="teacherSearch" type="search" placeholder="Search teachers" autocomplete="off" data-manager-search="teacher">
+      <label for="teacherSearch">Assigned staff member</label>
+      <input id="teacherSearch" type="search" placeholder="Search teachers or managers" autocomplete="off" data-manager-search="teacher">
       <select id="teacherUserId" name="teacherUserId">
         <option value="">Unassigned</option>
-        <% teachers.forEach((teacher) => { %>
-          <option value="<%= teacher.id %>" <%= teacher.id === kiosk.teacherUserId ? 'selected' : '' %>><%= teacher.name %><%= teacher.email ? ` (${teacher.email})` : '' %></option>
+        <% assignees.forEach((assignee) => { %>
+          <option value="<%= assignee.id %>" <%= assignee.id === kiosk.teacherUserId ? 'selected' : '' %>><%= assignee.name %><%= assignee.email ? ` (${assignee.email})` : '' %></option>
         <% }) %>
       </select>
 

@@ -459,6 +459,17 @@ describe('staff pass controls', () => {
       primary_email: `${teacherId}@example.test`,
       status: 'active',
     });
+    const teacherRole = await ctx.container.db.knex('roles').where({ name: 'teacher' }).first();
+    await ctx.container.db.knex('user_roles').insert({ user_id: teacherId, role_id: teacherRole.id });
+    const managerId = randomUUID();
+    await ctx.container.db.knex('users').insert({
+      id: managerId,
+      display_name: 'Location Manager',
+      primary_email: `${managerId}@example.test`,
+      status: 'active',
+    });
+    const managerRole = await ctx.container.db.knex('roles').where({ name: 'manager' }).first();
+    await ctx.container.db.knex('user_roles').insert({ user_id: managerId, role_id: managerRole.id });
 
     const student = await ctx.container.passService.createManagerStudent({
       studentNumber: '999999',
@@ -494,6 +505,14 @@ describe('staff pass controls', () => {
       active: true,
       defaultLocation: true,
     });
+    const managerLocation = await ctx.container.passService.createManagerLocation({
+      name: 'Manager Location',
+      type: 'one_way',
+      teacherUserId: managerId,
+      active: true,
+      defaultLocation: false,
+    });
+    expect(managerLocation.teacher_user_id).toBe(managerId);
     const kiosk = await ctx.container.passService.createManagerKiosk({
       name: 'New Kiosk',
       kioskCode: 'new-kiosk',
