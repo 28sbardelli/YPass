@@ -104,10 +104,10 @@
           </select>
         </label>
         <label>
-          Teacher
+          Assigned staff member
           <select name="teacherUserId">
             <option value="">Unassigned</option>
-            <% users.forEach((user) => { %>
+            <% locationAssignees.forEach((user) => { %>
               <option value="<%= user.id %>"><%= user.display_name %></option>
             <% }) %>
           </select>
@@ -152,10 +152,10 @@
               </select>
             </label>
             <label>
-              Teacher
+              Assigned staff member
               <select name="teacherUserId">
                 <option value="">Unassigned</option>
-                <% users.forEach((user) => { %>
+                <% locationAssignees.forEach((user) => { %>
                   <option value="<%= user.id %>" <%= location.teacher_user_id === user.id ? 'selected' : '' %>><%= user.display_name %></option>
                 <% }) %>
               </select>
