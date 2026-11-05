@@ -205,6 +205,8 @@ export function createWebController(container) {
     },
     async scanKiosk(req, res, next) {
       const kioskCode = req.kiosk?.kiosk_code || req.body.kioskCode;
+      const appointmentAction = req.body.appointmentAction;
+      const appointmentId = req.body.appointmentId;
       if (req.body.managerAction === 'save') {
         try {
           await kioskService.updateSettings({
