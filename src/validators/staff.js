@@ -29,6 +29,7 @@ export const managerFilterSchema = z.object({
   appointmentStatus: z.string().trim().max(32).optional(),
   studentNumber: z.string().trim().max(64).optional(),
   enrollmentCode: z.string().trim().max(16).optional(),
+  role: z.enum(['student','teacher','manager','']).optional(),
 });
 
 const active = z.enum(['true', 'false']).transform((value) => value === 'true');
