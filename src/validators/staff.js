@@ -20,6 +20,10 @@ export const appointmentSchema = z.object({
   _csrf: z.string().optional(),
 });
 
+export const appointmentStudentLookupSchema = z.object({
+  studentNumber,
+});
+
 export const managerFilterSchema = z.object({
   status: z.string().trim().max(32).optional(),
   appointmentStatus: z.string().trim().max(32).optional(),

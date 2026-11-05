@@ -383,6 +383,14 @@ describe('staff pass controls', () => {
       notes: 'Testing appointment',
     });
     expect(appointment.appointment.status).toBe('scheduled');
+    await expect(ctx.container.passService.findAppointmentStudent('111111')).resolves.toEqual({
+      studentNumber: '111111',
+      studentName: 'Test Student 111111',
+    });
+    await expect(ctx.container.passService.findAppointmentStudent('not-a-student')).resolves.toBeNull();
+    await ctx.container.db.knex('students').where({ student_number: '111111' }).update({ status: 'inactive' });
+    await expect(ctx.container.passService.findAppointmentStudent('111111')).resolves.toBeNull();
+    await ctx.container.db.knex('students').where({ student_number: '111111' }).update({ status: 'active' });
 
     const student = await ctx.container.db
       .knex('students')
