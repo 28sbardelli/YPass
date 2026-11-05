@@ -66,6 +66,7 @@ export function createPassService({
   passes,
   clock,
   onPassRequested = () => {},
+  onPassStarted = () => {},
   onPassEnded = () => {},
 }) {
   async function kioskOptions(kioskCode, trx) {
@@ -225,7 +226,7 @@ export function createPassService({
     actorUserId,
   }) {
     const now = clock.now();
-    return db.transaction(async (trx) => {
+    const result = await db.transaction(async (trx) => {
       const { kiosk } = await kioskOptions(kioskCode, trx);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
@@ -299,10 +300,19 @@ export function createPassService({
         pass,
         student,
         kiosk,
+        origin: destination.origin,
         appointment: { ...appointment, status: 'completed', used_at: now },
         destination: destination.destination,
       };
     });
+    if (result.origin.teacher_user_id) {
+      onPassStarted({
+        teacherUserId: result.origin.teacher_user_id,
+        passId: result.pass.id,
+        originLocationId: result.pass.origin_location_id,
+      });
+    }
+    return result;
   }
 
   async function requestPass({
@@ -392,6 +402,13 @@ export function createPassService({
     });
     if (result.pass.status === 'pending_approval' && result.kiosk.location_teacher_id) {
       onPassRequested({
+        teacherUserId: result.kiosk.location_teacher_id,
+        passId: result.pass.id,
+        originLocationId: result.pass.origin_location_id,
+      });
+    }
+    if (result.autoApproved && result.kiosk.location_teacher_id) {
+      onPassStarted({
         teacherUserId: result.kiosk.location_teacher_id,
         passId: result.pass.id,
         originLocationId: result.pass.origin_location_id,

@@ -218,6 +218,106 @@ describe('staff pass controls', () => {
     });
   });
 
+  it('notifies the origin teacher when an appointment pass starts', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const mainOffice = await knex('locations').where({ name: 'Main Office' }).first();
+    const counseling = await knex('locations').where({ name: 'Counseling Office' }).first();
+    const teacherId = randomUUID();
+    const student = await knex('students').where({ student_number: '200001' }).first();
+    await knex('users').insert({
+      id: teacherId,
+      display_name: 'Appointment Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    await knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    await knex('appointments').insert({
+      id: randomUUID(),
+      student_id: student.id,
+      origin_location_id: mainOffice.id,
+      destination_location_id: counseling.id,
+      destination_teacher_id: counseling.teacher_user_id || null,
+      created_by: teacherId,
+      scheduled_at: new Date(Date.now() - 60 * 1000),
+      status: 'scheduled',
+    });
+    const events = [];
+    ctx.container.setRealtime({
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    });
+
+    const started = await ctx.container.passService.requestPass({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      destinationLocationId: counseling.id,
+    });
+
+    expect(started.pass.status).toBe('active');
+    expect(events).toContainEqual({
+      room: `teacher:${teacherId}`,
+      event: 'teacher-pass-started',
+      payload: { passId: started.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
+  it('notifies the origin teacher when the kiosk completes an appointment', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const mainOffice = await knex('locations').where({ name: 'Main Office' }).first();
+    const counseling = await knex('locations').where({ name: 'Counseling Office' }).first();
+    const teacherId = randomUUID();
+    const student = await knex('students').where({ student_number: '200001' }).first();
+    await knex('users').insert({
+      id: teacherId,
+      display_name: 'Appointment Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    });
+    await knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    const appointmentId = randomUUID();
+    await knex('appointments').insert({
+      id: appointmentId,
+      student_id: student.id,
+      origin_location_id: mainOffice.id,
+      destination_location_id: counseling.id,
+      destination_teacher_id: counseling.teacher_user_id || null,
+      created_by: teacherId,
+      scheduled_at: new Date(Date.now() + 60 * 1000),
+      status: 'scheduled',
+    });
+    const events = [];
+    ctx.container.setRealtime({
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    });
+
+    const started = await ctx.container.passService.completeAppointmentForStudent({
+      kioskCode: 'main-office',
+      studentNumber: student.student_number,
+      appointmentId,
+    });
+
+    expect(started.pass.status).toBe('active');
+    expect(events).toContainEqual({
+      room: `teacher:${teacherId}`,
+      event: 'teacher-pass-started',
+      payload: { passId: started.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
   it('notifies the origin teacher when a bathroom pass ends', async () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;

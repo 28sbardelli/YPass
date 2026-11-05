@@ -18,6 +18,27 @@ The complete `kioskMachine` directory can be copied to another machine and run i
 
 Set kiosk environment variables in the process environment or a local `.env` file when needed. Open <http://localhost:4177>, or use the URL printed by the process when `KIOSK_PORT` is changed.
 
+## File structure
+
+```text
+kioskMachine/
+├── app.js                    # Kiosk process entrypoint
+├── package.json              # Scripts and Node.js package metadata
+├── package-lock.json         # Locked dependency metadata
+├── .env.example              # Example local environment settings
+├── src/
+│   ├── config.js             # Environment and persisted kiosk configuration
+│   ├── kiosk-client.js       # Client for central YPass kiosk APIs
+│   └── server.js             # Local HTTP server and API proxy
+├── public/
+│   ├── index.html            # Kiosk browser page
+│   └── app.js                # Kiosk browser behavior
+└── test/
+	└── kiosk-client.test.js  # Kiosk client tests
+```
+
+The generated `kiosk-config.json` is stored beside the kiosk process and is intentionally not part of this source tree. It contains the enrolled kiosk secret and must remain private.
+
 ## Enrollment
 
 Enrollment is the normal first-run path:
