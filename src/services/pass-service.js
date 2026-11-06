@@ -531,6 +531,11 @@ export function createPassService({
       passesRepository.listManagerUsers(),
     ]);
 
+    let filteredUsers = users
+    if (filters.role){
+      filteredUsers = users.filter((user) => user.roles.includes(filters.role))
+    }
+
     const bathrooms = locations.filter(
     (location) => location.type === 'bathroom'
     );
