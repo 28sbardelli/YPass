@@ -471,6 +471,11 @@ export function createPassService({
     return { locations, teacherLocations };
   }
 
+  async function findAppointmentStudent(studentNumber) {
+    const student = await passesRepository.findStudentByNumber(studentNumber);
+    return student ? { studentNumber: student.student_number, studentName: student.display_name } : null;
+  }
+
   async function createAppointment({
     userId,
     studentNumber,
@@ -587,6 +592,9 @@ export function createPassService({
       bathrooms,
       kiosks: kiosksWithStatus,
       users,
+      locationAssignees: users.filter((user) =>
+        user.roles.some((role) => role === 'teacher' || role === 'manager'),
+      ),
     };
   }
 
@@ -632,6 +640,7 @@ export function createPassService({
   }) {
     if (await passesRepository.findLocationByName(name))
       throw new ConflictError('A location with that name already exists');
+    await validateLocationAssignee(teacherUserId);
     return passesRepository.createLocation({
       id: randomUUID(),
       name,
@@ -657,6 +666,7 @@ export function createPassService({
     const existing = await passesRepository.findLocationByName(name);
     if (existing && existing.id !== id)
       throw new ConflictError('A location with that name already exists');
+    await validateLocationAssignee(teacherUserId);
     await passesRepository.updateLocation(id, {
       name,
       type,
@@ -665,6 +675,13 @@ export function createPassService({
       default_location: defaultLocation,
       active,
     });
+  }
+
+  async function validateLocationAssignee(userId) {
+    if (!userId) return;
+    const user = await passesRepository.findManagerUserById(userId);
+    if (!user || !user.roles.some((role) => role === 'teacher' || role === 'manager'))
+      throw new ValidationError('Choose an active teacher or manager');
   }
 
   async function createManagerKiosk({ name, kioskCode, kioskSecret, locationId, active }) {
@@ -710,6 +727,7 @@ export function createPassService({
     approvePass,
     cancelPass,
     appointmentOptions,
+    findAppointmentStudent,
     createAppointment,
     managerDashboard,
     createManagerStudent,

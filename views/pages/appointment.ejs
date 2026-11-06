@@ -8,12 +8,13 @@
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label>
       Student ID<span class="required-note"> *</span>
-      <input name="studentNumber" value="<%= form.studentNumber || '' %>" required>
+      <input name="studentNumber" value="<%= form.studentNumber || '' %>" required data-appointment-student-id>
     </label>
     <label>
       Student full name<span class="required-note"> *</span>
-      <input name="studentName" value="<%= form.studentName || '' %>" required>
+      <input name="studentName" value="<%= form.studentName || '' %>" required readonly data-appointment-student-name>
     </label>
+    <p class="flash flash-error" role="alert" hidden data-appointment-student-warning>Student ID does not exist.</p>
     <label>
       Coming from<span class="required-note"> *</span>
       <select name="originLocationId" required>

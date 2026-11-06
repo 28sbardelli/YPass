@@ -207,8 +207,8 @@ export function createKioskService({ db, kiosks, clock, audit }) {
         id: location.id,
         name: location.name,
       })),
-      teachers: users
-        .filter((user) => user.roles.includes('teacher'))
+      assignees: users
+        .filter((user) => user.roles.some((role) => role === 'teacher' || role === 'manager'))
         .map((user) => ({ id: user.id, name: user.display_name, email: user.primary_email })),
     };
   }
@@ -219,9 +219,12 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       if (!kiosk || !kiosk.active) throw new NotFoundError('Kiosk not found or inactive');
       const location = await kiosks.findLocationById(locationId, trx);
       if (!location || !location.active) throw new ValidationError('Choose a valid active location');
-      const teacher = teacherUserId ? await kiosks.findManagerUserById(teacherUserId, trx) : null;
-      if (teacherUserId && (!teacher || !teacher.roles.includes('teacher'))) {
-        throw new ValidationError('Choose an active teacher');
+      const assignee = teacherUserId ? await kiosks.findManagerUserById(teacherUserId, trx) : null;
+      if (
+        teacherUserId &&
+        (!assignee || !assignee.roles.some((role) => role === 'teacher' || role === 'manager'))
+      ) {
+        throw new ValidationError('Choose an active teacher or manager');
       }
       await kiosks.updateKiosk(kioskId, { location_id: locationId }, trx);
       await kiosks.updateLocation(locationId, { teacher_user_id: teacherUserId || null }, trx);

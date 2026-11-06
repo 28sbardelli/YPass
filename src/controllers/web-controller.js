@@ -56,6 +56,14 @@ export function createWebController(container) {
         next(error);
       }
     },
+    async appointmentStudent(req, res, next) {
+      try {
+        const student = await passService.findAppointmentStudent(req.query.studentNumber);
+        res.json({ student });
+      } catch (error) {
+        next(error);
+      }
+    },
     async createAppointment(req, res, next) {
       try {
         await passService.createAppointment({ userId: req.currentUser.id, ...req.body });
