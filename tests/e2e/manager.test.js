@@ -40,6 +40,9 @@ describe('manager form navigation', () => {
     const managerPage = await agent.get('/manager?status=timedout&page=3&appointmentsPage=2');
     expect(managerPage.text).toContain('data-kiosk-search');
     expect(managerPage.text).toContain('data-kiosk-code=');
+    expect(managerPage.text).toContain('data-manager-pass-search');
+    expect(managerPage.text).toContain('data-manager-appointment-search');
+    expect(managerPage.text).toContain('data-user-role-search');
     const saved = await agent
       .post('/manager/students/create?status=timedout&page=3&appointmentsPage=2')
       .type('form')

@@ -4,7 +4,7 @@
     <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
   <% } %>
   <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
-  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=4" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=5" defer></script>
   <script nonce="<%= cspNonce %>" src="/js/teacher-action-message.js?v=3" defer></script>
   <div class="staff-heading">
     <div>
@@ -55,9 +55,12 @@
         <button type="button" data-sort-control="passes" data-sort-value="date-desc" aria-pressed="false">Newest</button>
         <button type="button" data-sort-control="passes" data-sort-value="date-asc" aria-pressed="false">Oldest</button>
       </div>
+      <label class="student-search">
+        <input type="search" data-search-input="passes" placeholder="⌕ Search passes by student, ID, destination, or status" autocomplete="off">
+      </label>
       <div class="staff-list" data-sort-list="passes">
         <% passes.forEach((pass) => { %>
-          <article class="staff-row pass-row <%= pass.status %>" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>">
+          <article class="staff-row pass-row <%= pass.status %>" data-sort-status="<%= pass.status %>" data-sort-student="<%= pass.student_name %>" data-sort-date="<%= pass.requested_at %>" data-search-text="<%= [pass.student_name, pass.student_number, pass.destination_name, pass.status].join(' ') %>">
             <div class="pass-identity">
               <div class="passes-header-wrap">
                 <strong><%= pass.student_name %></strong>
@@ -111,9 +114,12 @@
         <button type="button" data-sort-control="appointments" data-sort-value="date-asc" aria-pressed="false">Soonest</button>
         <button type="button" data-sort-control="appointments" data-sort-value="date-desc" aria-pressed="false">Latest</button>
       </div>
+      <label class="student-search">
+        <input type="search" data-search-input="appointments" placeholder="⌕ Search appointments by student, ID, location, or status" autocomplete="off">
+      </label>
       <div class="staff-list" data-sort-list="appointments">
         <% appointments.forEach((appointment) => { %>
-          <article class="staff-row pass-row appointment-row <%= appointment.status %>" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>">
+          <article class="staff-row pass-row appointment-row <%= appointment.status %>" data-sort-status="<%= appointment.status %>" data-sort-student="<%= appointment.student_name %>" data-sort-date="<%= appointment.scheduled_at %>" data-search-text="<%= [appointment.student_name, appointment.student_number, appointment.origin_name, appointment.destination_name, appointment.status].join(' ') %>">
             <div class="pass-identity">
               <div class="passes-header-wrap">
                 <strong><%= appointment.student_name %></strong>
@@ -126,7 +132,7 @@
                 <h4 class="small-muted">⌂ <%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
               </div>
             </div>
-            <span class="status-label appointment-status">⏱︎ <%= appointment.status %></span>
+            <span class="status-label appointment-status">⏱︎ <%= appointment.status %> · <%= appointment.scheduled_at_display %></span>
           </article>
         <% }) %>
       </div>

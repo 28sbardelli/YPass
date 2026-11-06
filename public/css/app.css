@@ -777,6 +777,9 @@ button:not(.danger-button):hover,
 .staff-row.expired {
   border-left: var(--pass-border) solid var(--expired) !important;
 }
+.staff-row.timedout {
+  border-left: var(--pass-border) solid var(--expired) !important;
+}
 
 /* Status filter colors. */
 .filter-pending {

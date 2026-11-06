@@ -46,6 +46,51 @@
         });
       });
     }
+
+    const passSearch = document.querySelector('[data-manager-pass-search]');
+    const passes = Array.from(document.querySelectorAll('[data-manager-pass-row]'));
+    if (passSearch && passes.length) {
+      passSearch.addEventListener('input', () => {
+        const query = passSearch.value.trim().toLocaleLowerCase();
+        passes.forEach((pass) => {
+          const searchableText = [
+            pass.dataset.passStudent,
+            pass.dataset.passNumber,
+            pass.dataset.passOrigin,
+            pass.dataset.passDestination,
+            pass.dataset.passStatus,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase();
+          pass.hidden = !searchableText.includes(query);
+        });
+      });
+    }
+
+    const appointmentSearch = document.querySelector('[data-manager-appointment-search]');
+    const appointments = Array.from(document.querySelectorAll('[data-manager-appointment-row]'));
+    if (appointmentSearch && appointments.length) {
+      appointmentSearch.addEventListener('input', () => {
+        const query = appointmentSearch.value.trim().toLocaleLowerCase();
+        appointments.forEach((appointment) => {
+          appointment.hidden = !appointment.dataset.appointmentSearchText
+            .toLocaleLowerCase()
+            .includes(query);
+        });
+      });
+    }
+
+    const userRoleSearch = document.querySelector('[data-user-role-search]');
+    const userRoleRows = Array.from(document.querySelectorAll('[data-user-role-row]'));
+    if (userRoleSearch && userRoleRows.length) {
+      userRoleSearch.addEventListener('input', () => {
+        const query = userRoleSearch.value.trim().toLocaleLowerCase();
+        userRoleRows.forEach((row) => {
+          row.hidden = !row.dataset.userRoleSearchText.toLocaleLowerCase().includes(query);
+        });
+      });
+    }
   };
 
   if (document.readyState === 'loading') {
