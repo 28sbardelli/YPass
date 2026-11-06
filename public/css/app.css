@@ -609,6 +609,21 @@ button:not(.danger-button):hover,
   border-color: #cbd5e1;
   filter: grayscale(1);
 }
+.student-row:has(select[name='status'] option:checked[value='inactive']) {
+  background-color: #e5e7eb;
+  border-color: #cbd5e1;
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.kiosk-row:has(select[name='active'] option:checked[value='false']) {
+  background-color: #e5e7eb;
+  border-color: #cbd5e1;
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.kiosk-row:has(select[name='active'] option:checked[value='false']) span {
+  color: var(--faint-txt);
+}
 .staff-section > .staff-list {
   min-width: 0;
 }
@@ -641,6 +656,12 @@ button:not(.danger-button):hover,
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: 0.7rem;
+}
+.manager-form.offline {
+    border-left: var(--pass-border) solid var(--danger) !important;
+}
+.manager-form.online {
+    border-left: var(--pass-border) solid var(--completed) !important;
 }
 .manager-form label {
   margin: 0;

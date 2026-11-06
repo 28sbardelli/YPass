@@ -7,9 +7,10 @@ const searchScript = readFileSync(
   'utf8',
 );
 
-function createSearchPage(students, locationNames = []) {
+function createSearchPage(students, locationNames = [], kioskData = []) {
   let inputHandler;
   let locationInputHandler;
+  let kioskInputHandler;
   const search = {
     value: '',
     addEventListener(event, handler) {
@@ -22,12 +23,22 @@ function createSearchPage(students, locationNames = []) {
       if (event === 'input') locationInputHandler = handler;
     },
   };
+  const kioskSearch = {
+    value: '',
+    addEventListener(event, handler) {
+      if (event === 'input') kioskInputHandler = handler;
+    },
+  };
   const rows = students.map(({ name, id }) => ({
     dataset: { studentName: name, studentId: id },
     hidden: false,
   }));
-  const locations = locationNames.map((name) => ({
-    dataset: { locationName: name },
+  const locations = locationNames.map(({ name, teacher = '' }) => ({
+    dataset: { locationName: name, locationTeacher: teacher },
+    hidden: false,
+  }));
+  const kiosks = kioskData.map(({ name, code, location }) => ({
+    dataset: { kioskName: name, kioskCode: code, kioskLocation: location },
     hidden: false,
   }));
   const document = {
@@ -35,11 +46,13 @@ function createSearchPage(students, locationNames = []) {
     querySelector(selector) {
       if (selector === '[data-student-search]') return search;
       if (selector === '[data-location-search]') return locationSearch;
+      if (selector === '[data-kiosk-search]') return kioskSearch;
       return null;
     },
     querySelectorAll(selector) {
       if (selector === '[data-student-name]') return rows;
       if (selector === '[data-location-name]') return locations;
+      if (selector === '[data-kiosk-name]') return kiosks;
       return [];
     },
   };
@@ -48,6 +61,7 @@ function createSearchPage(students, locationNames = []) {
   return {
     rows,
     locations,
+    kiosks,
     search(value) {
       search.value = value;
       inputHandler();
@@ -55,6 +69,10 @@ function createSearchPage(students, locationNames = []) {
     searchLocations(value) {
       locationSearch.value = value;
       locationInputHandler();
+    },
+    searchKiosks(value) {
+      kioskSearch.value = value;
+      kioskInputHandler();
     },
   };
 }
@@ -77,12 +95,34 @@ describe('manager student search', () => {
   });
 
   it('filters locations by name case-insensitively and restores rows when cleared', () => {
-    const { locations, searchLocations } = createSearchPage([], ['Main Office', 'Library']);
+    const { locations, searchLocations } = createSearchPage([], [
+      { name: 'Main Office' },
+      { name: 'Library', teacher: 'Jordan Lee' },
+    ]);
+
+    searchLocations('JORDAN');
+    expect(locations.map(({ hidden }) => hidden)).toEqual([true, false]);
 
     searchLocations('LIB');
     expect(locations.map(({ hidden }) => hidden)).toEqual([true, false]);
 
     searchLocations('');
     expect(locations.map(({ hidden }) => hidden)).toEqual([false, false]);
+  });
+
+  it('filters kiosks by name, code, or location and restores rows when cleared', () => {
+    const { kiosks, searchKiosks } = createSearchPage([], [], [
+      { name: 'Main Entrance', code: 'K-101', location: 'Front Office' },
+      { name: 'Library Kiosk', code: 'K-202', location: 'Library' },
+    ]);
+
+    searchKiosks('K-202');
+    expect(kiosks.map(({ hidden }) => hidden)).toEqual([true, false]);
+
+    searchKiosks('FRONT');
+    expect(kiosks.map(({ hidden }) => hidden)).toEqual([false, true]);
+
+    searchKiosks('');
+    expect(kiosks.map(({ hidden }) => hidden)).toEqual([false, false]);
   });
 });

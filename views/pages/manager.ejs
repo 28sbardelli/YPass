@@ -33,12 +33,12 @@
       <form method="post" action="/manager/students/create" class="staff-form manager-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label>
-          <h4 class="small-muted">Student ID</h4>
-          <input name="studentNumber" required maxlength="64">
-        </label>
-        <label>
           <h4 class="small-muted">Name</h4>
           <input name="studentName" required maxlength="120">
+        </label>
+        <label>
+          <h4 class="small-muted">Student ID</h4>
+          <input name="studentNumber" required maxlength="64">
         </label>
         <label>
           <h4 class="small-muted">Status</h4>
@@ -50,11 +50,11 @@
         <button type="submit">+ Add student</button>
       </form>
       <label class="student-search">
-        <input type="search" data-student-search placeholder="⌕ Search a student name or ID" autocomplete="off">
+        <input type="search" data-student-search placeholder="⌕ Search students by name or ID" autocomplete="off">
       </label>
       <div class="staff-list">
         <% students.forEach((student) => { %>
-          <form method="post" action="/manager/students/update" class="staff-row manager-form" data-student-name="<%= student.display_name %>" data-student-id="<%= student.student_number %>">
+          <form method="post" action="/manager/students/update" class="staff-row manager-form student-row" data-student-name="<%= student.display_name %>" data-student-id="<%= student.student_number %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= student.id %>">
             <label>
@@ -130,11 +130,11 @@
         <button type="submit">+ Add location</button>
       </form>
       <label class="student-search">
-        <input type="search" data-location-search placeholder="⌕ Search locations by name" autocomplete="off">
+        <input type="search" data-location-search placeholder="⌕ Search locations by name or teacher" autocomplete="off">
       </label>
       <div class="staff-list">
         <% locations.forEach((location) => { %>
-          <form method="post" action="/manager/locations/update" class="staff-row manager-form location-row" data-location-name="<%= location.name %>">
+          <form method="post" action="/manager/locations/update" class="staff-row manager-form location-row" data-location-name="<%= location.name %>" data-location-teacher="<%= users.find((user) => user.id === location.teacher_user_id)?.display_name || '' %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= location.id %>">
             <label>
@@ -191,62 +191,44 @@
   </div>
   <div id="manager-panel-kiosks" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-kiosks" tabindex="0" data-panel="kiosks">
     <section class="staff-section">
-      <% if (enrollmentCode) { %>
-        <div class="status success">
-          <strong>Enrollment code:</strong>
-          <code><%= enrollmentCode %></code>
-          <span class="muted">Expires in 10 minutes. Enter it on the new kiosk.</span>
-        </div>
-      <% } %>
       <form method="post" action="/manager/kiosks/enrollment/complete" class="staff-form manager-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Register kiosk</strong>
         <label>
-          Enrollment code
-          <input name="enrollmentCode" required maxlength="16" placeholder="8K4P-29QX" autocomplete="off">
-        </label>
-        <label>
-          Kiosk name
+          <h4 class="small-muted">Name</h4>
           <input name="name" required maxlength="120">
         </label>
         <label>
-          Location
+          <h4 class="small-muted">Enrollment code</h4>
+          <input name="enrollmentCode" required maxlength="16" placeholder="8K4P-29QX" autocomplete="off">
+        </label>
+        <label>
+          <h4 class="small-muted">Location</h4>
           <select name="locationId" required>
             <% locations.filter((location) => location.active).forEach((location) => { %>
               <option value="<%= location.id %>"><%= location.name %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit">Register kiosk</button>
+        <button type="submit">+ Register kiosk</button>
       </form>
-      <% if (enrollmentCodes.length) { %>
-        <div class="staff-list">
-          <% enrollmentCodes.slice(0, 10).forEach((code) => { %>
-            <article class="staff-row">
-              <div>
-                <strong><%= code.name || 'Unconfigured kiosk' %></strong>
-                <p><%= code.type %> · <%= code.used_at ? 'Used' : 'Available' %></p>
-              </div>
-              <time><%= code.expires_at %></time>
-            </article>
-          <% }) %>
-        </div>
-      <% } %>
+      <label class="student-search">
+        <input type="search" data-kiosk-search placeholder="⌕ Search kiosks by name, code, or location" autocomplete="off">
+      </label>
       <div class="staff-list">
         <% kiosks.forEach((kiosk) => { %>
-          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form">
+          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form kiosk-row <%= kiosk.display_status %>" data-kiosk-name="<%= kiosk.name %>" data-kiosk-code="<%= kiosk.kiosk_code %>" data-kiosk-location="<%= kiosk.location_name %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= kiosk.id %>">
             <label>
-              Name
+              <h4 class="small-muted">Name</h4>
               <input name="name" value="<%= kiosk.name %>" required maxlength="120">
             </label>
             <label>
-              Code
+              <h4 class="small-muted">Code</h4>
               <input name="kioskCode" value="<%= kiosk.kiosk_code %>" required maxlength="64">
             </label>
             <label>
-              Location
+              <h4 class="small-muted">Location</h4>
               <select name="locationId" required>
                 <% locations.forEach((location) => { %>
                   <option value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option>
@@ -254,20 +236,13 @@
               </select>
             </label>
             <label>
-              Active
+              <h4 class="small-muted">Active</h4>
               <select name="active">
                 <option value="true" <%= kiosk.active ? 'selected' : '' %>>Active</option>
                 <option value="false" <%= !kiosk.active ? 'selected' : '' %>>Inactive</option>
               </select>
             </label>
-            <span><%= kiosk.display_status %></span>
-            <span><%= kiosk.last_seen_at || kiosk.last_seen || 'Never' %></span>
-            <button type="submit">Save</button>
-          </form>
-          <form method="post" action="/manager/kiosks/credentials/regenerate" class="manager-form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="kioskId" value="<%= kiosk.id %>">
-            <button type="submit">Regenerate credentials</button>
+            <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
           </form>
         <% }) %>
       </div>
@@ -512,6 +487,6 @@
       </div>
     </section>
   </div>
-  <script nonce="<%= cspNonce %>" src="/js/manager-tabs.js?v=1" defer></script>
-  <script nonce="<%= cspNonce %>" src="/js/student-search.js?v=1" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/manager-tabs.js?v=2" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/student-search.js?v=2" defer></script>
 </section>

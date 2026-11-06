@@ -19,7 +19,30 @@
       locationSearch.addEventListener('input', () => {
         const query = locationSearch.value.trim().toLocaleLowerCase();
         locations.forEach((location) => {
-          location.hidden = !location.dataset.locationName.toLocaleLowerCase().includes(query);
+          const searchableText = [location.dataset.locationName, location.dataset.locationTeacher]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase();
+          location.hidden = !searchableText.includes(query);
+        });
+      });
+    }
+
+    const kioskSearch = document.querySelector('[data-kiosk-search]');
+    const kiosks = Array.from(document.querySelectorAll('[data-kiosk-name]'));
+    if (kioskSearch && kiosks.length) {
+      kioskSearch.addEventListener('input', () => {
+        const query = kioskSearch.value.trim().toLocaleLowerCase();
+        kiosks.forEach((kiosk) => {
+          const searchableText = [
+            kiosk.dataset.kioskName,
+            kiosk.dataset.kioskCode,
+            kiosk.dataset.kioskLocation,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase();
+          kiosk.hidden = !searchableText.includes(query);
         });
       });
     }
