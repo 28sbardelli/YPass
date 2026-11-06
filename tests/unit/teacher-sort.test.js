@@ -67,15 +67,30 @@ function createSortablePage(passStatuses) {
     sortOptions.map((option) => createSortControl(name, option)),
   );
   const filterControls = ['pending_approval', 'active', 'arrived', 'returning', 'completed', 'cancelled', 'expired'].map(createFilterControl);
+  const searchControls = ['passes', 'appointments'].map((listName) => {
+    let inputHandler;
+    return {
+      dataset: { searchInput: listName },
+      value: '',
+      addEventListener(event, handler) {
+        if (event === 'input') inputHandler = handler;
+      },
+      search(value) {
+        this.value = value;
+        inputHandler();
+      },
+    };
+  });
   const passRows = passStatuses
-    ? passStatuses.map((status) => ({ dataset: { sortStatus: status, sortStudent: status, sortDate: '' } }))
+    ? passStatuses.map((status) => ({ dataset: { sortStatus: status, sortStudent: status, sortDate: '', searchText: status } }))
     : [
-        { dataset: { sortStatus: 'active', sortStudent: 'Zoe', sortDate: '2026-10-23T12:00:00Z' } },
+        { dataset: { sortStatus: 'active', sortStudent: 'Zoe', sortDate: '2026-10-23T12:00:00Z', searchText: 'Zoe Z-303 Library active' } },
         {
           dataset: {
             sortStatus: 'pending_approval',
             sortStudent: 'Alice',
             sortDate: '2026-10-21T12:00:00Z',
+            searchText: 'Alice A-101 Nurse pending approval',
           },
         },
         {
@@ -83,16 +98,18 @@ function createSortablePage(passStatuses) {
             sortStatus: 'cancelled',
             sortStudent: 'Bob',
             sortDate: '2026-10-22T12:00:00Z',
+            searchText: 'Bob B-202 Office cancelled',
           },
         },
       ];
   const appointmentRows = [
-    { dataset: { sortStatus: 'active', sortStudent: 'Zoe', sortDate: '2026-10-23T12:00:00Z' } },
+    { dataset: { sortStatus: 'active', sortStudent: 'Zoe', sortDate: '2026-10-23T12:00:00Z', searchText: 'Zoe Z-303 Library active' } },
     {
       dataset: {
         sortStatus: 'pending_approval',
         sortStudent: 'Alice',
         sortDate: '2026-10-21T12:00:00Z',
+        searchText: 'Alice A-101 Nurse pending approval',
       },
     },
     {
@@ -100,6 +117,7 @@ function createSortablePage(passStatuses) {
         sortStatus: 'cancelled',
         sortStudent: 'Bob',
         sortDate: '2026-10-22T12:00:00Z',
+        searchText: 'Bob B-202 Office cancelled',
       },
     },
   ];
@@ -112,6 +130,7 @@ function createSortablePage(passStatuses) {
     querySelectorAll(selector) {
       if (selector === '[data-sort-control][data-sort-value]') return controls;
       if (selector === '[data-filter-control][data-filter-value]') return filterControls;
+      if (selector === '[data-search-input]') return searchControls;
       const match = selector?.match(/data-sort-control="([^"]+)"/);
       if (match) return controls.filter((control) => control.dataset.sortControl === match[1]);
       const filterMatch = selector?.match(/data-filter-control="([^"]+)"/);
@@ -120,13 +139,17 @@ function createSortablePage(passStatuses) {
         : [];
     },
     querySelector(selector) {
+      const searchMatch = selector.match(/data-search-input="([^"]+)"/);
+      if (searchMatch) {
+        return searchControls.find((control) => control.dataset.searchInput === searchMatch[1]);
+      }
       const [, name] = selector.match(/data-sort-list="([^"]+)"/);
       return lists.get(name);
     },
   };
 
   runInNewContext(sortScript, { document });
-  return { controls, filterControls, lists };
+  return { controls, filterControls, searchControls, lists };
 }
 
 function clickSort(controls, listName, sortValue) {
@@ -257,6 +280,38 @@ describe('teacher page sort controls', () => {
     clickFilter(filterControls, 'completed');
 
     expect(rows.every((row) => !row.hidden)).toBe(true);
+  });
+
+  it('searches passes and appointments independently', () => {
+    const { searchControls, lists } = createSortablePage();
+    const passes = lists.get('passes').children;
+    const appointments = lists.get('appointments').children;
+
+    searchControls.find((control) => control.dataset.searchInput === 'passes').search('a-101');
+    searchControls
+      .find((control) => control.dataset.searchInput === 'appointments')
+      .search('office');
+
+    expect(passes.filter((row) => !row.hidden).map((row) => row.dataset.sortStudent)).toEqual([
+      'Alice',
+    ]);
+    expect(
+      appointments.filter((row) => !row.hidden).map((row) => row.dataset.sortStudent),
+    ).toEqual(['Bob']);
+  });
+
+  it('combines pass text search with selected status filters', () => {
+    const { filterControls, searchControls, lists } = createSortablePage();
+    const rows = lists.get('passes').children;
+
+    clickFilter(filterControls, 'active');
+    searchControls.find((control) => control.dataset.searchInput === 'passes').search('alice');
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(0);
+
+    searchControls.find((control) => control.dataset.searchInput === 'passes').search('zoe');
+    expect(rows.filter((row) => !row.hidden).map((row) => row.dataset.sortStudent)).toEqual([
+      'Zoe',
+    ]);
   });
 
   it('does not include a separate all-status filter', () => {

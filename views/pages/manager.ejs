@@ -24,7 +24,7 @@
     <button id="manager-tab-passes" type="button" class="manager-tab" role="tab" data-tab="passes" aria-controls="manager-panel-passes" aria-selected="false" tabindex="-1"><img src="/images/ticket.svg" width="15" height="15">Passes</button>
     <button id="manager-tab-appointments" type="button" class="manager-tab" role="tab" data-tab="appointments" aria-controls="manager-panel-appointments" aria-selected="false" tabindex="-1"><img src="/images/timer.svg" width="15" height="15">Appointments</button>
     <% if (sisEnabled) { %>
-      <button id="manager-tab-sis" type="button" class="manager-tab" role="tab" data-tab="sis" aria-controls="manager-panel-sis" aria-selected="false" tabindex="-1"><img src="/images/roles.svg" width="17" height="17">SIS integrations</button>
+      <button id="manager-tab-sis" type="button" class="manager-tab" role="tab" data-tab="sis" aria-controls="manager-panel-sis" aria-selected="false" tabindex="-1"><img src="/images/gear.svg" width="20" height="20">SIS integrations</button>
     <% } %>
     <button id="manager-tab-user-roles" type="button" class="manager-tab" role="tab" data-tab="user-roles" aria-controls="manager-panel-user-roles" aria-selected="false" tabindex="-1"><img src="/images/roles.svg" width="17" height="17">User roles</button>
   </nav>
@@ -32,17 +32,16 @@
     <section class="staff-section">
       <form method="post" action="/manager/students/create" class="staff-form manager-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Add student</strong>
         <label>
-          Student ID
-          <input name="studentNumber" required maxlength="64">
-        </label>
-        <label>
-          Name
+          <h4 class="small-muted">Name</h4>
           <input name="studentName" required maxlength="120">
         </label>
         <label>
-          Status
+          <h4 class="small-muted">Student ID</h4>
+          <input name="studentNumber" required maxlength="64">
+        </label>
+        <label>
+          <h4 class="small-muted">Status</h4>
           <select name="status">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -50,28 +49,31 @@
         </label>
         <button type="submit">+ Add student</button>
       </form>
+      <label class="student-search">
+        <input type="search" data-student-search placeholder="⌕ Search students by name or ID" autocomplete="off">
+      </label>
       <div class="staff-list">
         <% students.forEach((student) => { %>
-          <form method="post" action="/manager/students/update" class="staff-row manager-form">
+          <form method="post" action="/manager/students/update" class="staff-row manager-form student-row" data-student-name="<%= student.display_name %>" data-student-id="<%= student.student_number %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= student.id %>">
             <label>
-              ID
-              <input name="studentNumber" value="<%= student.student_number %>" required maxlength="64">
-            </label>
-            <label>
-              Name
+              <h4 class="small-muted">Name</h4>
               <input name="studentName" value="<%= student.display_name %>" required maxlength="120">
             </label>
             <label>
-              Status
+              <h4 class="small-muted">Student ID</h4>
+              <input name="studentNumber" value="<%= student.student_number %>" required maxlength="64">
+            </label>
+            <label>
+              <h4 class="small-muted">Status</h4>
               <select name="status">
                 <option value="active" <%= student.status === 'active' ? 'selected' : '' %>>Active</option>
                 <option value="inactive" <%= student.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
               </select>
             </label>
-            <button type="submit" formaction="/manager/students/delete" formmethod="POST"> Remove Student </button>
-            <button type="submit">Save</button>
+            <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
+            <button type="submit" formaction="/manager/students/delete" formmethod="POST" class="danger-button decline"><img src="/images/trash.svg" width="15" height="15">Delete</button>
           </form>
         <% }) %>
       </div>
@@ -81,13 +83,12 @@
     <section class="staff-section">
       <form method="post" action="/manager/locations/create" class="staff-form manager-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Add location</strong>
         <label>
-          Name
+          <h4 class="small-muted">Name</h4>
           <input name="name" required maxlength="120">
         </label>
         <label>
-          Type
+          <h4 class="small-muted">Type</h4>
           <select name="type">
             <option value="round_trip">Round trip</option>
             <option value="one_way">One way</option>
@@ -95,7 +96,7 @@
           </select>
         </label>
         <label>
-          Bathroom
+          <h4 class="small-muted">Bathroom</h4>
           <select name="bathroom">
             <option value="">Unassigned</option>
             <% bathrooms.forEach((bathroom) => { %>
@@ -104,7 +105,7 @@
           </select>
         </label>
         <label>
-          Assigned staff member
+          <h4 class="small-muted">Staff member</h4>
           <select name="teacherUserId">
             <option value="">Unassigned</option>
             <% locationAssignees.forEach((user) => { %>
@@ -113,37 +114,45 @@
           </select>
         </label>
         <label>
-          <input type="checkbox" name="defaultLocation" value="true">
-          Default location
+          <h4 class="small-muted">Default</h4>
+          <select name="defaultLocation">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
         </label>
         <label>
-          Active
+          <h4 class="small-muted">Active</h4>
           <select name="active">
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
         </label>
-        <button type="submit">Add location</button>
+        <button type="submit">+ Add location</button>
       </form>
+      <label class="student-search">
+        <input type="search" data-location-search placeholder="⌕ Search locations by name or teacher" autocomplete="off">
+      </label>
       <div class="staff-list">
         <% locations.forEach((location) => { %>
-          <form method="post" action="/manager/locations/update" class="staff-row manager-form">
+          <form method="post" action="/manager/locations/update" class="staff-row manager-form location-row" data-location-name="<%= location.name %>" data-location-teacher="<%= users.find((user) => user.id === location.teacher_user_id)?.display_name || '' %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= location.id %>">
             <label>
-              Name
+              <h4 class="small-muted">Name</h4>
               <input name="name" value="<%= location.name %>" required maxlength="120">
             </label>
             <label>
-              Type
+              <h4 class="small-muted">Type</h4>
               <select name="type">
                 <% ['round_trip', 'one_way', 'bathroom'].forEach((type) => { %>
-                  <option value="<%= type %>" <%= location.type === type ? 'selected' : '' %>><%= type %></option>
+                  <option value="<%= type %>" <%= location.type === type ? 'selected' : '' %>>
+                    <%= type === 'round_trip' ? 'Round trip' : type === 'one_way' ? 'One way' : 'Bathroom'  %>
+                  </option>
                 <% }) %>
               </select>
             </label>
             <label>
-              Bathroom
+              <h4 class="small-muted">Bathroom</h4>
               <select name="bathroom">
                 <option value="">Unassigned</option>
                 <% bathrooms.forEach((bathroom) => { %>
@@ -152,7 +161,7 @@
               </select>
             </label>
             <label>
-              Assigned staff member
+              <h4 class="small-muted">Staff member</h4>
               <select name="teacherUserId">
                 <option value="">Unassigned</option>
                 <% locationAssignees.forEach((user) => { %>
@@ -161,17 +170,20 @@
               </select>
             </label>
             <label>
-              <input type="checkbox" name="defaultLocation" value="true" <%= location.default_location ? 'checked' : '' %>>
-              Default location
+              <h4 class="small-muted">Default</h4>
+              <select name="defaultLocation">
+                <option value="false" <%= !location.default_location ? 'selected' : '' %>>No</option>
+                <option value="true" <%= location.default_location ? 'selected' : '' %>>Yes</option>
+              </select>
             </label>
             <label>
-              Active
+              <h4 class="small-muted">Active</h4>
               <select name="active">
                 <option value="true" <%= location.active ? 'selected' : '' %>>Active</option>
                 <option value="false" <%= !location.active ? 'selected' : '' %>>Inactive</option>
               </select>
             </label>
-            <button type="submit">Save</button>
+            <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
           </form>
         <% }) %>
       </div>
@@ -179,111 +191,44 @@
   </div>
   <div id="manager-panel-kiosks" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-kiosks" tabindex="0" data-panel="kiosks">
     <section class="staff-section">
-      <% if (enrollmentCode) { %>
-        <div class="status success">
-          <strong>Enrollment code:</strong>
-          <code><%= enrollmentCode %></code>
-          <span class="muted">Expires in 10 minutes. Enter it on the new kiosk.</span>
-        </div>
-      <% } %>
       <form method="post" action="/manager/kiosks/enrollment/complete" class="staff-form manager-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Register kiosk</strong>
         <label>
-          Enrollment code
+          <h4 class="small-muted">Name</h4>
+          <input name="name" required maxlength="120">
+        </label>
+        <label>
+          <h4 class="small-muted">Enrollment code</h4>
           <input name="enrollmentCode" required maxlength="16" placeholder="8K4P-29QX" autocomplete="off">
         </label>
         <label>
-          Kiosk name
-          <input name="name" required maxlength="120">
-        </label>
-        <label>
-          Location
+          <h4 class="small-muted">Location</h4>
           <select name="locationId" required>
             <% locations.filter((location) => location.active).forEach((location) => { %>
               <option value="<%= location.id %>"><%= location.name %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit">Register kiosk</button>
+        <button type="submit">+ Register kiosk</button>
       </form>
-      <form method="post" action="/manager/kiosks/enrollment-codes/create" class="staff-form manager-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Create legacy enrollment code</strong>
-        <label>
-          Kiosk name
-          <input name="name" required maxlength="120">
-        </label>
-        <label>
-          Location
-          <select name="locationId" required>
-            <% locations.filter((location) => location.active).forEach((location) => { %>
-              <option value="<%= location.id %>"><%= location.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <button type="submit">Create legacy code</button>
-      </form>
-      <% if (enrollmentCodes.length) { %>
-        <div class="staff-list">
-          <% enrollmentCodes.slice(0, 10).forEach((code) => { %>
-            <article class="staff-row">
-              <div>
-                <strong><%= code.name || 'Unconfigured kiosk' %></strong>
-                <p><%= code.type %> · <%= code.used_at ? 'Used' : 'Available' %></p>
-              </div>
-              <time><%= code.expires_at %></time>
-            </article>
-          <% }) %>
-        </div>
-      <% } %>
-      <form method="post" action="/manager/kiosks/create" class="staff-form manager-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <strong>Add kiosk</strong>
-        <label>
-          Name
-          <input name="name" required maxlength="120">
-        </label>
-        <label>
-          Code
-          <input name="kioskCode" required maxlength="64">
-        </label>
-        <label>
-          Secret
-          <input name="kioskSecret" type="password" minlength="16" maxlength="255" required>
-        </label>
-        <label>
-          Location
-          <select name="locationId" required>
-            <% locations.forEach((location) => { %>
-              <option value="<%= location.id %>"><%= location.name %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Active
-          <select name="active">
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-        </label>
-        <button type="submit">Add kiosk</button>
-      </form>
+      <label class="student-search">
+        <input type="search" data-kiosk-search placeholder="⌕ Search kiosks by name, code, or location" autocomplete="off">
+      </label>
       <div class="staff-list">
         <% kiosks.forEach((kiosk) => { %>
-          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form">
+          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form kiosk-row <%= kiosk.display_status %>" data-kiosk-name="<%= kiosk.name %>" data-kiosk-code="<%= kiosk.kiosk_code %>" data-kiosk-location="<%= kiosk.location_name %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= kiosk.id %>">
             <label>
-              Name
+              <h4 class="small-muted">Name</h4>
               <input name="name" value="<%= kiosk.name %>" required maxlength="120">
             </label>
             <label>
-              Code
+              <h4 class="small-muted">Code</h4>
               <input name="kioskCode" value="<%= kiosk.kiosk_code %>" required maxlength="64">
             </label>
             <label>
-              Location
+              <h4 class="small-muted">Location</h4>
               <select name="locationId" required>
                 <% locations.forEach((location) => { %>
                   <option value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option>
@@ -291,20 +236,13 @@
               </select>
             </label>
             <label>
-              Active
+              <h4 class="small-muted">Active</h4>
               <select name="active">
                 <option value="true" <%= kiosk.active ? 'selected' : '' %>>Active</option>
                 <option value="false" <%= !kiosk.active ? 'selected' : '' %>>Inactive</option>
               </select>
             </label>
-            <span><%= kiosk.display_status %></span>
-            <span><%= kiosk.last_seen_at || kiosk.last_seen || 'Never' %></span>
-            <button type="submit">Save</button>
-          </form>
-          <form method="post" action="/manager/kiosks/credentials/regenerate" class="manager-form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="kioskId" value="<%= kiosk.id %>">
-            <button type="submit">Regenerate credentials</button>
+            <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
           </form>
         <% }) %>
       </div>
@@ -312,101 +250,26 @@
   </div>
   <div id="manager-panel-passes" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-passes" tabindex="0" data-panel="passes">
     <section class="staff-section">
-      <form method="get" action="/manager" class="filter-bar">
-        <label>
-          Pass status
-          <select name="status">
-            <option value="">All pass statuses</option>
-            <% ['pending_approval', 'active', 'arrived', 'timedout', 'completed', 'cancelled', 'expired'].forEach((status) => { %>
-              <option value="<%= status %>" <%= activeFilters.status === status ? 'selected' : '' %>><%= status %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Appointment status
-          <select name="appointmentStatus">
-            <option value="">All appointment statuses</option>
-            <% ['scheduled', 'cancelled', 'completed', 'no_show'].forEach((status) => { %>
-              <option value="<%= status %>" <%= activeFilters.appointmentStatus === status ? 'selected' : '' %>><%= status %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Student ID
-          <input name="studentNumber" value="<%= activeFilters.studentNumber || '' %>">
-        </label>
-        <button type="submit">Filter</button>
-      </form>
       <div class="staff-section">
-        <h3>Recent timed-out passes</h3>
-        <% if (!recentTimedOutPasses.length) { %>
-          <p class="muted">No timed-out passes.</p>
-        <% } %>
-        <div class="staff-list">
-          <% recentTimedOutPasses.forEach((pass) => { %>
-            <article class="staff-row">
-              <div>
-                <strong><%= pass.student_name %></strong>
-                <span class="muted"> ID <%= pass.student_number %></span>
-                <p>
-                  <%= pass.origin_name %> to <%= pass.destination_name %> · timedout
-                  <% if (pass.finished_at) { %>
-                    · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time>
-                  <% } %>
-                </p>
-              </div>
-              <time><%= pass.requested_at %></time>
-            </article>
-          <% }) %>
-        </div>
-        <button type="button" class="link-button" data-timeout-modal-open>Show all timed out passes</button>
-      </div>
-      <div class="timeout-modal" data-timeout-modal hidden>
-        <div class="timeout-modal-backdrop" data-timeout-modal-close></div>
-        <section class="timeout-modal-panel" role="dialog" aria-modal="true" aria-labelledby="timeout-modal-title">
-          <button type="button" class="timeout-modal-close" aria-label="Close timed-out passes" data-timeout-modal-close>&times;</button>
-          <h2 id="timeout-modal-title">All timed-out passes</h2>
-          <% if (!timedOutPasses.length) { %>
-            <p class="muted">No timed-out passes.</p>
-          <% } %>
-          <div class="staff-list">
-            <% timedOutPasses.forEach((pass) => { %>
-              <article class="staff-row">
-                <div>
-                  <strong><%= pass.student_name %></strong>
-                  <span class="muted"> ID <%= pass.student_number %></span>
-                  <p>
-                    <%= pass.origin_name %> to <%= pass.destination_name %> · timedout
-                    <% if (pass.finished_at) { %>
-                      · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time>
-                    <% } %>
-                  </p>
-                </div>
-                <time><%= pass.requested_at %></time>
-              </article>
-            <% }) %>
-          </div>
-        </section>
-      </div>
-      <div class="staff-section">
-        <h3>All passes</h3>
+        <label class="student-search">
+          <input type="search" data-manager-pass-search placeholder="⌕ Search passes by student, ID, destination, or status" autocomplete="off">
+        </label>
         <% if (!passes.length) { %>
           <p class="muted">No passes match these filters.</p>
         <% } %>
         <div class="staff-list">
           <% passes.forEach((pass) => { %>
-            <article class="staff-row">
-              <div>
-                <strong><%= pass.student_name %></strong>
-                <span class="muted"> ID <%= pass.student_number %></span>
-                <p>
-                  <%= pass.origin_name %> to <%= pass.destination_name %> · <%= pass.display_status %>
-                  <% if (pass.active_live && pass.active_duration) { %>
-                    · <span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span>
-                  <% } else if (pass.finished_at) { %>
-                    · <time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time>
-                  <% } %>
-                </p>
+            <article class="staff-row pass-row <%= pass.status %>" data-manager-pass-row data-pass-student="<%= pass.student_name %>" data-pass-number="<%= pass.student_number %>" data-pass-origin="<%= pass.origin_name %>" data-pass-destination="<%= pass.destination_name %>" data-pass-status="<%= pass.display_status %>">
+              <div class="pass-identity">
+                <div class="passes-header-wrap"><strong><%= pass.student_name %></strong></div>
+                <p><% if (pass.active_live && pass.active_duration) { %><span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %><time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
+                <h4 class="small-muted">🇮🇩 <%= pass.student_number %></h4>
+              </div>
+              <div class="pass-details">
+                <div class="passes-footer-wrap">
+                  <div>Destination</div>
+                  <h4 class="small-muted"><%= pass.destination_name %></h4>
+                </div>
               </div>
               <time><%= pass.requested_at %></time>
             </article>
@@ -417,18 +280,26 @@
   </div>
   <div id="manager-panel-appointments" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-appointments" tabindex="0" data-panel="appointments">
     <section class="staff-section">
+      <label class="student-search">
+        <input type="search" data-manager-appointment-search placeholder="⌕ Search appointments by student, ID, location, or status" autocomplete="off">
+      </label>
       <% if (!appointments.length) { %>
         <p class="muted">No appointments match these filters.</p>
       <% } %>
       <div class="staff-list">
         <% appointments.forEach((appointment) => { %>
-          <article class="staff-row">
-            <div>
-              <strong><%= appointment.student_name %></strong>
-              <span class="muted"> ID <%= appointment.student_number %></span>
-              <p><%= appointment.origin_name %> to <%= appointment.destination_name %> · <%= appointment.status %></p>
+          <article class="staff-row pass-row appointment-row <%= appointment.status %>" data-manager-appointment-row data-appointment-search-text="<%= [appointment.student_name, appointment.student_number, appointment.origin_name, appointment.destination_name, appointment.status].join(' ') %>">
+            <div class="pass-identity">
+              <div class="passes-header-wrap"><strong><%= appointment.student_name %></strong></div>
+              <h4 class="small-muted">🇮🇩 <%= appointment.student_number %></h4>
             </div>
-            <time><%= appointment.scheduled_at_display %></time>
+            <div class="pass-details">
+              <div class="passes-footer-wrap">
+                <div>Appointment</div>
+                <h4 class="small-muted"><%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
+              </div>
+            </div>
+            <span class="status-label appointment-status">⏱︎ <%= appointment.status %> · <%= appointment.scheduled_at_display %></span>
           </article>
         <% }) %>
       </div>
@@ -437,16 +308,14 @@
   <% if (sisEnabled) { %>
     <div id="manager-panel-sis" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-sis" tabindex="0" data-panel="sis">
       <section class="staff-section">
-        <h2>SIS integrations</h2>
         <form method="post" class="staff-form manager-form" data-sis-create>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <strong>Add connection</strong>
           <label>
-            Name
+            <h4 class="small-muted">Name</h4>
             <input name="connectionName" required maxlength="120">
           </label>
           <label>
-            Provider
+            <h4 class="small-muted">Provider</h4>
             <select name="provider">
               <option value="mock">Mock</option>
               <option value="oneroster">OneRoster</option>
@@ -455,36 +324,36 @@
             </select>
           </label>
           <label>
-            Base URL
+            <h4 class="small-muted">Base URL</h4>
             <input name="baseUrl" type="url" placeholder="https://sis.example.test">
           </label>
           <label>
-            Protocol
+            <h4 class="small-muted">Protocol</h4>
             <select name="protocol">
               <option value="oneroster">OneRoster</option>
               <option value="api">Vendor API</option>
             </select>
           </label>
           <label>
-            Platform
+            <h4 class="small-muted">Platform</h4>
             <select name="platform">
               <option value="qmlativ">Skyward Qmlativ</option>
               <option value="sms20">Skyward SMS 2.0</option>
             </select>
           </label>
           <label>
-            Student path (optional)
+            <h4 class="small-muted">Student path (optional)</h4>
             <input name="studentPath" placeholder="/api/qmlativ/students">
           </label>
           <label>
-            OneRoster version
+            <h4 class="small-muted">OneRoster Version</h4>
             <select name="version">
               <option value="1.1">1.1</option>
               <option value="1.2">1.2</option>
             </select>
           </label>
           <label>
-            Auth type
+            <h4 class="small-muted">Auth Type</h4>
             <select name="authType">
               <option value="bearer">Bearer token</option>
               <option value="basic">Basic</option>
@@ -493,58 +362,60 @@
             </select>
           </label>
           <label>
-            Username
+            <h4 class="small-muted">Username</h4>
             <input name="username" autocomplete="off">
           </label>
           <label>
-            Password
+            <h4 class="small-muted">Password</h4>
             <input name="password" type="password" autocomplete="new-password">
           </label>
           <label>
-            Token
+            <h4 class="small-muted">Token</h4>
             <input name="token" type="password" autocomplete="new-password">
           </label>
           <label>
-            API key
+            <h4 class="small-muted">API key</h4>
             <input name="apiKey" type="password" autocomplete="new-password">
           </label>
           <label>
-            Consumer key
+            <h4 class="small-muted">Consumer key</h4>
             <input name="consumerKey" autocomplete="off">
           </label>
           <label>
-            Consumer secret
+            <h4 class="small-muted">Consumer secret</h4>
             <input name="consumerSecret" type="password" autocomplete="new-password">
           </label>
           <label>
-            Token secret
+            <h4 class="small-muted">Token secret</h4>
             <input name="tokenSecret" type="password" autocomplete="new-password">
           </label>
           <label>
-            Sync interval (seconds)
+            <h4 class="small-muted">Sync interval (seconds)</h4>
             <input name="syncIntervalSeconds" type="number" min="0" max="86400" value="0">
           </label>
-          <button type="submit">Save connection</button>
+          <button type="submit"><img src="/images/save.svg" width="15" height="15">Save connection</button>
           <output data-sis-message class="muted"></output>
         </form>
 
-        <div class="staff-list" data-sis-list>
-          <% sisConnections.forEach((connection) => { %>
-            <article class="staff-row" data-sis-connection data-connection-id="<%= connection.id %>">
-              <div>
-                <strong><%= connection.connection_name %></strong>
-                <p><%= connection.provider %> · <%= connection.active ? 'Active' : 'Inactive' %> · Last sync: <%= connection.last_synced_at || 'Never' %></p>
-                <pre data-sis-history hidden></pre>
-              </div>
-              <span class="manager-form">
-                <button type="button" data-sis-test>Test</button>
-                <button type="button" data-sis-sync>Sync</button>
-                <button type="button" data-sis-history-toggle>History</button>
-                <button type="button" data-sis-delete>Delete</button>
-              </span>
-            </article>
-          <% }) %>
-        </div>
+        <% if (sisConnections) { %>
+          <div class="staff-list" data-sis-list>
+            <% sisConnections.forEach((connection) => { %>
+              <article class="staff-row" data-sis-connection data-connection-id="<%= connection.id %>">
+                <div>
+                  <strong><%= connection.connection_name %></strong>
+                  <p><%= connection.provider %> · <%= connection.active ? 'Active' : 'Inactive' %> · Last sync: <%= connection.last_synced_at || 'Never' %></p>
+                  <pre data-sis-history hidden></pre>
+                </div>
+                <span class="manager-form">
+                  <button type="button" data-sis-test>Test</button>
+                  <button type="button" data-sis-sync>Sync</button>
+                  <button type="button" data-sis-history-toggle>History</button>
+                  <button type="button" data-sis-delete>Delete</button>
+                </span>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
       </section>
     </div>
     <script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=2" defer></script>
@@ -560,14 +431,17 @@
   </form>
   <div id="manager-panel-user-roles" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-user-roles" tabindex="0" data-panel="user-roles">
     <section class="staff-section">
+      <label class="student-search">
+        <input type="search" data-user-role-search placeholder="⌕ Search users by name, email, or role" autocomplete="off">
+      </label>
       <div class="staff-list">
         <% users.forEach((user) => { %>
-          <form method="post" action="/manager/users/role" class="staff-row manager-form">
+          <form method="post" action="/manager/users/role" class="staff-row manager-form" data-user-role-row data-user-role-search-text="<%= [user.display_name, user.primary_email || '', ...(user.roles || []), ...(user.roles?.length ? [] : ['student'])].join(' ') %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="userId" value="<%= user.id %>">
             <div>
               <strong><%= user.display_name %></strong>
-              <p><%= user.primary_email || 'No email' %> · Current: <%= user.roles?.join(', ') || 'student' %></p>
+              <p>✉ <%= user.primary_email || 'No email' %> · <%= user.roles?.join(', ') || 'student' %></p>
             </div>
             <label>
               Role
@@ -583,5 +457,6 @@
       </div>
     </section>
   </div>
-  <script nonce="<%= cspNonce %>" src="/js/manager-tabs.js?v=1" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/manager-tabs.js?v=2" defer></script>
+  <script nonce="<%= cspNonce %>" src="/js/student-search.js?v=3" defer></script>
 </section>
