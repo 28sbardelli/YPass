@@ -83,3 +83,116 @@ test('getKioskOptions returns destinations from the central kiosk API', async ()
 
   assert.deepEqual(options.destinations, [{ id: 'location-1', name: 'Counselor' }]);
 });
+
+
+test('local kiosk server exposes health without exposing its secret', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    kioskCode: 'KSK-TEST',
+    kioskSecret: 'never-return-this-secret',
+    kioskName: 'Test Kiosk',
+    kioskLocation: 'Room 1',
+    serverUrl: 'http://127.0.0.1:1',
+    registered: true,
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const configResponse = await fetch(`http://127.0.0.1:${port}/api/config`);
+  const config = await configResponse.json();
+  assert.equal(config.kioskCode, 'KSK-TEST');
+  assert.equal(config.registered, true);
+  assert.equal(JSON.stringify(config).includes('never-return-this-secret'), false);
+
+  const healthResponse = await fetch(`http://127.0.0.1:${port}/api/health`);
+  assert.equal(healthResponse.status, 200);
+  assert.equal((await healthResponse.json()).ok, true);
+});
+
+test('local kiosk server rejects cross-origin browser requests', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const response = await fetch(`http://127.0.0.1:${port}/api/health`, {
+    headers: { Origin: 'https://malicious.example' },
+  });
+  assert.equal(response.status, 403);
+});
+
+test('local kiosk server accepts Electron requests with a trusted origin', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const response = await fetch(`http://127.0.0.1:${port}/api/health`, {
+    headers: {
+      Origin: `http://127.0.0.1:${port}`,
+      'Sec-Fetch-Site': 'cross-site',
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).ok, true);
+});
+
+test('local kiosk server starts only one enrollment for concurrent config requests', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  let startCount = 0;
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'https://central.example.test',
+    startEnrollment: async () => {
+      startCount += 1;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return {
+        enrollmentCode: 'ABCD-EFGH',
+        enrollmentToken: 'enrollment-token',
+        expiresAt: '2026-11-06T10:00:00.000Z',
+      };
+    },
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const responses = await Promise.all([
+    fetch(`http://127.0.0.1:${port}/api/config`),
+    fetch(`http://127.0.0.1:${port}/api/config`),
+  ]);
+  const configs = await Promise.all(responses.map((response) => response.json()));
+
+  assert.equal(startCount, 1);
+  assert.equal(configs[0].enrollmentCode, 'ABCD-EFGH');
+  assert.equal(configs[1].enrollmentCode, 'ABCD-EFGH');
+});
+
+
+test('local kiosk server does not serve files outside the public directory', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const response = await fetch(`http://127.0.0.1:${port}/%2e%2e/README.md`);
+  assert.equal(response.status, 404);
+});

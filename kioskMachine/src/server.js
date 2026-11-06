@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig, saveEnrolledConfig } from './config.js';
+import { loadConfig, saveEnrolledConfig, savePendingEnrollmentConfig } from './config.js';
 import {
   callKioskApi,
   establishKioskSession,
@@ -28,10 +28,24 @@ const mimeTypes = {
   '.ico': 'image/x-icon',
 };
 
-function readRequestBody(req) {
+function readRequestBody(req, maxBytes = 64 * 1024) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
+    let size = 0;
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > maxBytes) {
+        tooLarge = true;
+        const error = new Error('Request body is too large.');
+        error.statusCode = 413;
+        reject(error);
+        req.resume();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
       if (!raw) return resolve({});
@@ -46,10 +60,24 @@ function readRequestBody(req) {
   });
 }
 
-function readRawRequestBody(req) {
+function readRawRequestBody(req, maxBytes = 1024 * 1024) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
+    let size = 0;
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > maxBytes) {
+        tooLarge = true;
+        const error = new Error('Request body is too large.');
+        error.statusCode = 413;
+        reject(error);
+        req.resume();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
@@ -69,26 +97,37 @@ async function serveStaticAsset(filePath, res) {
 
 export async function createKioskServer(options = {}) {
   const config = { ...loadConfig(), ...options };
+  const startEnrollment = options.startEnrollment || startKioskEnrollment;
   const state = {
     lastHeartbeatAt: null,
     lastStudent: null,
-    enrollmentExpiresAt: null,
+    enrollmentExpiresAt: config.enrollmentExpiresAt || null,
     centralSessionCookie: '',
   };
+  let enrollmentStartPromise = null;
 
   async function ensureEnrollment() {
     if (config.registered || config.enrollmentCode || !config.serverUrl) return;
-    try {
-      const result = await startKioskEnrollment({
-        serverUrl: config.serverUrl,
-        softwareVersion: '1.0.0',
-      });
-      config.enrollmentCode = result.enrollmentCode;
-      config.enrollmentToken = result.enrollmentToken;
-      state.enrollmentExpiresAt = result.expiresAt;
-    } catch (_error) {
-      // The browser will show the connection failure and retry on its next poll.
+    if (!enrollmentStartPromise) {
+      enrollmentStartPromise = (async () => {
+        try {
+          const result = await startEnrollment({
+            serverUrl: config.serverUrl,
+            softwareVersion: '1.0.0',
+          });
+          config.enrollmentCode = result.enrollmentCode;
+          config.enrollmentToken = result.enrollmentToken;
+          config.enrollmentExpiresAt = result.expiresAt;
+          state.enrollmentExpiresAt = result.expiresAt;
+          savePendingEnrollmentConfig(config);
+        } catch (_error) {
+          // The browser will show the connection failure and retry on its next poll.
+        } finally {
+          enrollmentStartPromise = null;
+        }
+      })();
     }
+    await enrollmentStartPromise;
   }
 
   async function ensureCentralSession() {
@@ -179,6 +218,16 @@ export async function createKioskServer(options = {}) {
   }
 
   const server = http.createServer(async (req, res) => {
+    try {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+    if (!isAllowedLocalOrigin(req)) {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, message: 'Cross-origin requests are not allowed.' }));
+      return;
+    }
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
     if (
@@ -232,13 +281,19 @@ export async function createKioskServer(options = {}) {
             registered: true,
             enrollmentCode: null,
             enrollmentToken: '',
+            enrollmentExpiresAt: null,
           });
+          state.enrollmentExpiresAt = null;
           saveEnrolledConfig(config);
         }
         sendJson(res, { ok: true, ...result });
       } catch (error) {
         if (error.status === 404) {
           config.enrollmentCode = null;
+          config.enrollmentToken = '';
+          config.enrollmentExpiresAt = null;
+          state.enrollmentExpiresAt = null;
+          savePendingEnrollmentConfig(config);
           await ensureEnrollment();
         }
         sendJson(
@@ -366,27 +421,54 @@ export async function createKioskServer(options = {}) {
       return;
     }
 
-    const requestedFile = path.join(publicDir, url.pathname);
-    if (url.pathname.startsWith('/')) {
-      await serveStaticAsset(requestedFile, res);
-      return;
+    if (req.method === 'GET' && url.pathname.startsWith('/')) {
+      let decodedPath;
+      try { decodedPath = decodeURIComponent(url.pathname); } catch { decodedPath = ''; }
+      const requestedFile = path.resolve(publicDir, `.${decodedPath}`);
+      const relativePath = path.relative(publicDir, requestedFile);
+      if (decodedPath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+        await serveStaticAsset(requestedFile, res);
+        return;
+      }
     }
 
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
+    } catch (error) {
+      if (!res.headersSent && !res.destroyed) {
+        sendJson(res, { ok: false, message: error.statusCode === 413 ? 'Request body is too large.' : 'The kiosk encountered an internal error.' }, error.statusCode || 500);
+      } else if (!res.destroyed) {
+        res.destroy();
+      }
+    }
   });
 
+  let heartbeatInFlight = false;
   const heartbeatTimer = setInterval(async () => {
-    if (!config.registered) return;
+    if (!config.registered || heartbeatInFlight) return;
+    heartbeatInFlight = true;
     try {
       const result = await sendHeartbeat({ serverUrl: config.serverUrl, config });
       state.lastHeartbeatAt = result.timestamp || new Date().toISOString();
     } catch (_error) {
       // The central server remains authoritative when the kiosk is offline.
+    } finally {
+      heartbeatInFlight = false;
     }
   }, config.heartbeatMs);
+  heartbeatTimer.unref?.();
 
-  await new Promise((resolve) => server.listen(config.port, resolve));
+  server.requestTimeout = 15000;
+  server.headersTimeout = 10000;
+  server.keepAliveTimeout = 5000;
+  const host = config.host || '127.0.0.1';
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(config.port, host, () => {
+      server.removeListener('error', reject);
+      resolve();
+    });
+  });
 
   return {
     server,
@@ -396,8 +478,23 @@ export async function createKioskServer(options = {}) {
       new Promise((resolve, reject) => {
         clearInterval(heartbeatTimer);
         server.close((error) => (error ? reject(error) : resolve()));
+        server.closeAllConnections?.();
       }),
   };
+}
+
+function isAllowedLocalOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    const parsed = new URL(origin);
+    const hostname = parsed.hostname.toLowerCase();
+    const allowedHost = ['127.0.0.1', 'localhost', '[::1]', '::1'].includes(hostname);
+    const requestPort = String(req.headers.host || '').split(':').pop();
+    return parsed.protocol === 'http:' && allowedHost && parsed.port === requestPort;
+  } catch {
+    return false;
+  }
 }
 
 function sendJson(res, body, status = 200) {
@@ -409,6 +506,6 @@ if (process.argv[1] === __filename) {
   const config = loadConfig();
   const { server } = await createKioskServer(config);
   console.log(`Kiosk app running at http://localhost:${config.port}`);
-  console.log(`Kiosk code: ${config.kioskCode} | Location: ${config.kioskLocation}`);
+  console.log(`Kiosk location: ${config.kioskLocation}`);
   server.on('close', () => process.exit(0));
 }
