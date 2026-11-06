@@ -438,11 +438,6 @@ export function createWebController(container) {
     async deleteManagerStudent(req, res, next) {
       return managerMutation(req, res, next, () => passService.deleteManagerStudent(req.body));
     },
-    async updateManagerUserRole(req, res, next) {
-      return managerMutation(req, res, next, () =>
-        userService.setStaffRole(req.body, { userId: req.currentUser.id, ...req }),
-      );
-    },
     async createManagerLocation(req, res, next) {
       return managerMutation(req, res, next, () => passService.createManagerLocation(req.body));
     },
@@ -465,7 +460,7 @@ export function createWebController(container) {
           ...req.body,
           reqLike: req,
         });
-        res.redirect(`/manager?enrollmentCode=${encodeURIComponent(result.code)}`);
+        res.redirect(managerRedirectPath(req, { enrollmentCode: result.code }));
       } catch (error) {
         next(error);
       }
@@ -473,7 +468,7 @@ export function createWebController(container) {
     async completeManagerEnrollment(req, res, next) {
       try {
         await kioskService.completeEnrollment({ ...req.body, reqLike: req });
-        res.redirect('/manager');
+        res.redirect(managerRedirectPath(req));
       } catch (error) {
         next(error);
       }
@@ -485,7 +480,7 @@ export function createWebController(container) {
           kioskId: req.body.kioskId,
           reqLike: req,
         });
-        res.redirect(`/manager?enrollmentCode=${encodeURIComponent(result.code)}`);
+        res.redirect(managerRedirectPath(req, { enrollmentCode: result.code }));
       } catch (error) {
         next(error);
       }
@@ -495,10 +490,34 @@ export function createWebController(container) {
   async function managerMutation(req, res, next, action) {
     try {
       await action();
-      res.redirect('/manager');
+      res.redirect(managerRedirectPath(req));
     } catch (error) {
       next(error);
     }
+  }
+
+  function managerRedirectPath(req, extra = {}) {
+    const params = new URLSearchParams();
+    let valueCount = 0;
+
+    for (const [key, value] of Object.entries(req.query || {})) {
+      if (!/^[A-Za-z][A-Za-z0-9_-]{0,40}$/.test(key) || key === '_csrf') continue;
+      for (const item of Array.isArray(value) ? value : [value]) {
+        if (valueCount >= 32) break;
+        if (typeof item !== 'string' || item.length > 256) continue;
+        params.append(key, item);
+        valueCount += 1;
+      }
+    }
+
+    for (const [key, value] of Object.entries(extra)) {
+      if (/^[A-Za-z][A-Za-z0-9_-]{0,40}$/.test(key) && typeof value === 'string') {
+        params.set(key, value);
+      }
+    }
+
+    const query = params.toString();
+    return query ? `/manager?${query}` : '/manager';
   }
 
   function renderKiosk(res, data, status = 200) {

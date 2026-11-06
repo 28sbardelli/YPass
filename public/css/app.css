@@ -152,9 +152,23 @@ button,
   border-radius: 8px;
   padding: 8px 10px;
   text-decoration: none;
-  display: inline-block;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+button:not(.danger-button, .manager-tab) img, .button img {
+  filter: invert(1);
+}
+.danger-button img {
+  filter: opacity(0.7);
+}
+.danger-button:hover img {
+  filter: brightness(0) saturate(100%) invert(15%) sepia(95%) saturate(4810%) hue-rotate(355deg)
+    brightness(75%) contrast(98%);
 }
 button:not(.danger-button):hover,
 .button:hover {
@@ -570,6 +584,46 @@ button:not(.danger-button):hover,
 .staff-form + .staff-list {
   margin-top: 0.7rem;
 }
+.student-search {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--card);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border: 1px solid var(--card-border);
+  margin-bottom: 0;
+}
+.student-search input {
+  margin-top: 0.35rem;
+}
+#manager-panel-locations select[name='bathroom']:has(option:checked[value='']),
+#manager-panel-locations select[name='teacherUserId']:has(option:checked[value='']),
+#manager-panel-locations select[name='defaultLocation']:has(option:checked[value='false']) {
+  color: var(--faint-txt);
+}
+.location-row:has(select[name='active'] option:checked[value='false']) {
+  background-color: #e5e7eb;
+  border-color: #cbd5e1;
+  filter: grayscale(1);
+}
+.student-row:has(select[name='status'] option:checked[value='inactive']) {
+  background-color: #e5e7eb;
+  border-color: #cbd5e1;
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.kiosk-row:has(select[name='active'] option:checked[value='false']) {
+  background-color: #e5e7eb;
+  border-color: #cbd5e1;
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.kiosk-row:has(select[name='active'] option:checked[value='false']) span {
+  color: var(--faint-txt);
+}
 .staff-section > .staff-list {
   min-width: 0;
 }
@@ -603,6 +657,12 @@ button:not(.danger-button):hover,
   align-items: end;
   gap: 0.7rem;
 }
+.manager-form.offline {
+    border-left: var(--pass-border) solid var(--danger) !important;
+}
+.manager-form.online {
+    border-left: var(--pass-border) solid var(--completed) !important;
+}
 .manager-form label {
   margin: 0;
 }
@@ -618,16 +678,17 @@ button:not(.danger-button):hover,
 .staff-section > .staff-list .manager-form > span {
   align-self: center;
 }
-.staff-section > .staff-list .manager-form + .manager-form {
-  margin-top: -0.6rem;
-  padding-top: 0;
-  border-top: 0;
-}
 
 /* Shared staff cards, including pass and appointment card layouts. */
 .staff-list {
   display: grid;
-  gap: 0.6rem;
+  gap: 10px;
+  background-color: oklch(from var(--bg) calc(l - 0.05) c h);
+  padding: 10px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border: 1px solid var(--card-border);
+  border-top: none;
 }
 .staff-row {
   display: flex;
@@ -716,6 +777,9 @@ button:not(.danger-button):hover,
 .staff-row.expired {
   border-left: var(--pass-border) solid var(--expired) !important;
 }
+.staff-row.timedout {
+  border-left: var(--pass-border) solid var(--expired) !important;
+}
 
 /* Status filter colors. */
 .filter-pending {
@@ -789,9 +853,9 @@ button:not(.danger-button):hover,
   border-radius: 10px;
   border: 1px solid var(--card-border);
 }
-.staff-form input,
-.staff-form select,
-.staff-form textarea {
+input,
+select,
+textarea {
   width: 100%;
   font: inherit;
   padding: 0.55rem;

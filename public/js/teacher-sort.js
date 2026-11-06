@@ -94,27 +94,41 @@ document.querySelectorAll('[data-sort-control][data-sort-value]').forEach((contr
   if (control.getAttribute('aria-pressed') === 'true') applySort();
 });
 
+const applyListVisibility = (listName) => {
+  const list = document.querySelector(`[data-sort-list="${listName}"]`);
+  if (!list) return;
+
+  const selectedStatuses = new Set(
+    Array.from(
+      document.querySelectorAll(`[data-filter-control="${listName}"][data-filter-value]`),
+    )
+      .filter((button) => button.getAttribute('aria-pressed') === 'true')
+      .map((button) => button.dataset.filterValue),
+  );
+  const search = document.querySelector(`[data-search-input="${listName}"]`);
+  const query = search?.value.trim().toLocaleLowerCase() || '';
+
+  Array.from(list.children).forEach((row) => {
+    const matchesStatus = selectedStatuses.size === 0 || selectedStatuses.has(row.dataset.sortStatus);
+    const searchableText = (row.dataset.searchText || '').toLocaleLowerCase();
+    row.hidden = !matchesStatus || !searchableText.includes(query);
+  });
+};
+
+document.querySelectorAll('[data-search-input]').forEach((search) => {
+  search.addEventListener('input', () => applyListVisibility(search.dataset.searchInput));
+});
+
 document.querySelectorAll('[data-filter-control][data-filter-value]').forEach((control) => {
   const filterName = control.dataset.filterControl;
   const list = document.querySelector(`[data-sort-list="${filterName}"]`);
   if (!list) return;
 
-  const rows = Array.from(list.children);
   control.addEventListener('click', () => {
     control.setAttribute(
       'aria-pressed',
       String(control.getAttribute('aria-pressed') !== 'true'),
     );
-    const selectedStatuses = new Set(
-      Array.from(
-        document.querySelectorAll(`[data-filter-control="${filterName}"][data-filter-value]`),
-      )
-        .filter((button) => button.getAttribute('aria-pressed') === 'true')
-        .map((button) => button.dataset.filterValue),
-    );
-
-    rows.forEach((row) => {
-      row.hidden = selectedStatuses.size > 0 && !selectedStatuses.has(row.dataset.sortStatus);
-    });
+    applyListVisibility(filterName);
   });
 });
