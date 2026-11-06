@@ -1,0 +1,6 @@
+node_modules/
+release/
+.env
+kiosk-config.json
+*.log
+.DS_Store

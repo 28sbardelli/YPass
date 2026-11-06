@@ -7,6 +7,9 @@
   socket.on('teacher-pass-requested', function () {
     window.location.reload();
   });
+  socket.on('teacher-pass-started', function () {
+    window.location.reload();
+  });
   socket.on('teacher-pass-ended', function () {
     window.location.reload();
   });

@@ -6,7 +6,11 @@ if (section) {
   const request = async (url, options = {}) => {
     const response = await fetch(url, {
       ...options,
-      headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+      headers: {
+        'content-type': 'application/json',
+        'x-csrf-token': csrf,
+        ...(options.headers || {}),
+      },
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.error?.message || 'SIS request failed');
