@@ -43,7 +43,7 @@ describe('SIS administration API', () => {
     expect(managerPage.text).toContain('SIS integrations');
     expect(managerPage.text).toContain('id="manager-tab-sis"');
     expect(managerPage.text).toContain('id="manager-panel-sis"');
-    expect(managerPage.text).toContain('/js/sis-manager.js?v=1');
+    expect(managerPage.text).toContain('/js/sis-manager.js?v=2');
 
     const created = await agent
       .post('/api/v1/admin/sis/connections')
@@ -61,5 +61,15 @@ describe('SIS administration API', () => {
     const listed = await agent.get('/api/v1/admin/sis/connections');
     expect(listed.status).toBe(200);
     expect(JSON.stringify(listed.body)).not.toContain('super-secret-token');
+
+    const connectionId = listed.body.data[0].id;
+    const deleted = await agent
+      .delete(`/api/v1/admin/sis/connections/${connectionId}`)
+      .set('x-csrf-token', csrf);
+    expect(deleted.status).toBe(204);
+
+    const afterDelete = await agent.get('/api/v1/admin/sis/connections');
+    expect(afterDelete.status).toBe(200);
+    expect(afterDelete.body.data).toHaveLength(0);
   });
 });

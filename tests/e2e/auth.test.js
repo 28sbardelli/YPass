@@ -23,6 +23,10 @@ describe('local authentication', () => {
     });
     expect(register.status).toBe(302);
 
+    const user = await ctx.container.db.knex('users').where({ primary_email: 'alice@example.test' }).first();
+    const teacherRole = await ctx.container.db.knex('roles').where({ name: 'teacher' }).first();
+    await ctx.container.db.knex('user_roles').insert({ user_id: user.id, role_id: teacherRole.id });
+
     const loginPage = await agent.get('/auth/login');
     const loginCsrf = extractCsrf(loginPage.text);
     const login = await agent.post('/auth/login').type('form').send({
