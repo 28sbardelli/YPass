@@ -97,12 +97,14 @@ export function createPassService({
     if (!student) {
       return [];
     }
+    await passes.expireAppointmentNoShows(now);
     return passes.listUpcomingAppointmentsForStudent(student.id, now, 12);
   }
 
   async function scanStudent({ kioskCode, studentNumber, studentName, actorUserId }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
+      await passes.expireAppointmentNoShows(now, trx);
       const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
@@ -402,6 +404,7 @@ export function createPassService({
 
   async function teacherDashboard(userId) {
     const now = clock.now();
+    await passesRepository.expireAppointmentNoShows(now);
     const [locations, passes, appointments] = await Promise.all([
       passesRepository.listTeacherLocations(userId),
       passesRepository.listTeacherPasses(userId),
@@ -522,6 +525,7 @@ export function createPassService({
 
   async function managerDashboard(filters = {}) {
     const now = clock.now();
+    await passesRepository.expireAppointmentNoShows(now);
     const [passRows, appointmentRows, students, locations, kiosks, users] = await Promise.all([
       passesRepository.listManagerPasses({ ...filters, now }),
       passesRepository.listManagerAppointments(filters),
@@ -530,6 +534,11 @@ export function createPassService({
       passesRepository.listManagerKiosks(),
       passesRepository.listManagerUsers(),
     ]);
+
+    let filteredUsers = users
+    if (filters.role){
+      filteredUsers = users.filter((user) => user.roles.includes(filters.role))
+    }
 
     const bathrooms = locations.filter(
     (location) => location.type === 'bathroom'

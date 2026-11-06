@@ -324,6 +324,13 @@ export function createPassRepository(db) {
         .where({ id, status: 'scheduled' })
         .update({ status: 'completed', used_at: completedAt, updated_at: trx.fn.now() });
     },
+    async expireAppointmentNoShows(now, trx = knex) {
+      const cutoff = new Date(now.getTime() - 30 * 60 * 1000);
+      await trx('appointments')
+        .where({ status: 'scheduled' })
+        .where('scheduled_at', '<=', cutoff)
+        .update({ status: 'no_show', updated_at: trx.fn.now() });
+    },
     async createPass(pass, event, trx = knex) {
       await trx('passes').insert(pass);
       await trx('pass_events').insert(event);
