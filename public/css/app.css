@@ -627,6 +627,9 @@ button:not(.danger-button):hover,
 .staff-section > .staff-list {
   min-width: 0;
 }
+.manager-tab-panel .staff-list:not(:has(> :not([hidden]))) {
+  display: none;
+}
 .staff-sort,
 .staff-filter {
   display: flex;
