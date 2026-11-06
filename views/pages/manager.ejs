@@ -271,7 +271,6 @@
                   <h4 class="small-muted"><%= pass.destination_name %></h4>
                 </div>
               </div>
-              <time><%= pass.requested_at %></time>
             </article>
           <% }) %>
         </div>
@@ -420,15 +419,6 @@
     </div>
     <script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=2" defer></script>
   <% } %>
-  <form method="get" action="/manager" class="filter-bar">
-    <select name="role" id="">
-      <option value="">All roles</option>
-      <option value="student">Student</option>
-      <option value="teacher">Teacher</option>
-      <option value="manager">Manager</option>
-    </select>
-    <button type="submit">Filter</button>
-  </form>
   <div id="manager-panel-user-roles" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-user-roles" tabindex="0" data-panel="user-roles">
     <section class="staff-section">
       <label class="student-search">
