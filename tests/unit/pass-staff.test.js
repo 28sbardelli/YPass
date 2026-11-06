@@ -450,6 +450,47 @@ describe('staff pass controls', () => {
     expect(timedOut.timedOutPasses[0].id).toBe(requested.pass.id);
   });
 
+  it('marks old appointments as no_show after 30 minutes', async () => {
+    ctx = await createTestApp();
+    const teacherId = randomUUID();
+    const user = {
+      id: teacherId,
+      display_name: 'Appointment Teacher',
+      primary_email: `${teacherId}@example.test`,
+      status: 'active',
+    };
+    await ctx.container.db.knex('users').insert(user);
+    const mainOffice = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const counseling = await ctx.container.db.knex('locations').where({ name: 'Counseling Office' }).first();
+    await ctx.container.db.knex('locations').where({ id: mainOffice.id }).update({ teacher_user_id: teacherId });
+    const student = await ctx.container.db.knex('students').where({ student_number: '111111' }).first();
+
+    const appointment = await ctx.container.passService.createAppointment({
+      userId: teacherId,
+      studentNumber: student.student_number,
+      studentName: student.display_name,
+      originLocationId: mainOffice.id,
+      destinationLocationId: counseling.id,
+      scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      notes: 'Late appointment',
+    });
+    await ctx.container.db.knex('appointments').where({ id: appointment.appointment.id }).update({
+      scheduled_at: new Date(Date.now() - 31 * 60 * 1000),
+      updated_at: new Date(Date.now()),
+    });
+
+    const dashboard = await ctx.container.passService.teacherDashboard(teacherId);
+    expect(dashboard.appointments).toContainEqual(
+      expect.objectContaining({ id: appointment.appointment.id, status: 'no_show' }),
+    );
+
+    const manager = await ctx.container.passService.managerDashboard({ appointmentStatus: 'no_show' });
+    expect(manager.appointments.map(({ id }) => id)).toContain(appointment.appointment.id);
+    await expect(
+      ctx.container.db.knex('appointments').where({ id: appointment.appointment.id }).first(),
+    ).resolves.toMatchObject({ status: 'no_show' });
+  });
+
   it('lets managers create and update students, locations, and kiosks', async () => {
     ctx = await createTestApp();
     const teacherId = randomUUID();
