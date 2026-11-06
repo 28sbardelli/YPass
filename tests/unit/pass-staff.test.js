@@ -371,6 +371,12 @@ describe('staff pass controls', () => {
     expect(arrived.action).toBe('arrival');
     expect(leaving.action).toBe('scan_out');
     expect(ended.action).toBe('completed');
+    await expect(
+      ctx.container.passService.approvePass({
+        passId: requested.pass.id,
+        userId: mainOffice.teacher_user_id,
+      }),
+    ).resolves.toMatchObject({ status: 'completed' });
     expect(events).toContainEqual({
       room: `teacher:${mainOffice.teacher_user_id}`,
       event: 'teacher-pass-ended',

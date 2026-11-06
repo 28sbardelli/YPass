@@ -451,6 +451,7 @@ export function createPassService({
       const pass = await passesRepository.findPassForTeacher(passId, userId, trx);
       if (!pass) throw new NotFoundError('Pass not found or outside your locations');
       if (action === 'approve' && pass.status === 'active') return pass;
+      if (action === 'approve' && pass.status === 'completed') return pass;
       if (action === 'cancel' && pass.status === 'cancelled') return pass;
       if (action === 'approve' && pass.status !== 'pending_approval')
         throw new ConflictError('Only pending passes can be approved');

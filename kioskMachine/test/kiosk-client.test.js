@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
 
 import {
   buildHeartbeatPayload,
@@ -105,10 +106,34 @@ test('local kiosk server exposes health without exposing its secret', async (t) 
   assert.equal(config.kioskCode, 'KSK-TEST');
   assert.equal(config.registered, true);
   assert.equal(JSON.stringify(config).includes('never-return-this-secret'), false);
+  assert.equal(configResponse.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
 
   const healthResponse = await fetch(`http://127.0.0.1:${port}/api/health`);
   assert.equal(healthResponse.status, 200);
   assert.equal((await healthResponse.json()).ok, true);
+});
+
+test('local kiosk server retries central requests after an outage', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: true,
+    kioskCode: 'KSK-TEST',
+    kioskSecret: 'secret',
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+
+  const pageResponse = await fetch(`http://127.0.0.1:${port}/kiosk/pass`);
+  assert.equal(pageResponse.status, 503);
+  assert.match(await pageResponse.text(), /api\/central-status/);
+
+  const statusResponse = await fetch(`http://127.0.0.1:${port}/api/central-status`);
+  assert.equal(statusResponse.status, 503);
+  assert.deepEqual(await statusResponse.json(), { ok: false, status: 'offline' });
 });
 
 test('local kiosk server rejects cross-origin browser requests', async (t) => {
@@ -149,6 +174,59 @@ test('local kiosk server accepts Electron requests with a trusted origin', async
   assert.equal((await response.json()).ok, true);
 });
 
+test('local kiosk server accepts trusted origins when Host omits the dev port', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const response = await new Promise((resolve, reject) => {
+    const request = http.request({
+      host: '127.0.0.1',
+      port,
+      path: '/api/health',
+      headers: {
+        Host: 'localhost',
+        Origin: `http://localhost:${port}`,
+      },
+    }, (result) => {
+      const chunks = [];
+      result.on('data', (chunk) => chunks.push(chunk));
+      result.on('end', () => resolve({ status: result.statusCode, body: Buffer.concat(chunks).toString() }));
+    });
+    request.on('error', reject);
+    request.end();
+  });
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(response.body).ok, true);
+});
+
+test('local kiosk server accepts sandboxed form posts with a local referer', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const port = instance.server.address().port;
+  const response = await fetch(`http://127.0.0.1:${port}/api/health`, {
+    headers: {
+      Origin: 'null',
+      Referer: `http://127.0.0.1:${port}/kiosk/pass`,
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).ok, true);
+});
+
 test('local kiosk server starts only one enrollment for concurrent config requests', async (t) => {
   const { createKioskServer } = await import('../src/server.js');
   let startCount = 0;
@@ -157,6 +235,8 @@ test('local kiosk server starts only one enrollment for concurrent config reques
     port: 0,
     heartbeatMs: 30000,
     registered: false,
+    enrollmentCode: '',
+    enrollmentToken: '',
     serverUrl: 'https://central.example.test',
     startEnrollment: async () => {
       startCount += 1;
@@ -179,6 +259,47 @@ test('local kiosk server starts only one enrollment for concurrent config reques
   assert.equal(startCount, 1);
   assert.equal(configs[0].enrollmentCode, 'ABCD-EFGH');
   assert.equal(configs[1].enrollmentCode, 'ABCD-EFGH');
+});
+
+test('local kiosk server returns to registration when enrolled credentials are rejected', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: true,
+    kioskCode: 'KSK-STALE',
+    kioskSecret: 'stale-secret',
+    serverUrl: 'https://central.example.test',
+    startEnrollment: async () => ({
+      enrollmentCode: 'NEW-CODE',
+      enrollmentToken: 'new-token',
+      expiresAt: '2026-11-06T10:00:00.000Z',
+    }),
+  });
+  t.after(() => instance.close());
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).endsWith('/api/v1/kiosks/session')) {
+      const error = new Error('Kiosk disabled');
+      error.status = 401;
+      throw error;
+    }
+    if (String(url).includes('127.0.0.1')) return originalFetch(url, options);
+    throw new Error(`Unexpected request: ${url}`);
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  const port = instance.server.address().port;
+  const response = await fetch(`http://127.0.0.1:${port}/kiosk/pass`, { redirect: 'manual' });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), '/');
+
+  const configResponse = await fetch(`http://127.0.0.1:${port}/api/config`);
+  const config = await configResponse.json();
+  assert.equal(config.registered, false);
+  assert.equal(config.enrollmentCode, 'NEW-CODE');
 });
 
 

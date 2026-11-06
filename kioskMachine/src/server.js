@@ -105,6 +105,7 @@ export async function createKioskServer(options = {}) {
     centralSessionCookie: '',
   };
   let enrollmentStartPromise = null;
+  let centralStatusPromise = null;
 
   async function ensureEnrollment() {
     if (config.registered || config.enrollmentCode || !config.serverUrl) return;
@@ -134,6 +135,39 @@ export async function createKioskServer(options = {}) {
     if (state.centralSessionCookie) return;
     const session = await establishKioskSession({ serverUrl: config.serverUrl, config });
     state.centralSessionCookie = session.cookieHeader;
+    saveEnrolledConfig(config);
+  }
+
+  async function checkCentralStatus() {
+    if (!centralStatusPromise) {
+      centralStatusPromise = sendHeartbeat({ serverUrl: config.serverUrl, config })
+        .then((result) => {
+          state.lastHeartbeatAt = result.timestamp || new Date().toISOString();
+          return result.ok;
+        })
+        .catch(() => false)
+        .finally(() => {
+          centralStatusPromise = null;
+        });
+    }
+    return centralStatusPromise;
+  }
+
+  async function recoverFromInvalidCredentials(res) {
+    Object.assign(config, {
+      kioskCode: '',
+      kioskSecret: '',
+      registered: false,
+      enrollmentCode: null,
+      enrollmentToken: '',
+      enrollmentExpiresAt: null,
+    });
+    state.centralSessionCookie = '';
+    state.enrollmentExpiresAt = null;
+    savePendingEnrollmentConfig(config);
+    await ensureEnrollment();
+    res.writeHead(302, { Location: '/' });
+    res.end();
   }
 
   async function proxyCentralPage(req, res) {
@@ -175,28 +209,45 @@ export async function createKioskServer(options = {}) {
       }
       const contentType = response.headers.get('content-type') || 'text/html; charset=utf-8';
       if (response.status === 401) {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(
-          '<!doctype html><title>Kiosk Disabled</title><h1>Kiosk Disabled</h1><p>Please contact an administrator.</p>',
-        );
+        await recoverFromInvalidCredentials(res);
         return;
       }
       res.writeHead(response.status, { 'Content-Type': contentType });
       res.end(await response.text());
     } catch (error) {
       if (error.status === 401) {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(
-          '<!doctype html><title>Kiosk Disabled</title><h1>Kiosk Disabled</h1><p>Please contact an administrator.</p>',
-        );
+        await recoverFromInvalidCredentials(res);
         return;
       }
-      sendJson(
-        res,
-        { ok: false, status: 'offline', message: 'YPass unavailable. Reconnecting...' },
-        502,
-      );
+      sendCentralOfflinePage(res);
     }
+  }
+
+  function sendCentralOfflinePage(res) {
+    res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>YPass unavailable</title></head>
+  <body>
+    <main>
+      <h1>YPass is temporarily unavailable</h1>
+      <p>Waiting for the server to come back online...</p>
+    </main>
+    <script>
+      async function retryConnection() {
+        try {
+          const response = await fetch('/api/central-status', { cache: 'no-store' });
+          if (response.ok) {
+            window.location.replace('/kiosk/pass');
+            return;
+          }
+        } catch (_error) {}
+        window.setTimeout(retryConnection, 3000);
+      }
+      retryConnection();
+    </script>
+  </body>
+</html>`);
   }
 
   function rememberCentralCookies(response) {
@@ -220,7 +271,7 @@ export async function createKioskServer(options = {}) {
   const server = http.createServer(async (req, res) => {
     try {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
     if (!isAllowedLocalOrigin(req)) {
@@ -341,6 +392,16 @@ export async function createKioskServer(options = {}) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/central-status') {
+      const online = await checkCentralStatus();
+      sendJson(
+        res,
+        { ok: online, status: online ? 'online' : 'offline' },
+        online ? 200 : 503,
+      );
+      return;
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/heartbeat') {
       if (!config.registered) {
         sendJson(
@@ -436,7 +497,17 @@ export async function createKioskServer(options = {}) {
     res.end('Not found');
     } catch (error) {
       if (!res.headersSent && !res.destroyed) {
-        sendJson(res, { ok: false, message: error.statusCode === 413 ? 'Request body is too large.' : 'The kiosk encountered an internal error.' }, error.statusCode || 500);
+        sendJson(
+          res,
+          {
+            ok: false,
+            message:
+              error.statusCode === 413
+                ? 'Request body is too large.'
+                : 'The kiosk encountered an internal error.',
+          },
+          error.statusCode || 500,
+        );
       } else if (!res.destroyed) {
         res.destroy();
       }
@@ -486,11 +557,16 @@ export async function createKioskServer(options = {}) {
 function isAllowedLocalOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return true;
+  if (origin === 'null') return isAllowedLocalOriginValue(req.headers.referer, req);
+  return isAllowedLocalOriginValue(origin, req);
+}
+
+function isAllowedLocalOriginValue(value, req) {
   try {
-    const parsed = new URL(origin);
+    const parsed = new URL(value);
     const hostname = parsed.hostname.toLowerCase();
     const allowedHost = ['127.0.0.1', 'localhost', '[::1]', '::1'].includes(hostname);
-    const requestPort = String(req.headers.host || '').split(':').pop();
+    const requestPort = String(req.socket.localPort || '');
     return parsed.protocol === 'http:' && allowedHost && parsed.port === requestPort;
   } catch {
     return false;
