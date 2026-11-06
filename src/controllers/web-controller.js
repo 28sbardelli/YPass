@@ -187,6 +187,7 @@ export function createWebController(container) {
       try {
         await kioskService.updateSettings({
           kioskId: req.kiosk.id,
+          name: req.body.name,
           locationId: req.body.locationId,
           teacherUserId: req.body.teacherUserId,
           reqLike: req,
@@ -219,6 +220,7 @@ export function createWebController(container) {
         try {
           await kioskService.updateSettings({
             kioskId: req.kiosk.id,
+            name: req.body.name,
             locationId: req.body.locationId,
             teacherUserId: req.body.teacherUserId,
             reqLike: req,

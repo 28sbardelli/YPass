@@ -34,6 +34,7 @@ export const kioskSessionScanSchema = kioskScanSchema
   });
 
 export const kioskSettingsSchema = z.object({
+  name: z.string().trim().min(1).max(120),
   locationId: z.string().uuid(),
   teacherUserId: z.string().uuid().optional().or(z.literal('')),
   _csrf: z.string().optional(),
