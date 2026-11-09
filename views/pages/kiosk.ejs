@@ -2,7 +2,7 @@
   <% const waitingForApproval = (typeof action !== 'undefined' && action === 'pending') || (typeof pass !== 'undefined' && pass && pass.status === 'pending_approval');%>
   <div class="kiosk-heading">
     <div>
-      <p class="kiosk-kicker">Student movement</p>
+      <p class="kiosk-kicker">Student Kiosk</p>
       <h1><%= kiosk.name %></h1>
       <p class="small-muted">Scan a student ID to request a pass or record a return.</p>
     </div>
@@ -17,7 +17,7 @@
     <section class="kiosk-panel kiosk-scan-panel">
       <div class="panel-heading">
         <div>
-          <h2>Identify student</h2>
+          <h2>⌕ Identify student</h2>
           <p>Use the barcode scanner or type the student ID.</p>
         </div>
       </div>
@@ -38,7 +38,7 @@
       <section class="kiosk-panel kiosk-appointment-panel">
         <div class="panel-heading">
           <div>
-            <h2>Upcoming appointment</h2>
+            <h2>⏱︎ Upcoming appointment</h2>
             <p>Would you like to go to the appointment now?</p>
           </div>
         </div>
@@ -58,7 +58,7 @@
       <section class="kiosk-panel kiosk-appointment-panel">
         <div class="panel-heading">
           <div>
-            <h2>Choose appointment</h2>
+            <h2>⏱︎ Choose appointment</h2>
             <p>Select the appointment to complete now.</p>
           </div>
         </div>
@@ -70,7 +70,7 @@
             <input type="hidden" name="appointmentAction" value="complete">
             <input type="hidden" name="appointmentId" value="<%= appointment.id %>">
             <button type="submit" class="appointment-choice-button">
-              <strong><%= appointment.origin_name %> to <%= appointment.destination_name %></strong>
+              <strong><%= appointment.origin_name %> → <%= appointment.destination_name %></strong>
               <span><%= new Date(appointment.scheduled_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) %></span>
             </button>
           </form>
@@ -82,7 +82,7 @@
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">
           <div>
-            <h2>Choose destination</h2>
+            <h2>⌂ Choose destination</h2>
             <p>Student: <strong><%= student.display_name %></strong></p>
           </div>
         </div>
