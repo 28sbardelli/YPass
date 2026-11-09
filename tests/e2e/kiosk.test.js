@@ -210,17 +210,21 @@ describe('kiosk pass flow', () => {
     expect(session.status).toBe(200);
 
     const manager = await agent.get('/kiosk/manager');
+    expect(manager.text).toContain('action="/kiosk/scan"');
     const saved = await agent
-      .post('/kiosk/manager')
+      .post('/kiosk/scan')
       .type('form')
       .send({
         _csrf: extractCsrf(manager.text),
+        managerAction: 'save',
+        studentNumber: 'manager-settings',
         name: 'Renamed Main Office',
         locationId: kiosk.location_id,
         teacherUserId: '',
       });
 
-    expect(saved.status).toBe(302);
+    expect(saved.status).toBe(200);
+    expect(saved.text).toContain('Kiosk settings saved.');
     expect(
       (await ctx.container.db.knex('kiosks').where({ id: kiosk.id }).first()).name,
     ).toBe('Renamed Main Office');

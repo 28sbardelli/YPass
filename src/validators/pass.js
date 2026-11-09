@@ -29,6 +29,7 @@ export const kioskSessionScanSchema = kioskScanSchema
   .omit({ kioskCode: true })
   .extend({
     managerAction: z.literal('save').optional(),
+    name: z.string().trim().min(1).max(120).optional(),
     locationId: z.string().uuid().optional(),
     teacherUserId: z.string().uuid().optional().or(z.literal('')),
   });
