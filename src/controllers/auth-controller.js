@@ -12,6 +12,7 @@ export function createAuthController(container) {
         next: safeRedirect(req.query.next, ''),
         features: config.features,
         error: null,
+        pageClass: 'auth-centered-page',
       });
     },
 
@@ -20,7 +21,11 @@ export function createAuthController(container) {
         res.redirect('/auth/login');
         return;
       }
-      res.render('auth/register', { title: '创建账户', error: null });
+      res.render('auth/register', {
+        title: '创建账户',
+        error: null,
+        pageClass: 'auth-centered-page',
+      });
     },
 
     async register(req, res, next) {
@@ -32,6 +37,7 @@ export function createAuthController(container) {
           res.status(error.status).render('auth/register', {
             title: '创建账户',
             error: error.message,
+            pageClass: 'auth-centered-page',
           });
           return;
         }
@@ -54,6 +60,7 @@ export function createAuthController(container) {
             next: safeRedirect(req.body.next, ''),
             features: config.features,
             error: error.message,
+            pageClass: 'auth-centered-page',
           });
           return;
         }
@@ -144,13 +151,21 @@ export function createAuthController(container) {
     },
 
     forgotPage(req, res) {
-      res.render('auth/forgot', { title: '忘记密码', message: null });
+      res.render('auth/forgot', {
+        title: '忘记密码',
+        message: null,
+        pageClass: 'auth-centered-page',
+      });
     },
 
     async forgot(req, res, next) {
       try {
         const message = await localAuth.requestPasswordReset(req.body.email, req);
-        res.render('auth/forgot', { title: '忘记密码', message });
+        res.render('auth/forgot', {
+          title: '忘记密码',
+          message,
+          pageClass: 'auth-centered-page',
+        });
       } catch (error) {
         next(error);
       }

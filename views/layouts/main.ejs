@@ -12,7 +12,7 @@
     <% if (!(typeof hideSiteChrome !== 'undefined' && hideSiteChrome)) { %>
       <%- include('../partials/header') %>
     <% } %>
-    <main class="page">
+    <main class="page <%= typeof pageClass !== 'undefined' ? pageClass : '' %>">
       <% if (typeof error !== 'undefined' && error) { %>
         <p class="flash flash-error"><%= error %></p>
       <% } %>

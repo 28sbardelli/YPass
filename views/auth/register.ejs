@@ -1,12 +1,15 @@
-<h1>Create account</h1>
-<% if (error) { %>
-  <p class="flash flash-error"><%= error %></p>
-<% } %>
-<form method="post" action="/auth/register">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-  <label>Display name <input name="displayName" required maxlength="120" /></label>
-  <label>Username <input name="username" required maxlength="64" /></label>
-  <label>Email <input name="email" type="email" required /></label>
-  <label>Password <input name="password" type="password" required minlength="12" /></label>
-  <button type="submit">Create account</button>
-</form>
+<section class="auth-card">
+  <h1>Create account</h1>
+  <% if (error) { %>
+    <p class="flash flash-error" role="alert"><%= error %></p>
+  <% } %>
+  <form class="auth-form" method="post" action="/auth/register">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Display name <input name="displayName" required maxlength="120" /></label>
+    <label>Username <input name="username" required maxlength="64" /></label>
+    <label>Email <input name="email" type="email" required /></label>
+    <label>Password <input name="password" type="password" required minlength="12" /></label>
+    <button type="submit">Create account</button>
+  </form>
+  <p class="auth-footer-link">Already have an account? <a href="/auth/login">Sign in</a></p>
+</section>

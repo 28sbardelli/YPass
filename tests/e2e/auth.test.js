@@ -18,6 +18,7 @@ describe('local authentication', () => {
 
     const page = await ctx.request.get('/auth/login');
     expect(page.status).toBe(200);
+    expect(page.text).toContain('class="page auth-centered-page"');
     expect(page.text).toContain('class="button microsoft-login-button"');
     expect(page.text).toContain('src="/images/microsoft-transparent.png"');
 
@@ -124,6 +125,8 @@ describe('local authentication', () => {
     const { default: request } = await import('supertest');
     const agent = request.agent(ctx.app);
     const page = await agent.get('/auth/forgot');
+    expect(page.text).toContain('class="page auth-centered-page"');
+    expect(page.text).toContain('class="auth-card"');
     const csrf = extractCsrf(page.text);
     const res = await agent.post('/auth/forgot').type('form').send({
       _csrf: csrf,
@@ -131,6 +134,15 @@ describe('local authentication', () => {
     });
     expect(res.status).toBe(200);
     expect(res.text).toMatch(/If that email is registered/i);
+  });
+
+  it('uses the centered auth layout for account creation only', async () => {
+    ctx = await createTestApp();
+    const page = await ctx.request.get('/auth/register');
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('class="page auth-centered-page"');
+    expect(page.text).toContain('class="auth-card"');
+    expect(page.text).toContain('class="auth-form"');
   });
 });
 
