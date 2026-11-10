@@ -57,6 +57,9 @@ body {
   background: var(--card);
   z-index: 10000;
 }
+.footer-txt {
+  margin: 0 !important;
+}
 .site-header {
   position: sticky;
   top: 0;
