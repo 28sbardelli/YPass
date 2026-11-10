@@ -1,8 +1,15 @@
-<h1>电子通行证</h1>
 <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-  <p>Signed in as <%= currentUser.display_name %>.</p>
-  <a href="/kiosk">Make a Pass</a>
+  <section class="access-denied-card" role="status">
+    <span class="access-denied-icon" aria-hidden="true">!</span>
+    <p class="access-denied-kicker">Access denied</p>
+    <h2>This page isn’t available for your account</h2>
+    <p>You are signed in as <strong><%= currentUser.display_name %></strong>, but you don’t have permission to access this page.</p>
+    <form method="post" action="/auth/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit">Sign out</button>
+    </form>
+  </section>
 <% } else { %>
-  <p>这是电子通行证</p>
+  <p>This is Elektronischer Hallenpass</p>
   <p><a href="/auth/login">Sign in</a> to continue.</p>
 <% } %>

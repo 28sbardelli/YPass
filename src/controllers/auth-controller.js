@@ -8,10 +8,11 @@ export function createAuthController(container) {
   return {
     loginPage(req, res) {
       res.render('auth/login', {
-        title: '登录',
-        next: safeRedirect(req.query.next),
+        title: 'Sign in',
+        next: safeRedirect(req.query.next, ''),
         features: config.features,
         error: null,
+        pageClass: 'auth-centered-page',
       });
     },
 
@@ -20,7 +21,11 @@ export function createAuthController(container) {
         res.redirect('/auth/login');
         return;
       }
-      res.render('auth/register', { title: '创建账户', error: null });
+      res.render('auth/register', {
+        title: '创建账户',
+        error: null,
+        pageClass: 'auth-centered-page',
+      });
     },
 
     async register(req, res, next) {
@@ -32,6 +37,7 @@ export function createAuthController(container) {
           res.status(error.status).render('auth/register', {
             title: '创建账户',
             error: error.message,
+            pageClass: 'auth-centered-page',
           });
           return;
         }
@@ -43,14 +49,18 @@ export function createAuthController(container) {
       try {
         const user = await localAuth.login(req.body, req);
         await regenerateSession(req, { userId: user.id });
-        res.redirect(safeRedirect(req.body.next));
+        const authenticatedUser = await userService.findByIdWithAuthz(user.id);
+        res.redirect(
+          safeRedirect(req.body.next, roleLandingPath(authenticatedUser, config.managers)),
+        );
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/login', {
-            title: '登录',
-            next: safeRedirect(req.body.next),
+            title: 'Sign in',
+            next: safeRedirect(req.body.next, ''),
             features: config.features,
             error: error.message,
+            pageClass: 'auth-centered-page',
           });
           return;
         }
@@ -76,7 +86,7 @@ export function createAuthController(container) {
       req.session.oauth = {
         provider: 'formbar',
         state,
-        next: safeRedirect(req.query.next),
+        next: safeRedirect(req.query.next, ''),
         link: req.query.link === '1',
       };
       if (req.query.link === '1' && req.session.userId) {
@@ -112,7 +122,7 @@ export function createAuthController(container) {
           state: started.state,
           nonce: started.nonce,
           verifier: started.verifier,
-          next: safeRedirect(req.query.next),
+          next: safeRedirect(req.query.next, ''),
           link: req.query.link === '1',
         };
         if (req.query.link === '1' && req.session.userId) {
@@ -141,13 +151,21 @@ export function createAuthController(container) {
     },
 
     forgotPage(req, res) {
-      res.render('auth/forgot', { title: '忘记密码', message: null });
+      res.render('auth/forgot', {
+        title: '忘记密码',
+        message: null,
+        pageClass: 'auth-centered-page',
+      });
     },
 
     async forgot(req, res, next) {
       try {
         const message = await localAuth.requestPasswordReset(req.body.email, req);
-        res.render('auth/forgot', { title: '忘记密码', message });
+        res.render('auth/forgot', {
+          title: '忘记密码',
+          message,
+          pageClass: 'auth-centered-page',
+        });
       } catch (error) {
         next(error);
       }
@@ -214,6 +232,19 @@ export function createAuthController(container) {
       throw new AuthenticationError('Formbar authentication failed');
     }
     await regenerateSession(req, { userId: user.id });
-    res.redirect(safeRedirect(pending?.next));
+    const authenticatedUser = await userService.findByIdWithAuthz(user.id);
+    res.redirect(safeRedirect(pending?.next, roleLandingPath(authenticatedUser, config.managers)));
   }
+}
+
+function roleLandingPath(user, managerEmails = []) {
+  const roles = user?.roles || [];
+  const email = user?.primary_email?.trim().toLowerCase();
+  if (roles.includes('manager') || (email && managerEmails.includes(email))) {
+    return '/manager';
+  }
+  if (roles.includes('teacher')) {
+    return '/teacher';
+  }
+  return '/';
 }

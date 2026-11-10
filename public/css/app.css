@@ -14,11 +14,15 @@
   --card: #fff;
   --pass-border: 8px;
   --card-border: rgb(182, 189, 182);
+  --site-footer-clearance: 4rem;
 }
 * {
   box-sizing: border-box;
 }
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
@@ -46,15 +50,26 @@ body {
 }
 .site-header,
 .site-footer {
-  position: sticky;
-  top: 0;
-  left: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;
   background: var(--card);
   z-index: 10000;
+}
+.footer-txt {
+  margin: 0 !important;
+}
+.site-header {
+  position: sticky;
+  top: 0;
+}
+.site-footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: var(--site-footer-clearance);
 }
 .site-header nav {
   display: flex;
@@ -101,8 +116,16 @@ body {
 
 /* Shared page sizing and account information. */
 .page {
-  margin: 4rem auto;
-  padding: 0 1rem;
+  flex: 1;
+  margin: 4rem;
+  padding: 0 1rem var(--site-footer-clearance);
+}
+.auth-centered-page {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  padding: 1.5rem 1rem calc(var(--site-footer-clearance) + 1.5rem);
+  place-items: safe center;
 }
 .kiosk-layout {
   display: grid;
@@ -134,6 +157,126 @@ body {
   border: none;
   border-radius: 8px;
   padding: 8px 10px;
+}
+.auth-card,
+.login-page {
+  width: min(100%, 34rem);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 16px 40px rgb(28 25 23 / 8%);
+}
+.auth-card h1,
+.login-page h1 {
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+.auth-form,
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+.auth-form label,
+.login-form label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  font-weight: 600;
+}
+.auth-form input,
+.login-form input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: #fff;
+}
+.auth-form button,
+.login-form button {
+  width: 100%;
+  min-height: 2.75rem;
+}
+.login-links {
+  margin: 1rem 0 0;
+  text-align: center;
+}
+.auth-description {
+  margin: -0.5rem 0 1.25rem;
+  color: var(--faint-txt);
+  text-align: center;
+  line-height: 1.5;
+}
+.auth-footer-link {
+  margin: 1.25rem 0 0;
+  text-align: center;
+}
+.auth-provider-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--faint-txt);
+  font-size: 0.875rem;
+}
+.auth-provider-divider::before,
+.auth-provider-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+  content: '';
+}
+.auth-providers {
+  display: grid;
+  gap: 0.75rem;
+}
+.auth-providers .button {
+  min-height: 2.75rem;
+}
+.auth-providers .microsoft-login-button img {
+  width: 18px;
+  height: 18px;
+  filter: none;
+  object-fit: contain;
+}
+.access-denied-card {
+  width: min(100%, 38rem);
+  margin: 2rem 0;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid var(--card-border);
+  border-top: 5px solid var(--danger);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 16px 40px rgb(28 25 23 / 8%);
+  text-align: center;
+}
+.access-denied-icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(185 28 28 / 10%);
+  color: var(--danger);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.access-denied-kicker {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.access-denied-card h2 {
+  margin: 0.5rem 0;
+}
+.access-denied-card form {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
 }
 
 /* Typography and small reusable layout helpers. */
@@ -1049,6 +1192,11 @@ textarea {
   .manager-form {
     display: grid;
     grid-template-columns: 1fr;
+  }
+  .page {
+    flex: 1;
+    margin: 4rem auto;
+    padding: 0 1rem var(--site-footer-clearance);
   }
 }
 
