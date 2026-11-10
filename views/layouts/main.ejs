@@ -8,8 +8,10 @@
     <!-- Raw HTML is used only to inject the CSP nonce attribute. Do not unescaped-print user data. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'" />
   </head>
-  <body>
-    <%- include('../partials/header') %>
+  <body class="<%= typeof hideSiteChrome !== 'undefined' && hideSiteChrome ? 'kiosk-layout' : '' %>">
+    <% if (!(typeof hideSiteChrome !== 'undefined' && hideSiteChrome)) { %>
+      <%- include('../partials/header') %>
+    <% } %>
     <main class="page">
       <% if (typeof error !== 'undefined' && error) { %>
         <p class="flash flash-error"><%= error %></p>
@@ -20,5 +22,8 @@
     <script src="/js/kiosk-destination-search.js"></script>
     <script src="/js/appointment-student-lookup.js"></script>
     <script src="/js/language-switcher.js"></script>
+    <% if (!(typeof hideSiteChrome !== 'undefined' && hideSiteChrome)) { %>
+      <%- include('../partials/footer') %>
+    <% } %>
   </body>
 </html>

@@ -2,11 +2,11 @@
   <% const waitingForApproval = (typeof action !== 'undefined' && action === 'pending') || (typeof pass !== 'undefined' && pass && pass.status === 'pending_approval');%>
   <div class="kiosk-heading">
     <div>
-      <p class="kiosk-kicker">Student movement</p>
+      <p class="kiosk-kicker">Student Kiosk</p>
       <h1><%= kiosk.name %></h1>
       <p class="small-muted">Scan a student ID to request a pass or record a return.</p>
     </div>
-    <div class="kiosk-status"><span></span> Ready</div>
+    <div class="kiosk-status"><img src="/images/power-outline.svg" width="15" height="15">Ready</div>
   </div>
 
   <% if (message) { %>
@@ -17,7 +17,7 @@
     <section class="kiosk-panel kiosk-scan-panel">
       <div class="panel-heading">
         <div>
-          <h2>Identify student</h2>
+          <h2>⌕ Identify student</h2>
           <p>Use the barcode scanner or type the student ID.</p>
         </div>
       </div>
@@ -38,7 +38,7 @@
       <section class="kiosk-panel kiosk-appointment-panel">
         <div class="panel-heading">
           <div>
-            <h2>Upcoming appointment</h2>
+            <h2>⏱︎ Upcoming appointment</h2>
             <p>Would you like to go to the appointment now?</p>
           </div>
         </div>
@@ -58,7 +58,7 @@
       <section class="kiosk-panel kiosk-appointment-panel">
         <div class="panel-heading">
           <div>
-            <h2>Choose appointment</h2>
+            <h2>⏱︎ Choose appointment</h2>
             <p>Select the appointment to complete now.</p>
           </div>
         </div>
@@ -82,8 +82,7 @@
       <section class="kiosk-panel kiosk-destination-panel">
         <div class="panel-heading">
           <div>
-            <h2>Choose destination</h2>
-            <p>Student: <strong><%= student.display_name %></strong></p>
+            <h2>⌂ Choose destination</h2>
           </div>
         </div>
         <form method="post" action="/kiosk/pass" class="kiosk-form" <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
@@ -98,18 +97,16 @@
             <input type="hidden" name="studentNumber" value="<%= student.student_number || form.studentNumber || '' %>">
             <input type="hidden" name="studentName" value="<%= student.display_name || form.studentName || '' %>">
           <% } %>
-          
-          <label for="destinationSearch">Search locations</label>
           <input name="defaultLocations" type="hidden" value="<%= JSON.stringify(destinations) %>">
-          <input id="destinationSearch" type="search" placeholder="Search by location or teacher" autocomplete="off" data-destination-search <% if (waitingForApproval) { %> disabled <% } %>>
+          <input id="destinationSearch" type="search" placeholder="⌕ Search by location or teacher" autocomplete="off" data-destination-search <% if (waitingForApproval) { %> disabled <% } %>>
           <input type="hidden" name="destinationLocationId" value="<%= form.destinationLocationId || '' %>" data-destination-value required>
           <div class="destination-list" role="listbox" aria-label="Destinations" data-destination-list <% if (waitingForApproval) { %> aria-disabled="true" <% } %>>
             <% destinations.forEach((destination) => { %>
               <button type="button" class="destination-option<%= destination.default_location ? ' default-destination' : '' %><%= destination.assigned_bathroom ? ' assigned-bathroom' : '' %>" role="option" aria-selected="false" data-destination-option data-default-location="<%= (destination.default_location || destination.assigned_bathroom) ? 'true' : 'false' %>" data-location-id="<%= destination.id %>" data-location-name="<%= destination.name %>" data-search-text="<%= `${destination.name} ${destination.teacher_name || ''} ${destination.bathroom_name || ''}` %>" <%= (destination.default_location || destination.assigned_bathroom) ? '' : 'hidden' %> <% if (waitingForApproval) { %> disabled <% } %>>
                 <strong><%= destination.name %></strong>
-                <% if (destination.assigned_bathroom) { %><span>Assigned bathroom</span><% } %>
-                <% if (destination.teacher_name) { %><span><%= destination.teacher_name %></span><% } %>
-                <% if (destination.bathroom_name) { %><span>Bathroom: <%= destination.bathroom_name %></span><% } %>
+                <% if (destination.assigned_bathroom) { %><div class="location-cont"><img src="/images/alert-circle-outline.svg" width="15" height="15">Assigned bathroom</div><% } %>
+                <% if (destination.teacher_name) { %><div class="location-cont"><img src="/images/person.svg" width="15" height="15"><%= destination.teacher_name %></div><% } %>
+                <% if (destination.bathroom_name) { %><div class="location-cont"><img src="/images/toilet.png" width="15" height="15"><%= destination.bathroom_name %></div><% } %>
               </button>
             <% }) %>
             <p class="destination-empty" data-destination-empty hidden>No matching locations.</p>

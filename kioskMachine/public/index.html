@@ -4,72 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register YPass Kiosk</title>
-    <style>
-      :root {
-        --bg: #0f172a;
-        --panel: #111827;
-        --accent: #38bdf8;
-        --text: #f8fafc;
-        --muted: #cbd5e1;
-        --warning: #f59e0b;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        background: linear-gradient(180deg, var(--bg), #111827);
-        color: var(--text);
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-      }
-      .shell {
-        width: min(520px, 90vw);
-        padding: 24px;
-        background: rgba(17, 24, 39, 0.9);
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 18px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.5);
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(56, 189, 248, 0.12);
-        color: var(--accent);
-        font-weight: 700;
-      }
-      .panel {
-        background: rgba(31, 41, 55, 0.94);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 14px;
-        padding: 18px;
-      }
-      .status {
-        margin-top: 10px;
-        padding: 12px;
-        border-radius: 10px;
-        background: rgba(15, 23, 42, 0.85);
-        color: var(--muted);
-      }
-      .status strong {
-        color: var(--text);
-      }
-      .warn {
-        border-left: 4px solid var(--warning);
-      }
-    </style>
+    <link rel="stylesheet" href="/css/register.css" />
   </head>
   <body>
     <main class="shell">
-      <div class="badge">YPass kiosk registration</div>
+      <p class="kicker">YPass · Kiosk registration</p>
       <h1>Register this kiosk</h1>
-      <p>Enter this code in YPass Manager to register the kiosk.</p>
-      <p><strong id="enrollmentCodeDisplay">Connecting...</strong></p>
-      <p id="enrollmentExpiry">Waiting for registration...</p>
+      <p class="description">Enter the enrollment code below in YPass Manager to connect this kiosk.</p>
+      <p class="code-label">Enrollment code</p>
+      <p class="enrollment-code" id="enrollmentCodeDisplay" aria-live="polite">Connecting...</p>
+      <p class="expiry" id="enrollmentExpiry">Waiting for registration...</p>
       <div class="status" id="statusPanel" role="status" aria-live="polite">
         <strong>Status:</strong> Checking kiosk configuration...
       </div>

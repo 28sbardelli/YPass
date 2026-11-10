@@ -1,0 +1,104 @@
+:root {
+  color-scheme: light;
+  --bg: #eceeea;
+  --ink: #1c1917;
+  --accent: #586a4d;
+  --muted: rgb(98, 102, 95);
+  --pending: rgb(158, 126, 22);
+  --card: #fff;
+  --card-border: rgb(182, 189, 182);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: grid;
+  min-height: 100vh;
+  margin: 0;
+  padding: 1.5rem;
+  place-items: center;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.shell {
+  width: min(100%, 38rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-top: 5px solid var(--accent);
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 500;
+}
+
+.description {
+  margin: 0.75rem 0 2rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.code-label {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.enrollment-code {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--card-border);
+  background: #f7f8f6;
+  color: var(--accent);
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.expiry {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+}
+
+.status {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  border-left: 4px solid var(--accent);
+  background: #f4f5f2;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.status strong {
+  color: var(--ink);
+}
+
+.status.warn {
+  border-left-color: var(--pending);
+}
+
+@media (max-width: 420px) {
+  body {
+    padding: 1rem;
+  }
+}

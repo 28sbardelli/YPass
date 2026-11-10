@@ -16,7 +16,6 @@
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
       <li class="teacher-data">
         <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
-        <p class="account-info-box">Your locations</p>
         <% if (locations.length) { %>
             <% locations.forEach((location) => { %>
                 <p class="account-info-box">⌂ <span data-language-ignore><%= location.name %></span></p>
