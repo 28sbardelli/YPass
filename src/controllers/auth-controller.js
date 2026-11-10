@@ -8,7 +8,7 @@ export function createAuthController(container) {
   return {
     loginPage(req, res) {
       res.render('auth/login', {
-        title: 'Sign in',
+        title: '登录',
         next: safeRedirect(req.query.next),
         features: config.features,
         error: null,
@@ -20,7 +20,7 @@ export function createAuthController(container) {
         res.redirect('/auth/login');
         return;
       }
-      res.render('auth/register', { title: 'Create account', error: null });
+      res.render('auth/register', { title: '创建账户', error: null });
     },
 
     async register(req, res, next) {
@@ -30,7 +30,7 @@ export function createAuthController(container) {
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/register', {
-            title: 'Create account',
+            title: '创建账户',
             error: error.message,
           });
           return;
@@ -47,7 +47,7 @@ export function createAuthController(container) {
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/login', {
-            title: 'Sign in',
+            title: '登录',
             next: safeRedirect(req.body.next),
             features: config.features,
             error: error.message,
@@ -141,20 +141,20 @@ export function createAuthController(container) {
     },
 
     forgotPage(req, res) {
-      res.render('auth/forgot', { title: 'Forgot password', message: null });
+      res.render('auth/forgot', { title: '忘记密码', message: null });
     },
 
     async forgot(req, res, next) {
       try {
         const message = await localAuth.requestPasswordReset(req.body.email, req);
-        res.render('auth/forgot', { title: 'Forgot password', message });
+        res.render('auth/forgot', { title: '忘记密码', message });
       } catch (error) {
         next(error);
       }
     },
 
     resetPage(req, res) {
-      res.render('auth/reset', { title: 'Reset password', token: req.query.token, error: null });
+      res.render('auth/reset', { title: '重置密码', token: req.query.token, error: null });
     },
 
     async reset(req, res, next) {
@@ -164,7 +164,7 @@ export function createAuthController(container) {
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/reset', {
-            title: 'Reset password',
+            title: '重置密码',
             token: req.body.token,
             error: error.message,
           });
@@ -177,11 +177,11 @@ export function createAuthController(container) {
     async verify(req, res, next) {
       try {
         await localAuth.verifyEmail(req.query.token, req);
-        res.render('auth/verify', { title: 'Email verified', ok: true });
+        res.render('auth/verify', { title: '邮箱验证成功', ok: true });
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/verify', {
-            title: 'Email verification',
+            title: '邮箱验证',
             ok: false,
             error: error.message,
           });

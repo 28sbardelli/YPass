@@ -19,7 +19,7 @@
       <select name="originLocationId" required>
         <option value="">Select location</option>
         <% locations.forEach((location) => { %>
-          <option value="<%= location.id %>" 
+          <option data-language-ignore value="<%= location.id %>" 
             <%= form.originLocationId === location.id ? 'selected' : '' %>><%= location.name %>
           </option>
         <% }) %>
@@ -30,7 +30,7 @@
       <select name="destinationLocationId" required>
         <option value="">Select location</option>
         <% locations.forEach((location) => { %>
-          <option value="<%= location.id %>" 
+          <option data-language-ignore value="<%= location.id %>" 
             <%= form.destinationLocationId === location.id ? 'selected' : '' %>>
             <%= location.name %>
           </option>

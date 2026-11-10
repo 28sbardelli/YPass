@@ -15,7 +15,7 @@ describe('http skeleton', () => {
     ctx = await createTestApp();
     const res = await ctx.request.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Elektronischer Hallenpass');
+    expect(res.text).toContain('电子通行证');
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers['content-security-policy']).toBeTruthy();
   });
@@ -72,7 +72,7 @@ describe('http skeleton', () => {
 
     const teacherPage = await agent.get('/teacher');
     expect(teacherPage.status).toBe(200);
-    expect(teacherPage.text).toContain('Lehrerseite');
+    expect(teacherPage.text).toContain('教师页面');
   });
 
   it('redirects teacher pass actions before rendering the teacher page', async () => {
