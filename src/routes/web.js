@@ -25,7 +25,9 @@ import {
   managerKioskCredentialRotationSchema,
   managerUserRoleSchema,
   managerLocationCreateSchema,
+  managerLocationDeleteSchema,
   managerLocationUpdateSchema,
+  managerKioskDeleteSchema,
   managerStudentCreateSchema,
   managerStudentUpdateSchema,
   passActionSchema,
@@ -129,6 +131,12 @@ export function createWebRouter(container) {
     controller.updateManagerLocation,
   );
   router.post(
+    '/manager/locations/delete',
+    ...manager,
+    validate(managerLocationDeleteSchema),
+    controller.deleteManagerLocation,
+  );
+  router.post(
     '/manager/kiosks/create',
     ...manager,
     validate(managerKioskCreateSchema),
@@ -139,6 +147,12 @@ export function createWebRouter(container) {
     ...manager,
     validate(managerKioskUpdateSchema),
     controller.updateManagerKiosk,
+  );
+  router.post(
+    '/manager/kiosks/delete',
+    ...manager,
+    validate(managerKioskDeleteSchema),
+    controller.deleteManagerKiosk,
   );
   router.post(
     '/manager/kiosks/enrollment-codes/create',

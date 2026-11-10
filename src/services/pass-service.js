@@ -704,6 +704,15 @@ export function createPassService({
     });
   }
 
+  async function deleteManagerLocation({ id }) {
+    await db.transaction(async (trx) => {
+      if (!(await passesRepository.findLocationById(id, trx)))
+        throw new NotFoundError('Location not found');
+      await passesRepository.unassignLocationReferences(id, clock.now(), trx);
+      await passesRepository.deleteLocation(id, trx);
+    });
+  }
+
   async function validateLocationAssignee(userId) {
     if (!userId) return;
     const user = await passesRepository.findManagerUserById(userId);
@@ -728,7 +737,8 @@ export function createPassService({
 
   async function updateManagerKiosk({ name, kioskCode, kioskSecret, locationId, active, id }) {
     if (!(await passesRepository.findKioskById(id))) throw new NotFoundError('Kiosk not found');
-    if (!(await passesRepository.findLocationById(locationId)))
+    if (!locationId && active) throw new ValidationError('Choose a location for an active kiosk');
+    if (locationId && !(await passesRepository.findLocationById(locationId)))
       throw new ValidationError('Choose a valid location');
     const existing = await passesRepository.findKioskByKioskCode(kioskCode);
     if (existing && existing.id !== id)
@@ -736,9 +746,18 @@ export function createPassService({
     await passesRepository.updateKiosk(id, {
       name,
       kiosk_code: kioskCode,
-      location_id: locationId,
+      location_id: locationId || null,
       ...(kioskSecret ? { secret_hash: sha256(kioskSecret) } : {}),
       active,
+    });
+  }
+
+  async function deleteManagerKiosk({ id }) {
+    await db.transaction(async (trx) => {
+      if (!(await passesRepository.findKioskById(id, trx)))
+        throw new NotFoundError('Kiosk not found');
+      await passesRepository.unassignKioskReferences(id, clock.now(), trx);
+      await passesRepository.deleteKiosk(id, trx);
     });
   }
 
@@ -762,8 +781,10 @@ export function createPassService({
     deleteManagerStudent,
     createManagerLocation,
     updateManagerLocation,
+    deleteManagerLocation,
     createManagerKiosk,
     updateManagerKiosk,
+    deleteManagerKiosk,
   };
 }
 

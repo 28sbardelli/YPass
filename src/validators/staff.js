@@ -56,6 +56,10 @@ export const managerLocationCreateSchema = z.object({
   _csrf: z.string().optional(),
 });
 export const managerLocationUpdateSchema = managerLocationCreateSchema.extend({ id: managerId });
+export const managerLocationDeleteSchema = z.object({
+  id: managerId,
+  _csrf: z.string().optional(),
+});
 
 export const managerKioskCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -65,7 +69,14 @@ export const managerKioskCreateSchema = z.object({
   active,
   _csrf: z.string().optional(),
 });
-export const managerKioskUpdateSchema = managerKioskCreateSchema.extend({ id: managerId });
+export const managerKioskUpdateSchema = managerKioskCreateSchema.extend({
+  locationId: managerId.or(z.literal('')),
+  id: managerId,
+});
+export const managerKioskDeleteSchema = z.object({
+  id: managerId,
+  _csrf: z.string().optional(),
+});
 
 export const managerEnrollmentCodeSchema = z.object({
   name: z.string().trim().min(1).max(120),

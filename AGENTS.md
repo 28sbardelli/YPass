@@ -172,11 +172,12 @@ Tests use Vitest and temporary SQLite databases through `tests/helpers/`. Extern
 - Pending pass requests and auto-started appointment passes notify the assigned origin teacher through the server-side Socket.IO room `teacher:<userId>` after the database transaction commits; the teacher page may subscribe only when Socket.IO is enabled.
 - `src/repositories/index.js` owns hall-pass, appointment, location, kiosk, event, and heartbeat queries. The partial unique index `passes_one_active_per_student` is the database concurrency guard.
 - Locations have a persisted `default_location` flag managed by the manager panel; kiosk options expose it so default destinations are immediately selectable while all active destinations remain searchable.
-- Migrations `002_pass_system.js` through `013_default_locations.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, the returning-state concurrency guard, and persisted default locations.
+- Migrations `002_pass_system.js` through `017_nullable_manager_references.js` define students, locations, kiosks, passes, events, appointments, kiosk credential hashes, heartbeats, appointment usage, the returning-state concurrency guard, persisted default locations, and nullable manager-deletion references.
 - `src/database/seeds/002_pass_system.js` creates the standard and sample hall-pass locations with their demo kiosks; rerun `npm run db:seed` to apply seed additions safely.
 - `/api/v1/kiosks/enroll` accepts a short-lived manager-generated enrollment code and returns the kiosk code plus one secret. Enrollment codes expire after 10 minutes and can be used once.
 - `/api/v1/kiosks/options`, `/heartbeat`, `/scan`, and `/request-pass` are authenticated with `x-kiosk-code` and `x-kiosk-secret`. Only the hash is persisted centrally; the secret is returned once during enrollment.
 - The manager panel at `/manager` creates enrollment codes and regenerates credentials. Credential regeneration disables the kiosk until the new code is used.
+- Manager kiosk/location deletion preserves referencing records, clears the deleted IDs and bathroom assignments, and cancels open passes and scheduled appointments that lose required context. Kiosks unassigned by location deletion are deactivated until reassigned.
 - `kioskMachine/` stores the issued secret in local `kiosk-config.json` with restrictive file permissions. It must never send that secret to browser JavaScript or expose it in logs.
 - The kiosk UI may collect student details and destination selections, but it must display central responses and must not implement pass approval, completion, expiration, or state transitions.
 

@@ -189,6 +189,7 @@
               </select>
             </label>
             <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
+            <button type="submit" formaction="/manager/locations/delete" formmethod="POST" class="danger-button decline"><img src="/images/trash.svg" width="15" height="15">Delete</button>
           </form>
         <% }) %>
       </div>
@@ -238,7 +239,8 @@
             </label>
             <label>
               <h4 class="small-muted">Location</h4>
-              <select name="locationId" required>
+              <select name="locationId">
+                <option value="" <%= !kiosk.location_id ? 'selected' : '' %>>Unassigned</option>
                 <% locations.filter((location) => !kioskLocationIds.has(String(location.id)) || String(kiosk.location_id) === String(location.id)).forEach((location) => { %>
                   <option data-language-ignore value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option>
                 <% }) %>
@@ -252,6 +254,7 @@
               </select>
             </label>
             <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
+            <button type="submit" formaction="/manager/kiosks/delete" formmethod="POST" class="danger-button decline"><img src="/images/trash.svg" width="15" height="15">Delete</button>
           </form>
         <% }) %>
       </div>
@@ -272,7 +275,7 @@
         <% } %>
         <div class="staff-list">
           <% passes.forEach((pass) => { %>
-            <article class="staff-row pass-row <%= pass.status %>" data-manager-pass-row data-pass-student="<%= pass.student_name %>" data-pass-number="<%= pass.student_number %>" data-pass-origin="<%= pass.origin_name %>" data-pass-destination="<%= pass.destination_name %>" data-pass-status="<%= pass.display_status %>">
+            <article class="staff-row pass-row <%= pass.status %>" data-manager-pass-row data-pass-student="<%= pass.student_name %>" data-pass-number="<%= pass.student_number %>" data-pass-origin="<%= pass.origin_name || 'Unassigned' %>" data-pass-destination="<%= pass.destination_name || 'Unassigned' %>" data-pass-status="<%= pass.display_status %>">
               <div class="pass-identity">
                 <div class="passes-header-wrap"><strong><%= pass.student_name %></strong></div>
                 <p><% if (pass.active_live && pass.active_duration) { %><span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %><time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>

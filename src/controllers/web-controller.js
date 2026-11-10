@@ -446,11 +446,17 @@ export function createWebController(container) {
     async updateManagerLocation(req, res, next) {
       return managerMutation(req, res, next, () => passService.updateManagerLocation(req.body));
     },
+    async deleteManagerLocation(req, res, next) {
+      return managerMutation(req, res, next, () => passService.deleteManagerLocation(req.body));
+    },
     async createManagerKiosk(req, res, next) {
       return managerMutation(req, res, next, () => passService.createManagerKiosk(req.body));
     },
     async updateManagerKiosk(req, res, next) {
       return managerMutation(req, res, next, () => passService.updateManagerKiosk(req.body));
+    },
+    async deleteManagerKiosk(req, res, next) {
+      return managerMutation(req, res, next, () => passService.deleteManagerKiosk(req.body));
     },
     async updateManagerUserRole(req, res, next) {
       return managerMutation(req, res, next, () => userService.assignRole(req.body, req));
