@@ -117,6 +117,64 @@ describe('kiosk enrollment', () => {
     expect(replay.status).toBe('registered');
   });
 
+  it('registers a kiosk through the manager web form using the kiosk enrollment code', async () => {
+    ctx = await createTestApp({
+      LOCAL_AUTH_EMAIL_FLOW: 'disabled',
+      MANAGERS: 'kiosk-manager@example.test',
+    });
+    const { default: request } = await import('supertest');
+    const agent = request.agent(ctx.app);
+    const registerPage = await agent.get('/auth/register');
+    const registration = await agent.post('/auth/register').type('form').send({
+      _csrf: extractCsrf(registerPage.text),
+      username: 'kiosk-manager',
+      email: 'kiosk-manager@example.test',
+      password: 'correct-horse-battery',
+      displayName: 'Kiosk Manager',
+    });
+    expect(registration.status).toBe(302);
+
+    const loginPage = await agent.get('/auth/login');
+    const login = await agent.post('/auth/login').type('form').send({
+      _csrf: extractCsrf(loginPage.text),
+      username: 'kiosk-manager',
+      password: 'correct-horse-battery',
+    });
+    expect(login.status).toBe(302);
+
+    const started = await ctx.request.post('/api/v1/kiosks/enrollment/start').send({
+      softwareVersion: '2.0.0',
+    });
+    expect(started.status).toBe(201);
+    const managerPage = await agent.get('/manager');
+    expect(managerPage.status).toBe(200);
+    const location = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const response = await agent.post('/manager/kiosks/enrollment/complete').type('form').send({
+      _csrf: extractCsrf(managerPage.text),
+      name: 'Newly Registered Kiosk',
+      enrollmentCode: started.body.enrollmentCode,
+      locationId: location.id,
+    });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/manager');
+    const kiosk = await ctx.container.db.knex('kiosks').where({ name: 'Newly Registered Kiosk' }).first();
+    expect(kiosk).toBeDefined();
+    expect(kiosk.location_id).toBe(location.id);
+
+    const invalidCodeResponse = await agent.post('/manager/kiosks/enrollment/complete').type('form').send({
+      _csrf: extractCsrf(managerPage.text),
+      name: 'Invalid Code Kiosk',
+      enrollmentCode: 'ABCD-EFGH',
+      locationId: location.id,
+    });
+    expect(invalidCodeResponse.status).toBe(404);
+    expect(invalidCodeResponse.text).toContain('Enrollment code is invalid or expired');
+    expect(
+      await ctx.container.db.knex('kiosks').where({ name: 'Invalid Code Kiosk' }).first(),
+    ).toBeUndefined();
+  });
+
   it('rejects a manager completion that duplicates a kiosk name at the location', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
     const location = await ctx.container.db.knex('locations').first();
@@ -132,3 +190,7 @@ describe('kiosk enrollment', () => {
     ).rejects.toThrow('A kiosk with that name already exists at this location');
   });
 });
+
+function extractCsrf(html) {
+  return html.match(/name="_csrf" value="([^"]+)"/)?.[1] || '';
+}
