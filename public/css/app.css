@@ -56,6 +56,44 @@ body {
   display: flex;
   align-items: center;
 }
+.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: 0.5rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 92%, var(--accent));
+  box-shadow: 0 2px 8px rgb(28 25 23 / 10%);
+}
+.language-switcher-label {
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.language-switcher select {
+  min-width: 9.5rem;
+  padding: 0.35rem 1.8rem 0.35rem 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.language-switcher select:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+@media (max-width: 480px) {
+  .site-header {
+    padding: 0 0.75rem;
+  }
+  .language-switcher select {
+    min-width: 7rem;
+  }
+}
 
 /* Shared page sizing and account information. */
 .page {
@@ -160,7 +198,8 @@ button,
   cursor: pointer;
   transition: all 0.2s ease;
 }
-button:not(.danger-button, .manager-tab) img, .button img {
+button:not(.danger-button, .manager-tab) img,
+.button img {
   filter: invert(1);
 }
 .danger-button img {
@@ -680,6 +719,25 @@ button:not(.danger-button):hover,
 }
 .staff-section > .staff-list .manager-form > span {
   align-self: center;
+}
+.manager-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--card-border);
+}
+.manager-bulk-actions button[disabled] {
+  cursor: wait;
+  opacity: 0.65;
+}
+.manager-bulk-status {
+  color: var(--faint-txt);
+  font-size: 0.9rem;
+}
+.manager-bulk-status.is-error {
+  color: var(--danger);
 }
 
 /* Shared staff cards, including pass and appointment card layouts. */

@@ -5,7 +5,7 @@
   <div class="staff-heading">
     <div>
       <h4>
-        🗒 <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
+        🗒 <time data-language-ignore><%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></time>
       </h4>
       <div class="h-line"></div>
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
@@ -55,7 +55,7 @@
       </label>
       <div class="staff-list">
         <% students.forEach((student) => { %>
-          <form method="post" action="/manager/students/update" class="staff-row manager-form student-row" data-student-name="<%= student.display_name %>" data-student-id="<%= student.student_number %>">
+          <form method="post" action="/manager/students/update" class="staff-row manager-form student-row" data-bulk-save-form data-student-name="<%= student.display_name %>" data-student-id="<%= student.student_number %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= student.id %>">
             <label>
@@ -77,6 +77,10 @@
             <button type="submit" formaction="/manager/students/delete" formmethod="POST" class="danger-button decline"><img src="/images/trash.svg" width="15" height="15">Delete</button>
           </form>
         <% }) %>
+      </div>
+      <div class="manager-bulk-actions">
+        <button type="button" data-bulk-save="students"><img src="/images/save.svg" width="15" height="15">Save all changes</button>
+        <span class="manager-bulk-status" data-bulk-status="students" role="status" aria-live="polite"></span>
       </div>
     </section>
   </div>
@@ -135,7 +139,7 @@
       </label>
       <div class="staff-list">
         <% locations.forEach((location) => { %>
-          <form method="post" action="/manager/locations/update" class="staff-row manager-form location-row" data-location-name="<%= location.name %>" data-location-teacher="<%= users.find((user) => user.id === location.teacher_user_id)?.display_name || '' %>">
+          <form method="post" action="/manager/locations/update" class="staff-row manager-form location-row" data-bulk-save-form data-location-name="<%= location.name %>" data-location-teacher="<%= users.find((user) => user.id === location.teacher_user_id)?.display_name || '' %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= location.id %>">
             <label>
@@ -188,6 +192,10 @@
           </form>
         <% }) %>
       </div>
+      <div class="manager-bulk-actions">
+        <button type="button" data-bulk-save="locations"><img src="/images/save.svg" width="15" height="15">Save all changes</button>
+        <span class="manager-bulk-status" data-bulk-status="locations" role="status" aria-live="polite"></span>
+      </div>
     </section>
   </div>
   <div id="manager-panel-kiosks" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-kiosks" tabindex="0" data-panel="kiosks">
@@ -206,7 +214,7 @@
           <h4 class="small-muted">Location</h4>
           <select name="locationId" required>
             <% locations.filter((location) => location.active && !kioskLocationIds.has(String(location.id))).forEach((location) => { %>
-              <option value="<%= location.id %>"><%= location.name %></option>
+              <option data-language-ignore value="<%= location.id %>"><%= location.name %></option>
             <% }) %>
           </select>
         </label>
@@ -217,7 +225,7 @@
       </label>
       <div class="staff-list">
         <% kiosks.forEach((kiosk) => { %>
-          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form kiosk-row <%= kiosk.display_status %>" data-kiosk-name="<%= kiosk.name %>" data-kiosk-code="<%= kiosk.kiosk_code %>" data-kiosk-location="<%= kiosk.location_name %>">
+          <form method="post" action="/manager/kiosks/update" class="staff-row manager-form kiosk-row <%= kiosk.display_status %>" data-bulk-save-form data-kiosk-name="<%= kiosk.name %>" data-kiosk-code="<%= kiosk.kiosk_code %>" data-kiosk-location="<%= kiosk.location_name %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="id" value="<%= kiosk.id %>">
             <label>
@@ -232,7 +240,7 @@
               <h4 class="small-muted">Location</h4>
               <select name="locationId" required>
                 <% locations.filter((location) => !kioskLocationIds.has(String(location.id)) || String(kiosk.location_id) === String(location.id)).forEach((location) => { %>
-                  <option value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option>
+                  <option data-language-ignore value="<%= location.id %>" <%= kiosk.location_id === location.id ? 'selected' : '' %>><%= location.name %></option>
                 <% }) %>
               </select>
             </label>
@@ -246,6 +254,10 @@
             <button type="submit"><img src="/images/save.svg" width="15" height="15">Save</button>
           </form>
         <% }) %>
+      </div>
+      <div class="manager-bulk-actions">
+        <button type="button" data-bulk-save="kiosks"><img src="/images/save.svg" width="15" height="15">Save all changes</button>
+        <span class="manager-bulk-status" data-bulk-status="kiosks" role="status" aria-live="polite"></span>
       </div>
     </section>
   </div>
@@ -269,7 +281,7 @@
               <div class="pass-details">
                 <div class="passes-footer-wrap">
                   <div>Destination</div>
-                  <h4 class="small-muted"><%= pass.destination_name %></h4>
+                  <h4 class="small-muted"><span data-language-ignore><%= pass.destination_name %></span></h4>
                 </div>
               </div>
             </article>
@@ -296,7 +308,7 @@
             <div class="pass-details">
               <div class="passes-footer-wrap">
                 <div>Appointment</div>
-                <h4 class="small-muted"><%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
+                <h4 class="small-muted"><span data-language-ignore><%= appointment.origin_name %></span> → <span data-language-ignore><%= appointment.destination_name %></span></h4>
               </div>
             </div>
             <span class="status-label appointment-status">⏱︎ <%= appointment.status %> · <%= appointment.scheduled_at_display %></span>
@@ -420,6 +432,7 @@
     </div>
     <script nonce="<%= cspNonce %>" src="/js/sis-manager.js?v=2" defer></script>
   <% } %>
+  <script nonce="<%= cspNonce %>" src="/js/manager-bulk-save.js?v=1" defer></script>
   <div id="manager-panel-user-roles" class="manager-tab-panel" role="tabpanel" aria-labelledby="manager-tab-user-roles" tabindex="0" data-panel="user-roles">
     <section class="staff-section">
       <label class="student-search">
@@ -427,7 +440,7 @@
       </label>
       <div class="staff-list">
         <% users.forEach((user) => { %>
-          <form method="post" action="/manager/users/role" class="staff-row manager-form" data-user-role-row data-user-role-search-text="<%= [user.display_name, user.primary_email || '', ...(user.roles || []), ...(user.roles?.length ? [] : ['student'])].join(' ') %>">
+          <form method="post" action="/manager/users/role" class="staff-row manager-form" data-bulk-save-form data-user-role-row data-user-role-search-text="<%= [user.display_name, user.primary_email || '', ...(user.roles || []), ...(user.roles?.length ? [] : ['student'])].join(' ') %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="userId" value="<%= user.id %>">
             <div>
@@ -445,6 +458,10 @@
             <button type="submit">Assign role</button>
           </form>
         <% }) %>
+      </div>
+      <div class="manager-bulk-actions">
+        <button type="button" data-bulk-save="user-roles"><img src="/images/save.svg" width="15" height="15">Save all changes</button>
+        <span class="manager-bulk-status" data-bulk-status="user-roles" role="status" aria-live="polite"></span>
       </div>
     </section>
   </div>

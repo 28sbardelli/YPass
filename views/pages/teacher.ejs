@@ -8,9 +8,9 @@
   <script nonce="<%= cspNonce %>" src="/js/teacher-action-message.js?v=3" defer></script>
   <div class="staff-heading">
     <div>
-      <h1 class="visually-hidden">Lehrerseite</h1>
+      <h1 class="visually-hidden">教师页面</h1>
       <h4>
-        🗒 <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
+        🗒 <time data-language-ignore><%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></time>
       </h4>
       <div class="h-line"></div>
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
@@ -19,7 +19,7 @@
         <p class="account-info-box">Your locations</p>
         <% if (locations.length) { %>
             <% locations.forEach((location) => { %>
-                <p class="account-info-box">⌂ <%= location.name %></p>
+                <p class="account-info-box">⌂ <span data-language-ignore><%= location.name %></span></p>
             <% }) %>
         <% } %>
         <form class="inline" method="post" action="/auth/logout">
@@ -73,7 +73,7 @@
             <div class="pass-details">
               <div class="passes-footer-wrap">
                 <div>Destination</div>
-                <h4 class="small-muted">⌂ <%= pass.destination_name %></h4>
+                <h4 class="small-muted">⌂ <span data-language-ignore><%= pass.destination_name %></span></h4>
               </div>
             </div>
             <div class="staff-actions pass-actions">
@@ -131,7 +131,7 @@
             <div class="pass-details">
               <div class="passes-footer-wrap">
                 <div>Appointment</div>
-                <h4 class="small-muted">⌂ <%= appointment.origin_name %> → <%= appointment.destination_name %></h4>
+                <h4 class="small-muted">⌂ <span data-language-ignore><%= appointment.origin_name %></span> → <span data-language-ignore><%= appointment.destination_name %></span></h4>
               </div>
             </div>
             <span class="status-label appointment-status">⏱︎ <%= appointment.status %> · <%= appointment.scheduled_at_display %></span>
