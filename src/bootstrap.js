@@ -9,6 +9,22 @@ import { createApp } from './app.js';
 import { createRealtime } from '#realtime/index.js';
 import { createJobs } from '#jobs/index.js';
 
+export async function syncPrimaryManagerRole(container, managers) {
+  const primaryManager = await container.users.findByEmail(managers[0]);
+  if (!primaryManager) {
+    return;
+  }
+
+  const managerRole = await container.rbacRepository.findRoleByName('manager');
+  if (!managerRole) {
+    return;
+  }
+
+  await container.db.transaction(async (trx) => {
+    await container.rbacRepository.replaceRoles(primaryManager.id, managerRole.id, trx);
+  });
+}
+
 export async function startServer({ config, logger }) {
   const container = await createContainer({ config, logger });
 
@@ -23,11 +39,7 @@ export async function startServer({ config, logger }) {
     logger.fatal('database is required and is not reachable');
     throw new Error('Database unavailable');
   }
-  const managerToBe = await container.users.findByEmail(config.managers[0])
-  await container.db.transaction(async (trx) => {
-    const managerRole = await container.rbacRepository.findRoleByName('manager', trx)
-    await container.rbacRepository.replaceRoles(managerToBe.id, managerRole.id, trx)
-  })
+  await syncPrimaryManagerRole(container, config.managers);
 
   if (config.features.redis) {
     const redisHealth = await container.redis.health();
