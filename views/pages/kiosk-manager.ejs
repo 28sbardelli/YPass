@@ -22,7 +22,7 @@
       <input id="locationSearch" type="search" placeholder="Search locations" autocomplete="off" data-manager-search="location">
       <select id="locationId" name="locationId" required>
         <% locations.forEach((location) => { %>
-          <option value="<%= location.id %>" <%= location.id === kiosk.locationId ? 'selected' : '' %>><%= location.name %></option>
+          <option data-language-ignore value="<%= location.id %>" <%= location.id === kiosk.locationId ? 'selected' : '' %>><%= location.name %></option>
         <% }) %>
       </select>
 

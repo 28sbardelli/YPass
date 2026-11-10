@@ -41,7 +41,7 @@ export function errorHandler(config, logger) {
             : 'errors/500';
 
     res.status(mapped.status).render(view, {
-      title: mapped.status === 404 ? 'Not found' : 'Something went wrong',
+      title: mapped.status === 404 ? '页面未找到' : '出现错误',
       message: mapped.expose ? mapped.message : 'An unexpected error occurred',
     });
   };
@@ -52,5 +52,5 @@ export function notFoundHandler(req, res, _next) {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Not found' } });
     return;
   }
-  res.status(404).render('errors/404', { title: 'Not found' });
+  res.status(404).render('errors/404', { title: '页面未找到' });
 }

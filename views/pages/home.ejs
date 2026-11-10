@@ -1,5 +1,14 @@
 <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-  <%- include('../partials/access-denied') %>
+  <section class="access-denied-card" role="status">
+    <span class="access-denied-icon" aria-hidden="true">!</span>
+    <p class="access-denied-kicker">Access denied</p>
+    <h2>This page isn’t available for your account</h2>
+    <p>You are signed in as <strong><%= currentUser.display_name %></strong>, but you don’t have permission to access this page.</p>
+    <form method="post" action="/auth/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit">Sign out</button>
+    </form>
+  </section>
 <% } else { %>
   <p>This is Elektronischer Hallenpass</p>
   <p><a href="/auth/login">Sign in</a> to continue.</p>

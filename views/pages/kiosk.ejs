@@ -70,7 +70,7 @@
             <input type="hidden" name="appointmentAction" value="complete">
             <input type="hidden" name="appointmentId" value="<%= appointment.id %>">
             <button type="submit" class="appointment-choice-button">
-              <strong><%= appointment.origin_name %> → <%= appointment.destination_name %></strong>
+              <strong><span data-language-ignore><%= appointment.origin_name %></span> to <span data-language-ignore><%= appointment.destination_name %></span></strong>
               <span><%= new Date(appointment.scheduled_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) %></span>
             </button>
           </form>
