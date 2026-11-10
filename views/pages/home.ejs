@@ -1,7 +1,5 @@
-<h1>Elektronischer Hallenpass</h1>
 <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-  <p>Signed in as <%= currentUser.display_name %>.</p>
-  <a href="/kiosk">Make a Pass</a>
+  <%- include('../partials/access-denied') %>
 <% } else { %>
   <p>This is Elektronischer Hallenpass</p>
   <p><a href="/auth/login">Sign in</a> to continue.</p>

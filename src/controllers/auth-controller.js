@@ -9,7 +9,7 @@ export function createAuthController(container) {
     loginPage(req, res) {
       res.render('auth/login', {
         title: 'Sign in',
-        next: safeRedirect(req.query.next),
+        next: safeRedirect(req.query.next, ''),
         features: config.features,
         error: null,
       });
@@ -43,12 +43,15 @@ export function createAuthController(container) {
       try {
         const user = await localAuth.login(req.body, req);
         await regenerateSession(req, { userId: user.id });
-        res.redirect(safeRedirect(req.body.next));
+        const authenticatedUser = await userService.findByIdWithAuthz(user.id);
+        res.redirect(
+          safeRedirect(req.body.next, roleLandingPath(authenticatedUser, config.managers)),
+        );
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/login', {
             title: 'Sign in',
-            next: safeRedirect(req.body.next),
+            next: safeRedirect(req.body.next, ''),
             features: config.features,
             error: error.message,
           });
@@ -76,7 +79,7 @@ export function createAuthController(container) {
       req.session.oauth = {
         provider: 'formbar',
         state,
-        next: safeRedirect(req.query.next),
+        next: safeRedirect(req.query.next, ''),
         link: req.query.link === '1',
       };
       if (req.query.link === '1' && req.session.userId) {
@@ -112,7 +115,7 @@ export function createAuthController(container) {
           state: started.state,
           nonce: started.nonce,
           verifier: started.verifier,
-          next: safeRedirect(req.query.next),
+          next: safeRedirect(req.query.next, ''),
           link: req.query.link === '1',
         };
         if (req.query.link === '1' && req.session.userId) {
@@ -214,6 +217,19 @@ export function createAuthController(container) {
       throw new AuthenticationError('Formbar authentication failed');
     }
     await regenerateSession(req, { userId: user.id });
-    res.redirect(safeRedirect(pending?.next));
+    const authenticatedUser = await userService.findByIdWithAuthz(user.id);
+    res.redirect(safeRedirect(pending?.next, roleLandingPath(authenticatedUser, config.managers)));
   }
+}
+
+function roleLandingPath(user, managerEmails = []) {
+  const roles = user?.roles || [];
+  const email = user?.primary_email?.trim().toLowerCase();
+  if (roles.includes('manager') || (email && managerEmails.includes(email))) {
+    return '/manager';
+  }
+  if (roles.includes('teacher')) {
+    return '/teacher';
+  }
+  return '/';
 }

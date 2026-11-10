@@ -7,6 +7,7 @@ export function createWebController(container) {
       res.render('pages/home', {
         title: 'Home',
         features: container.config.features,
+        currentUser: req.currentUser || null,
       });
     },
     example(req, res) {
