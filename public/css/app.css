@@ -46,11 +46,15 @@ body {
 }
 .site-header,
 .site-footer {
+  position: sticky;
+  top: 0;
+  left: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;
   background: var(--card);
+  z-index: 10000;
 }
 .site-header nav {
   display: flex;
