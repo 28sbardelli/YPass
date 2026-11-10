@@ -43,8 +43,7 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       const claimed = await kiosks.claimEnrollmentCode(code.id, now, trx);
       if (claimed !== 1) throw new ConflictError('Enrollment code has already been used');
       const location = await kiosks.findLocationById(locationId, trx);
-      if (!location || !location.active)
-        throw new ValidationError('Choose a valid active location');
+      if (!location || !location.active) throw new ValidationError('Choose a valid active location');
       const existingKiosk = await kiosks.findKioskByNameAtLocation(name, locationId, trx);
       if (existingKiosk) {
         throw new ConflictError('A kiosk with that name already exists at this location');
@@ -124,11 +123,11 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       if (new Date(code.expires_at) <= now) {
         throw new NotFoundError('Enrollment code is invalid or expired');
       }
-      const claimed = await kiosks.claimEnrollmentCode(code.id, now, trx);
-      if (claimed !== 1) throw new ConflictError('Enrollment code has already been used');
       if (!code.location_id || !code.name) {
         throw new ValidationError('Enrollment code is not configured for a kiosk');
       }
+      const claimed = await kiosks.claimEnrollmentCode(code.id, now, trx);
+      if (claimed !== 1) throw new ConflictError('Enrollment code has already been used');
 
       const kioskCode = await kiosks.nextKioskCode(trx);
       const existingKiosk = code.kiosk_id ? await kiosks.findKioskById(code.kiosk_id, trx) : null;
@@ -218,7 +217,8 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       const kiosk = await kiosks.findKioskById(kioskId, trx);
       if (!kiosk || !kiosk.active) throw new NotFoundError('Kiosk not found or inactive');
       const location = await kiosks.findLocationById(locationId, trx);
-      if (!location || !location.active) throw new ValidationError('Choose a valid active location');
+      if (!location || !location.active)
+        throw new ValidationError('Choose a valid active location');
       const assignee = teacherUserId ? await kiosks.findManagerUserById(teacherUserId, trx) : null;
       if (
         teacherUserId &&
