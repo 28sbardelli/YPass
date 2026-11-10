@@ -526,6 +526,7 @@ export function createWebController(container) {
     const { view = 'pages/kiosk', ...viewData } = data;
     res.status(status).render(view, {
       title: 'Student Pass Kiosk',
+      hideSiteChrome: true,
       currentUser: res.req.currentUser || null,
       action: null,
     pass: null,

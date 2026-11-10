@@ -56,11 +56,25 @@ body {
   display: flex;
   align-items: center;
 }
+.footer-txt {
+  margin: 20px;
+}
 
 /* Shared page sizing and account information. */
 .page {
   margin: 4rem auto;
   padding: 0 1rem;
+}
+.kiosk-layout {
+  display: grid;
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  place-items: safe center;
+}
+.kiosk-layout .page {
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  padding: 0;
 }
 .account-content {
   display: flex;
@@ -155,12 +169,17 @@ button,
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
   gap: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
-button:not(.danger-button, .manager-tab) img, .button img {
+button:not(.destination-option), .button {
+  justify-content: center;
+}
+.destination-option:hover img {
+  filter: invert(1);
+}
+button:not(.danger-button, .manager-tab, .destination-option) img, .button img {
   filter: invert(1);
 }
 .danger-button img {
@@ -244,27 +263,37 @@ button:not(.danger-button):hover,
   font-size: 1.05rem;
 }
 .kiosk-status {
-  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  color: #166534;
-  font-weight: 700;
+  color: var(--completed);
+  font-weight: 500;
   white-space: nowrap;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
 }
-.kiosk-status span {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50%;
-  background: #22c55e;
+.kiosk-status img {
+  filter: brightness(0) saturate(100%) invert(23%) sepia(25%) saturate(1598%) hue-rotate(75deg) brightness(95%) contrast(90%);
 }
 .kiosk-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
+.kiosk-scan-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+.kiosk-destination-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+.kiosk-appointment-panel {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
 .kiosk-panel {
-  min-height: 20rem;
-  padding: clamp(1.2rem, 3vw, 2rem);
+  min-height: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
   background: var(--card);
   border: 1px solid #d6d3d1;
 }
@@ -278,6 +307,12 @@ button:not(.danger-button):hover,
   font-weight: 700;
   letter-spacing: 0.08em;
 }
+.location-cont {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
 .kiosk-panel h2 {
   margin: 0;
   font-size: 1.35rem;
@@ -290,7 +325,7 @@ button:not(.danger-button):hover,
 .kiosk-form {
   display: grid;
   gap: 0.65rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 .kiosk-form label {
   margin: 0;
@@ -313,7 +348,7 @@ button:not(.danger-button):hover,
   overflow-y: auto;
   padding: 0.2rem;
   border: 1px solid #d6d3d1;
-  background: #fffcf7;
+  background-color: oklch(from var(--bg) calc(l - 0.05) c h);
 }
 .destination-list[hidden] {
   display: none;
@@ -377,8 +412,28 @@ button:not(.danger-button):hover,
   margin-top: 0.4rem;
   font-weight: 700;
 }
+.appointment-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+.appointment-actions > button {
+  width: 100%;
+  min-height: 2.8rem;
+  margin: 0;
+}
+.kiosk-page .secondary-button {
+  border: 1px solid var(--card-border);
+  background: #f0f1ee;
+  color: var(--ink);
+}
+.kiosk-page .secondary-button:hover {
+  background: #e3e6e0;
+  color: var(--ink);
+}
 .scanner-note {
-  margin: 1.4rem 0 0;
+  margin: 1rem 0 0;
   color: #78716c;
   font-size: 0.88rem;
 }
@@ -418,6 +473,12 @@ button:not(.danger-button):hover,
   }
   .kiosk-grid {
     grid-template-columns: 1fr;
+  }
+  .kiosk-scan-panel,
+  .kiosk-destination-panel,
+  .kiosk-appointment-panel {
+    grid-column: auto;
+    grid-row: auto;
   }
   .kiosk-panel {
     min-height: auto;
@@ -741,6 +802,9 @@ button:not(.danger-button):hover,
 }
 .required-note {
   color: var(--danger);
+}
+.create-appointment {
+  width: 100%;
 }
 
 /* Pass state accents and animations. */
