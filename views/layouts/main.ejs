@@ -3,21 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Elektronischer Hallenpass</title>
+    <title><%= typeof title !== 'undefined' ? title : 'YPass' %></title>
     <link rel="stylesheet" href="/css/app.css" />
     <!-- Raw HTML is used only to inject the CSP nonce attribute. Do not unescaped-print user data. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'" />
   </head>
-  <body>
-    <%- include('../partials/header') %>
+  <body class="<%= typeof hideSiteChrome !== 'undefined' && hideSiteChrome ? 'kiosk-layout' : '' %>">
+    <% if (!(typeof hideSiteChrome !== 'undefined' && hideSiteChrome)) { %>
+      <%- include('../partials/header') %>
+    <% } %>
     <main class="page">
       <% if (typeof error !== 'undefined' && error) { %>
         <p class="flash flash-error"><%= error %></p>
       <% } %>
       <%- body %>
     </main>
+    <%- include('../partials/footer') %>
     <script src="/js/kiosk-destination-search.js"></script>
     <script src="/js/appointment-student-lookup.js"></script>
-    <%- include('../partials/footer') %>
+    <script src="/js/language-switcher.js"></script>
+    <% if (!(typeof hideSiteChrome !== 'undefined' && hideSiteChrome)) { %>
+      <%- include('../partials/footer') %>
+    <% } %>
   </body>
 </html>

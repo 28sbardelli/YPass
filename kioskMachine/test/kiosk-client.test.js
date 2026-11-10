@@ -302,6 +302,30 @@ test('local kiosk server returns to registration when enrolled credentials are r
   assert.equal(config.enrollmentCode, 'NEW-CODE');
 });
 
+test('kiosk registration page serves its site-themed stylesheet', async (t) => {
+  const { createKioskServer } = await import('../src/server.js');
+  const instance = await createKioskServer({
+    host: '127.0.0.1',
+    port: 0,
+    heartbeatMs: 30000,
+    registered: false,
+    serverUrl: 'http://127.0.0.1:1',
+  });
+  t.after(() => instance.close());
+  const baseUrl = `http://127.0.0.1:${instance.server.address().port}`;
+
+  const pageResponse = await fetch(baseUrl);
+  const page = await pageResponse.text();
+  assert.equal(pageResponse.status, 200);
+  assert.match(page, /href="\/css\/register\.css"/);
+
+  const stylesheetResponse = await fetch(`${baseUrl}/css/register.css`);
+  const stylesheet = await stylesheetResponse.text();
+  assert.equal(stylesheetResponse.status, 200);
+  assert.match(stylesheetResponse.headers.get('content-type'), /text\/css/);
+  assert.match(stylesheet, /--accent: #586a4d/);
+  assert.match(stylesheet, /--bg: #eceeea/);
+});
 
 test('local kiosk server does not serve files outside the public directory', async (t) => {
   const { createKioskServer } = await import('../src/server.js');

@@ -45,6 +45,9 @@ describe('kiosk pass flow', () => {
 
     const kioskPage = await agent.get('/kiosk?kiosk=main-office');
     expect(kioskPage.status).toBe(200);
+    expect(kioskPage.text).toContain('<body class="kiosk-layout">');
+    expect(kioskPage.text).not.toContain('class="site-header"');
+    expect(kioskPage.text).not.toContain('class="site-footer"');
     const scan = await agent
       .post('/kiosk/scan')
       .type('form')

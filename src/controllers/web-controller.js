@@ -5,20 +5,20 @@ export function createWebController(container) {
   return {
     home(req, res) {
       res.render('pages/home', {
-        title: 'Home',
+        title: '主页',
         features: container.config.features,
       });
     },
     example(req, res) {
       res.render('pages/example', {
-        title: 'Example',
+        title: '示例页面',
         socketEnabled: container.config.features.socketIo,
       });
     },
     teacher(req, res) {
       return passService.teacherDashboard(req.currentUser.id).then((dashboard) =>
         res.render('pages/teacher', {
-          title: 'Teacher panel',
+          title: '教师面板',
           currentUser: req.currentUser,
           message: null,
           ...dashboard,
@@ -32,7 +32,7 @@ export function createWebController(container) {
         await action({ passId: req.body.passId, userId: req.currentUser.id });
         const dashboard = await passService.teacherDashboard(req.currentUser.id);
         res.render('pages/teacher', {
-          title: 'Teacher panel',
+          title: '教师面板',
           currentUser: req.currentUser,
           message: approved ? 'Pass approved.' : 'Pass cancelled.',
           messageType: approved ? 'success' : 'error',
@@ -46,7 +46,7 @@ export function createWebController(container) {
       try {
         const options = await passService.appointmentOptions(req.currentUser.id);
         res.render('pages/appointment', {
-          title: 'Create appointment',
+          title: '创建预约',
           currentUser: req.currentUser,
           ...options,
           form: {},
@@ -69,7 +69,7 @@ export function createWebController(container) {
         await passService.createAppointment({ userId: req.currentUser.id, ...req.body });
         const options = await passService.appointmentOptions(req.currentUser.id);
         res.render('pages/appointment', {
-          title: 'Create appointment',
+          title: '创建预约',
           currentUser: req.currentUser,
           ...options,
           form: {},
@@ -82,7 +82,7 @@ export function createWebController(container) {
         }
         const options = await passService.appointmentOptions(req.currentUser.id);
         res.status(error.status).render('pages/appointment', {
-          title: 'Create appointment',
+          title: '创建预约',
           currentUser: req.currentUser,
           ...options,
           form: req.body,
@@ -129,7 +129,7 @@ export function createWebController(container) {
         if (req.query.manager === '1') {
           const settings = await kioskService.settings(req.kiosk.id);
           res.render('pages/kiosk-manager', {
-            title: 'Kiosk manager',
+            title: '终端管理',
             currentUser: null,
             ...settings,
             message: null,
@@ -174,7 +174,7 @@ export function createWebController(container) {
       try {
         const settings = await kioskService.settings(req.kiosk.id);
         res.render('pages/kiosk-manager', {
-          title: 'Kiosk manager',
+          title: '终端管理',
           currentUser: null,
           ...settings,
           message: req.query.saved ? 'Kiosk settings saved.' : null,
@@ -227,7 +227,7 @@ export function createWebController(container) {
           });
           const settings = await kioskService.settings(req.kiosk.id);
           res.render('pages/kiosk-manager', {
-            title: 'Kiosk manager',
+            title: '终端管理',
             currentUser: null,
             ...settings,
             message: 'Kiosk settings saved.',
@@ -245,7 +245,7 @@ export function createWebController(container) {
       ) {
         const settings = await kioskService.settings(req.kiosk.id);
         res.render('pages/kiosk-manager', {
-          title: 'Kiosk manager',
+          title: '终端管理',
           currentUser: null,
           ...settings,
           message: null,
@@ -419,7 +419,7 @@ export function createWebController(container) {
           ? await container.sisRepository.listConnections()
           : [];
         res.render('pages/manager', {
-          title: 'Manager panel',
+          title: '管理面板',
           currentUser: req.currentUser,
           ...manager,
           enrollmentCodes,
@@ -532,6 +532,7 @@ export function createWebController(container) {
     const { view = 'pages/kiosk', ...viewData } = data;
     res.status(status).render(view, {
       title: 'Student Pass Kiosk',
+      hideSiteChrome: true,
       currentUser: res.req.currentUser || null,
       action: null,
     pass: null,

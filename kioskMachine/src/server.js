@@ -281,6 +281,11 @@ export async function createKioskServer(options = {}) {
     }
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
+    if (req.method === 'GET' && url.pathname === '/css/register.css') {
+      await serveStaticAsset(path.join(publicDir, 'css', 'register.css'), res);
+      return;
+    }
+
     if (
       ['/kiosk/pass', '/kiosk/pass/status', '/kiosk/scan'].includes(url.pathname) ||
       url.pathname.startsWith('/css/') ||
