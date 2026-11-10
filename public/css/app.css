@@ -79,7 +79,7 @@ body {
 /* Shared page sizing and account information. */
 .page {
   flex: 1;
-  margin: 4rem auto;
+  margin: 4rem;
   padding: 0 1rem var(--site-footer-clearance);
 }
 .kiosk-layout {
@@ -1112,6 +1112,11 @@ textarea {
   .manager-form {
     display: grid;
     grid-template-columns: 1fr;
+  }
+  .page {
+    flex: 1;
+    margin: 4rem auto;
+    padding: 0 1rem var(--site-footer-clearance);
   }
 }
 
