@@ -96,6 +96,12 @@ export async function createContainer({ config, logger }) {
         originLocationId,
       });
     },
+    onPassStarted({ teacherUserId, passId, originLocationId }) {
+      realtime?.to(`teacher:${teacherUserId}`).emit('teacher-pass-started', {
+        passId,
+        originLocationId,
+      });
+    },
     onPassEnded({ teacherUserId, passId, originLocationId }) {
       realtime?.to(`teacher:${teacherUserId}`).emit('teacher-pass-ended', {
         passId,

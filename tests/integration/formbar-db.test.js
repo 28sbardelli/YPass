@@ -74,6 +74,6 @@ describe('database adapter', () => {
     const health = await ctx.container.db.health();
     expect(health.ok).toBe(true);
     const roles = await ctx.container.db.knex('roles').select('name');
-    expect(roles.map((row) => row.name).sort()).toEqual(['admin', 'user']);
+    expect(roles.map((row) => row.name).sort()).toEqual(['manager', 'student', 'teacher']);
   });
 });

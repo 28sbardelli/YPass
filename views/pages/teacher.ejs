@@ -1,13 +1,14 @@
 <section class="staff-page">
   <% if (features.socketIo) { %>
     <script nonce="<%= cspNonce %>" src="/socket.io/socket.io.js" defer></script>
-    <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=2" defer></script>
+    <script nonce="<%= cspNonce %>" src="/js/teacher-panel.js?v=3" defer></script>
   <% } %>
   <script nonce="<%= cspNonce %>" src="/js/active-pass-timer.js?v=2" defer></script>
   <script nonce="<%= cspNonce %>" src="/js/teacher-sort.js?v=5" defer></script>
   <script nonce="<%= cspNonce %>" src="/js/teacher-action-message.js?v=3" defer></script>
   <div class="staff-heading">
     <div>
+      <h1 class="visually-hidden">Lehrerseite</h1>
       <h4>
         🗒 <%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %>
       </h4>
@@ -15,6 +16,7 @@
       <h1>Hello, <%= currentUser.display_name.split(',')[1]?.trim() %></h1>
       <li class="teacher-data">
         <p class="account-info-box">✉ <%= currentUser.primary_email || 'no email' %></p>
+        <p class="account-info-box">Your locations</p>
         <% if (locations.length) { %>
             <% locations.forEach((location) => { %>
                 <p class="account-info-box">⌂ <%= location.name %></p>

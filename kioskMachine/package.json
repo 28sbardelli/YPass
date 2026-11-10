@@ -3,12 +3,57 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.js",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js",
-    "test": "node --test"
+    "start": "electron .",
+    "start:node": "node app.js",
+    "dev": "electron .",
+    "dev:node": "node --watch app.js",
+    "test": "node --test",
+    "dist": "electron-builder --win nsis",
+    "dist:dir": "electron-builder --win dir"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "org.ypass.kioskmachine",
+    "productName": "YPass Kiosk Machine",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "app.js",
+      "src/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "package.json",
+      "!test/**/*",
+      "!README.md",
+      "!.env",
+      "!kiosk-config.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "YPass-Kiosk-Machine-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "allowElevation": true,
+      "runAfterFinish": false
+    }
+  },
+  "dependencies": {
+    "formbar-app-boilerplate": "file:.."
   }
 }
