@@ -426,7 +426,24 @@
   const originalText = new WeakMap();
   const originalAttributes = new WeakMap();
 
+  function restoreOriginalContent() {
+    document.querySelectorAll('body *').forEach((element) => {
+      if (element.closest('[data-language-switcher], [data-language-ignore]')) return;
+      element.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE && originalText.has(node)) {
+          node.nodeValue = originalText.get(node);
+        }
+      });
+      const attributes = originalAttributes.get(element);
+      if (!attributes) return;
+      Object.entries(attributes).forEach(([attribute, value]) => {
+        element.setAttribute(attribute, value);
+      });
+    });
+  }
+
   function translate(language) {
+    if (language === 'en') restoreOriginalContent();
     const dictionary = languages[language].translations;
     const documentLanguages = {
       zh: 'zh-CN',
