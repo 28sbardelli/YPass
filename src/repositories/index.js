@@ -396,8 +396,12 @@ export function createPassRepository(db) {
     async listAppointmentsForTeacher(userId, trx = knex) {
       return trx('appointments')
         .join('students', 'appointments.student_id', 'students.id')
-        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
-        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .leftJoin(
+          'locations as destination',
+          'appointments.destination_location_id',
+          'destination.id',
+        )
         .where((query) =>
           query
             .where('appointments.created_by', userId)
@@ -416,8 +420,8 @@ export function createPassRepository(db) {
     async listManagerPasses(filters = {}, trx = knex) {
       const query = trx('passes')
         .join('students', 'passes.student_id', 'students.id')
-        .join('locations as origin', 'passes.origin_location_id', 'origin.id')
-        .join('locations as destination', 'passes.destination_location_id', 'destination.id')
+        .leftJoin('locations as origin', 'passes.origin_location_id', 'origin.id')
+        .leftJoin('locations as destination', 'passes.destination_location_id', 'destination.id')
         .leftJoin('appointments', 'passes.appointment_id', 'appointments.id')
         .select(
           'passes.*',
@@ -441,8 +445,12 @@ export function createPassRepository(db) {
     async listManagerAppointments(filters = {}, trx = knex) {
       const query = trx('appointments')
         .join('students', 'appointments.student_id', 'students.id')
-        .join('locations as origin', 'appointments.origin_location_id', 'origin.id')
-        .join('locations as destination', 'appointments.destination_location_id', 'destination.id')
+        .leftJoin('locations as origin', 'appointments.origin_location_id', 'origin.id')
+        .leftJoin(
+          'locations as destination',
+          'appointments.destination_location_id',
+          'destination.id',
+        )
         .select(
           'appointments.*',
           'students.student_number',
@@ -495,9 +503,42 @@ export function createPassRepository(db) {
         .where({ id })
         .update({ ...patch, updated_at: trx.fn.now() });
     },
+    async unassignLocationReferences(id, now, trx = knex) {
+      await trx('passes')
+        .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning'])
+        .where((query) =>
+          query.where('origin_location_id', id).orWhere('destination_location_id', id),
+        )
+        .update({ status: 'cancelled', ended_at: now, updated_at: now });
+      await trx('appointments')
+        .where({ status: 'scheduled' })
+        .where((query) =>
+          query.where('origin_location_id', id).orWhere('destination_location_id', id),
+        )
+        .update({ status: 'cancelled', cancelled_at: now, updated_at: now });
+      await trx('kiosks')
+        .where({ location_id: id })
+        .update({ location_id: null, active: false, updated_at: now });
+      await trx('kiosk_enrollment_codes').where({ location_id: id }).update({ location_id: null });
+      await trx('locations').where({ bathroom: id }).update({ bathroom: null });
+      await trx('passes').where({ origin_location_id: id }).update({ origin_location_id: null });
+      await trx('passes')
+        .where({ destination_location_id: id })
+        .update({ destination_location_id: null });
+      await trx('passes').where({ ended_location_id: id }).update({ ended_location_id: null });
+      await trx('appointments')
+        .where({ origin_location_id: id })
+        .update({ origin_location_id: null });
+      await trx('appointments')
+        .where({ destination_location_id: id })
+        .update({ destination_location_id: null });
+    },
+    async deleteLocation(id, trx = knex) {
+      await trx('locations').where({ id }).delete();
+    },
     async listManagerKiosks(trx = knex) {
       return trx('kiosks')
-        .join('locations', 'kiosks.location_id', 'locations.id')
+        .leftJoin('locations', 'kiosks.location_id', 'locations.id')
         .select('kiosks.*', 'locations.name as location_name')
         .orderBy('kiosks.name');
     },
@@ -530,6 +571,17 @@ export function createPassRepository(db) {
       await trx('kiosks')
         .where({ id })
         .update({ ...patch, updated_at: trx.fn.now() });
+    },
+    async unassignKioskReferences(id, now, trx = knex) {
+      await trx('passes')
+        .where({ origin_kiosk_id: id })
+        .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning'])
+        .update({ status: 'cancelled', ended_at: now, updated_at: now });
+      await trx('passes').where({ origin_kiosk_id: id }).update({ origin_kiosk_id: null });
+      await trx('kiosk_enrollment_codes').where({ kiosk_id: id }).update({ kiosk_id: null });
+    },
+    async deleteKiosk(id, trx = knex) {
+      await trx('kiosks').where({ id }).delete();
     },
     async listManagerUsers(trx = knex) {
       const rows = await trx('users')
