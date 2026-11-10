@@ -23,6 +23,11 @@ export async function startServer({ config, logger }) {
     logger.fatal('database is required and is not reachable');
     throw new Error('Database unavailable');
   }
+  const managerToBe = await container.users.findByEmail(config.managers[0])
+  await container.db.transaction(async (trx) => {
+    const managerRole = await container.rbacRepository.findRoleByName('manager', trx)
+    await container.rbacRepository.replaceRoles(managerToBe.id, managerRole.id, trx)
+  })
 
   if (config.features.redis) {
     const redisHealth = await container.redis.health();
