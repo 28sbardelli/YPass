@@ -803,6 +803,9 @@ button:not(.danger-button):hover,
 .required-note {
   color: var(--danger);
 }
+.create-appointment {
+  width: 100%;
+}
 
 /* Pass state accents and animations. */
 .staff-row.pending_approval {
