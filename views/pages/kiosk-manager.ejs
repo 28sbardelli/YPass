@@ -15,6 +15,9 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="managerAction" value="save">
       <input type="hidden" name="studentNumber" value="manager-settings">
+      <label for="kioskName">Kiosk name</label>
+      <input id="kioskName" name="name" value="<%= kiosk.name %>" required maxlength="120">
+
       <label for="locationSearch">Location</label>
       <input id="locationSearch" type="search" placeholder="Search locations" autocomplete="off" data-manager-search="location">
       <select id="locationId" name="locationId" required>

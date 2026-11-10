@@ -213,7 +213,7 @@ export function createKioskService({ db, kiosks, clock, audit }) {
     };
   }
 
-  async function updateSettings({ kioskId, locationId, teacherUserId, reqLike }) {
+  async function updateSettings({ kioskId, name, locationId, teacherUserId, reqLike }) {
     await db.transaction(async (trx) => {
       const kiosk = await kiosks.findKioskById(kioskId, trx);
       if (!kiosk || !kiosk.active) throw new NotFoundError('Kiosk not found or inactive');
@@ -226,11 +226,12 @@ export function createKioskService({ db, kiosks, clock, audit }) {
       ) {
         throw new ValidationError('Choose an active teacher or manager');
       }
-      await kiosks.updateKiosk(kioskId, { location_id: locationId }, trx);
+      await kiosks.updateKiosk(kioskId, { name, location_id: locationId }, trx);
       await kiosks.updateLocation(locationId, { teacher_user_id: teacherUserId || null }, trx);
     });
     await writeAudit('KIOSK_SETTINGS_UPDATED', null, reqLike, {
       kioskId,
+      name,
       locationId,
       teacherUserId: teacherUserId || null,
     });

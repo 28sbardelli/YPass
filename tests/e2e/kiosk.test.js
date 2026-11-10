@@ -199,6 +199,41 @@ describe('kiosk pass flow', () => {
     expect((await agent.get('/kiosk/pass/status')).body).toEqual({ pending: false });
   });
 
+  it('lets the mini-manager change the kiosk name', async () => {
+    ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
+    const kiosk = await ctx.container.db
+      .knex('kiosks')
+      .where({ kiosk_code: 'main-office' })
+      .first();
+    const agent = (await import('supertest')).default.agent(ctx.app);
+    const session = await agent
+      .post('/api/v1/kiosks/session')
+      .set('x-kiosk-code', kiosk.kiosk_code)
+      .set('x-kiosk-secret', 'change-me');
+    expect(session.status).toBe(200);
+
+    const manager = await agent.get('/kiosk/manager');
+    expect(manager.text).toContain('action="/kiosk/scan"');
+    const saved = await agent
+      .post('/kiosk/scan')
+      .type('form')
+      .send({
+        _csrf: extractCsrf(manager.text),
+        managerAction: 'save',
+        studentNumber: 'manager-settings',
+        name: 'Renamed Main Office',
+        locationId: kiosk.location_id,
+        teacherUserId: '',
+      });
+
+    expect(saved.status).toBe(200);
+    expect(saved.text).toContain('Kiosk settings saved.');
+    expect(
+      (await ctx.container.db.knex('kiosks').where({ id: kiosk.id }).first()).name,
+    ).toBe('Renamed Main Office');
+    expect((await agent.get('/kiosk/manager')).text).toContain('Renamed Main Office');
+  });
+
   it('does not show destination selection after a round-trip pass ends', async () => {
     ctx = await createTestApp({ LOCAL_AUTH_EMAIL_FLOW: 'disabled' });
     const agent = (await import('supertest')).default.agent(ctx.app);
