@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../helpers/app.js';
 
@@ -37,9 +38,27 @@ describe('manager form navigation', () => {
         password: 'correct-horse-battery',
       });
 
+    const availableLocation = {
+      id: randomUUID(),
+      name: 'Unassigned Manager Location',
+      type: 'one_way',
+      active: true,
+    };
+    await ctx.container.db.knex('locations').insert(availableLocation);
+    const occupiedLocation = await ctx.container.db.knex('locations').where({ name: 'Main Office' }).first();
+    const occupiedKiosk = await ctx.container.db.knex('kiosks').where({ location_id: occupiedLocation.id }).first();
     const managerPage = await agent.get('/manager?status=timedout&page=3&appointmentsPage=2');
     expect(managerPage.text).toContain('data-kiosk-search');
     expect(managerPage.text).toContain('data-kiosk-code=');
+    const registrationForm = managerPage.text.match(
+      /<form method="post" action="\/manager\/kiosks\/enrollment\/complete"[\s\S]*?<\/form>/,
+    )?.[0];
+    expect(registrationForm).toContain(`value="${availableLocation.id}"`);
+    expect(registrationForm).not.toContain(`value="${occupiedLocation.id}"`);
+    const occupiedKioskForm = managerPage.text.match(
+      new RegExp(`<form method="post" action="/manager/kiosks/update"[\\s\\S]*?name="id" value="${occupiedKiosk.id}"[\\s\\S]*?<\\/form>`),
+    )?.[0];
+    expect(occupiedKioskForm).toContain(`value="${occupiedLocation.id}" selected`);
     expect(managerPage.text).toContain('data-manager-pass-search');
     expect(managerPage.text).toContain('data-manager-appointment-search');
     expect(managerPage.text).toContain('data-user-role-search');
