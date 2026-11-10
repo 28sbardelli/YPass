@@ -3,6 +3,24 @@ export function createWebController(container) {
   const kioskManagerCode = container.config.kioskManagerCode;
 
   return {
+    async translate(req, res, next) {
+      try {
+        const texts = req.body?.texts;
+        if (
+          !Array.isArray(texts) ||
+          texts.length < 1 ||
+          texts.length > 100 ||
+          texts.some((text) => typeof text !== 'string' || text.length > 5000)
+        ) {
+          res.status(400).json({ error: 'texts must contain 1 to 100 strings of up to 5000 characters.' });
+          return;
+        }
+        const translations = await container.translate.translate(texts, 'es');
+        res.json({ translations });
+      } catch (error) {
+        next(error);
+      }
+    },
     home(req, res) {
       res.render('pages/home', {
         title: '主页',

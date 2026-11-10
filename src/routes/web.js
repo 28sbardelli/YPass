@@ -37,6 +37,7 @@ export function createWebRouter(container) {
   const router = Router();
   const controller = createWebController(container);
   router.get('/', controller.home);
+  router.post('/translate', controller.translate);
   router.get('/example', requireAuthentication(), controller.example);
   router.get('/teacher', requireStaffRole('teacher'), controller.teacher);
   router.post(

@@ -34,6 +34,7 @@ import { createPassService } from '#services/pass-service.js';
 import { createKioskService } from '#services/kiosk-service.js';
 import { createSisService } from '#services/sis/sis-service.js';
 import { createSisSyncService } from '#services/sis/sis-sync-service.js';
+import { createMyMemoryTranslate } from '#integrations/my-memory-translate.js';
 
 export async function createContainer({ config, logger }) {
   const auditLogger = createAuditLogger(logger);
@@ -58,6 +59,7 @@ export async function createContainer({ config, logger }) {
   const tokens = createTokenService(challenges, clock);
 
   const email = config.features.email ? createEmailProvider(config, logger) : null;
+  const translate = createMyMemoryTranslate();
 
   const userService = createUserService({
     db,
@@ -149,6 +151,7 @@ export async function createContainer({ config, logger }) {
     db,
     redis,
     email,
+    translate,
     users,
     identities,
     credentials,
