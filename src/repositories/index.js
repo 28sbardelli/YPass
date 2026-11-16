@@ -262,14 +262,33 @@ export function createPassRepository(db) {
         .first();
     },
     async countCurrentPasses(
-      { destinationLocationId, originLocationId = null, excludePassId = null },
+      {
+        destinationLocationId = null,
+        originLocationId = null,
+        excludePassId = null,
+        bathroomOnly = false,
+      },
       trx = knex,
     ) {
       const query = trx('passes')
-        .where({ destination_location_id: destinationLocationId })
         .whereIn('status', ['pending_approval', 'active', 'arrived', 'returning']);
+      if (destinationLocationId) query.where({ destination_location_id: destinationLocationId });
       if (originLocationId) query.where({ origin_location_id: originLocationId });
       if (excludePassId) query.whereNot({ id: excludePassId });
+      if (bathroomOnly) {
+        query.whereIn(
+          'destination_location_id',
+          trx('locations')
+            .select('id')
+            .where((builder) =>
+              builder
+                .where('type', 'bathroom')
+                .orWhereRaw('lower(name) like ?', ['%bathroom%'])
+                .orWhereRaw('lower(name) like ?', ['%restroom%'])
+                .orWhereRaw('lower(name) like ?', ['%toilet%']),
+            ),
+        );
+      }
       const result = await query.count('* as count').first();
       return Number(result?.count || 0);
     },
@@ -289,7 +308,7 @@ export function createPassRepository(db) {
           status: 'scheduled',
         })
         .whereBetween('scheduled_at', [windowStart, now])
-        .orderBy('scheduled_at')
+        .orderBy('appointments.scheduled_at')
         .first();
     },
     async listUpcomingAppointmentsForStudent(studentId, now, windowHours = 12, trx = knex) {
@@ -380,7 +399,14 @@ export function createPassRepository(db) {
           'students.display_name as student_name',
           'origin.name as origin_name',
           'destination.name as destination_name',
+          'destination.type as destination_type',
           'destination_teacher.display_name as destination_teacher_name',
+          trx.raw(
+            "case when destination.type = 'bathroom' or lower(destination.name) like '%bathroom%' or lower(destination.name) like '%restroom%' or lower(destination.name) like '%toilet%' then (select count(*) from passes as bathroom_passes where bathroom_passes.origin_location_id = passes.origin_location_id and bathroom_passes.destination_location_id in (select id from locations where type = 'bathroom' or lower(name) like '%bathroom%' or lower(name) like '%restroom%' or lower(name) like '%toilet%') and bathroom_passes.status in ('pending_approval', 'active', 'arrived', 'returning')) else 0 end as bathroom_classroom_count",
+          ),
+          trx.raw(
+            "case when destination.type = 'bathroom' or lower(destination.name) like '%bathroom%' or lower(destination.name) like '%restroom%' or lower(destination.name) like '%toilet%' then (select count(*) from passes as bathroom_passes where bathroom_passes.destination_location_id = passes.destination_location_id and bathroom_passes.status in ('pending_approval', 'active', 'arrived', 'returning')) else 0 end as bathroom_total_count",
+          ),
         )
         .orderBy('passes.requested_at', 'desc');
     },
@@ -447,7 +473,14 @@ export function createPassRepository(db) {
           'students.display_name as student_name',
           'origin.name as origin_name',
           'destination.name as destination_name',
+          'destination.type as destination_type',
           'appointments.scheduled_at as appointment_scheduled_at',
+          trx.raw(
+            "case when destination.type = 'bathroom' or lower(destination.name) like '%bathroom%' or lower(destination.name) like '%restroom%' or lower(destination.name) like '%toilet%' then (select count(*) from passes as bathroom_passes where bathroom_passes.origin_location_id = passes.origin_location_id and bathroom_passes.destination_location_id in (select id from locations where type = 'bathroom' or lower(name) like '%bathroom%' or lower(name) like '%restroom%' or lower(name) like '%toilet%') and bathroom_passes.status in ('pending_approval', 'active', 'arrived', 'returning')) else 0 end as bathroom_classroom_count",
+          ),
+          trx.raw(
+            "case when destination.type = 'bathroom' or lower(destination.name) like '%bathroom%' or lower(destination.name) like '%restroom%' or lower(destination.name) like '%toilet%' then (select count(*) from passes as bathroom_passes where bathroom_passes.destination_location_id = passes.destination_location_id and bathroom_passes.status in ('pending_approval', 'active', 'arrived', 'returning')) else 0 end as bathroom_total_count",
+          ),
         );
       if (filters.status === 'timedout') {
         query

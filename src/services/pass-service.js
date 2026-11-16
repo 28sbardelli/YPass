@@ -69,18 +69,30 @@ export function createPassService({
   onPassStarted = () => {},
   onPassEnded = () => {},
 }) {
-  async function kioskOptions(kioskCode, trx) {
+  async function kioskOptions(kioskCode, trx, includeOccupancy = !trx) {
     const kiosk = await passes.findKioskByCode(kioskCode, trx);
     if (!kiosk) {
       throw new NotFoundError('Kiosk not found or inactive');
     }
     const destinations = await passes.listDestinations(kiosk.location_id, trx);
+    if (includeOccupancy) {
+      for (const destination of destinations) {
+        if (!isBathroom(destination)) continue;
+        destination.bathroom_classroom_count = await passes.countCurrentPasses({
+          originLocationId: kiosk.location_id,
+          bathroomOnly: true,
+        });
+        destination.bathroom_total_count = await passes.countCurrentPasses({
+          destinationLocationId: destination.id,
+        });
+      }
+    }
     return { kiosk, destinations };
   }
 
   async function kioskPendingPass({ kioskCode, studentNumber, passId }) {
     return db.transaction(async (trx) => {
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) return null;
       const currentPass = await passes.findCurrentPassForStudent(student.id, trx);
@@ -106,7 +118,7 @@ export function createPassService({
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
       await passes.expireAppointmentNoShows(now, trx);
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -229,7 +241,7 @@ export function createPassService({
   }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
-      const { kiosk } = await kioskOptions(kioskCode, trx);
+      const { kiosk } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -327,7 +339,7 @@ export function createPassService({
   }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -745,11 +757,11 @@ export function createPassService({
       throw new ConflictError('This bathroom is currently at capacity');
     }
     const classroomCount = await passesRepository.countCurrentPasses(
-      { destinationLocationId: destination.id, originLocationId, excludePassId },
+      { originLocationId, excludePassId, bathroomOnly: true },
       trx,
     );
     if (classroomCount >= 2) {
-      throw new ConflictError('This classroom already has two students out at this bathroom');
+      throw new ConflictError('This classroom already has two students out to bathrooms');
     }
   }
 

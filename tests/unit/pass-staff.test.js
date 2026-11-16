@@ -130,6 +130,8 @@ describe('staff pass controls', () => {
       id: bathroom.id,
       name: 'North Hall Bathroom',
       assigned_bathroom: 1,
+      bathroom_classroom_count: 0,
+      bathroom_total_count: 0,
     });
 
     await ctx.container.passService.updateManagerLocation({
@@ -395,6 +397,14 @@ describe('staff pass controls', () => {
     ctx = await createTestApp();
     const knex = ctx.container.db.knex;
     const bathroom = await knex('locations').where({ type: 'bathroom' }).first();
+    const secondBathroom = {
+      id: randomUUID(),
+      name: 'Capacity Second Bathroom',
+      type: 'bathroom',
+      teacher_user_id: null,
+      active: true,
+    };
+    await knex('locations').insert(secondBathroom);
     const origins = [];
     const students = [];
 
@@ -418,7 +428,7 @@ describe('staff pass controls', () => {
       origins.push({ locationId, kioskCode });
     }
 
-    for (let index = 0; index < 8; index += 1) {
+    for (let index = 0; index < 9; index += 1) {
       const student = {
         id: randomUUID(),
         student_number: `capacity-${index}`,
@@ -438,16 +448,23 @@ describe('staff pass controls', () => {
       });
 
     await request(0, 0);
-    await request(1, 0);
+    const secondBathroomRequest = ctx.container.passService.requestPass({
+      kioskCode: origins[0].kioskCode,
+      studentNumber: students[1].student_number,
+      studentName: students[1].display_name,
+      destinationLocationId: secondBathroom.id,
+    });
+    await secondBathroomRequest;
     await expect(request(2, 0)).rejects.toMatchObject({
       status: 409,
-      message: 'This classroom already has two students out at this bathroom',
+      message: 'This classroom already has two students out to bathrooms',
     });
     await request(3, 1);
     await request(4, 1);
     await request(5, 2);
     await request(6, 2);
-    await expect(request(7, 3)).rejects.toMatchObject({
+    await request(7, 3);
+    await expect(request(8, 3)).rejects.toMatchObject({
       status: 409,
       message: 'This bathroom is currently at capacity',
     });

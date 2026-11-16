@@ -69,6 +69,7 @@ describe('kiosk pass flow', () => {
     const destination = await ctx.container.db
       .knex('locations')
       .whereNot('name', 'Main Office')
+      .where({ active: true })
       .first();
     const pass = await agent
       .post('/kiosk/pass')
@@ -134,6 +135,7 @@ describe('kiosk pass flow', () => {
     const destination = await ctx.container.db
       .knex('locations')
       .whereNot('id', kiosk.location_id)
+      .where({ active: true })
       .first();
     const scan = await agent
       .post('/kiosk/scan')

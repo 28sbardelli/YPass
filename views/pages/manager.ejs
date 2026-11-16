@@ -302,6 +302,7 @@
                 <div class="passes-footer-wrap">
                   <div>Destination</div>
                   <h4 class="small-muted"><span data-language-ignore><%= pass.destination_name %></span></h4>
+                  <% if (pass.destination_type === 'bathroom' || /bathroom|restroom|toilet/i.test(pass.destination_name || '')) { %><div class="small-muted"><%= pass.bathroom_classroom_count %>/2 from your class, <%= pass.bathroom_total_count %>/6 in total</div><% } %>
                 </div>
               </div>
             </article>
