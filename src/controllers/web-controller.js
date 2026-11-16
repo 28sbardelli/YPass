@@ -77,8 +77,13 @@ export function createWebController(container) {
     },
     async appointmentStudent(req, res, next) {
       try {
+        if (req.query.studentName) {
+          const students = await passService.findAppointmentStudents(req.query.studentName);
+          res.json({ students });
+          return;
+        }
         const student = await passService.findAppointmentStudent(req.query.studentNumber);
-        res.json({ student });
+        res.json({ students: student ? [student] : [] });
       } catch (error) {
         next(error);
       }

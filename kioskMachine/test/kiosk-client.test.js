@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtemp, rm } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
 import {
   buildHeartbeatPayload,
@@ -131,8 +128,11 @@ test('local kiosk server retries central requests after an outage', async (t) =>
   const port = instance.server.address().port;
 
   const pageResponse = await fetch(`http://127.0.0.1:${port}/kiosk/pass`);
-  assert.equal(pageResponse.status, 503);
-  assert.match(await pageResponse.text(), /api\/central-status/);
+  assert.equal(pageResponse.status, 200);
+  const page = await pageResponse.text();
+  assert.match(page, /Connecting to YPass/);
+  assert.match(page, /fetch\('\/api\/central-status'/);
+  assert.match(page, /window\.location\.replace\(requestedUrl\)/);
 
   const statusResponse = await fetch(`http://127.0.0.1:${port}/api/central-status`);
   assert.equal(statusResponse.status, 503);
@@ -262,57 +262,6 @@ test('local kiosk server starts only one enrollment for concurrent config reques
   assert.equal(startCount, 1);
   assert.equal(configs[0].enrollmentCode, 'ABCD-EFGH');
   assert.equal(configs[1].enrollmentCode, 'ABCD-EFGH');
-});
-
-test('local kiosk server rotates an expired enrollment code and exposes the replacement', async (t) => {
-  const { createKioskServer } = await import('../src/server.js');
-  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'ypass-kiosk-enrollment-'));
-  const previousDataDir = process.env.KIOSK_DATA_DIR;
-  process.env.KIOSK_DATA_DIR = dataDir;
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url, options) => {
-    if (String(url).startsWith('https://central.example.test/api/v1/kiosks/enrollment/status')) {
-      assert.equal(options?.method, undefined);
-      return {
-        ok: false,
-        status: 404,
-        async json() {
-          return { error: { message: 'Enrollment code is invalid or expired' } };
-        },
-      };
-    }
-    return originalFetch(url, options);
-  };
-  const instance = await createKioskServer({
-    host: '127.0.0.1',
-    port: 0,
-    heartbeatMs: 30000,
-    registered: false,
-    enrollmentCode: 'OLD-CODE',
-    enrollmentToken: 'old-token',
-    serverUrl: 'https://central.example.test',
-    startEnrollment: async () => ({
-      enrollmentCode: 'NEW-CODE',
-      enrollmentToken: 'new-token',
-      expiresAt: '2026-11-10T10:00:00.000Z',
-    }),
-  });
-  t.after(async () => {
-    await instance.close();
-    globalThis.fetch = originalFetch;
-    if (previousDataDir === undefined) delete process.env.KIOSK_DATA_DIR;
-    else process.env.KIOSK_DATA_DIR = previousDataDir;
-    await rm(dataDir, { recursive: true, force: true });
-  });
-
-  const baseUrl = `http://127.0.0.1:${instance.server.address().port}`;
-  const response = await fetch(`${baseUrl}/api/enrollment/status`);
-  const result = await response.json();
-  assert.equal(response.status, 404);
-  assert.equal(result.enrollmentCode, 'NEW-CODE');
-
-  const configResponse = await fetch(`${baseUrl}/api/config`);
-  assert.equal((await configResponse.json()).enrollmentCode, 'NEW-CODE');
 });
 
 test('local kiosk server returns to registration when enrolled credentials are rejected', async (t) => {

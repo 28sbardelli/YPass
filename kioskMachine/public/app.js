@@ -45,12 +45,6 @@ async function pollEnrollment() {
       setStatus('Registration successful. Loading pass page...', 'ok');
       window.location.replace('/kiosk/pass');
     } else if (!response.ok) {
-      if (result.enrollmentCode) {
-        enrollmentCodeDisplay.textContent = result.enrollmentCode;
-        enrollmentExpiry.textContent = result.enrollmentExpiresAt
-          ? `Expires ${new Date(result.enrollmentExpiresAt).toLocaleTimeString()}`
-          : 'Waiting for registration in YPass Manager...';
-      }
       setStatus(result.message || 'Unable to connect to YPass. Retrying...', 'warn');
     }
   } catch (_error) {

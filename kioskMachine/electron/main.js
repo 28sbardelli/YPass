@@ -27,9 +27,14 @@ if (!hasSingleInstanceLock) {
 function configureStartup() {
   if (process.platform !== 'win32') return;
   const configured = process.env.KIOSK_START_ON_LOGIN;
-  const openAtLogin = configured == null
+  const shellLauncherMode = ['1', 'true', 'yes', 'on'].includes(
+    String(process.env.KIOSK_SHELL_LAUNCHER || '').toLowerCase(),
+  );
+  // Shell Launcher starts Electron as the Windows shell; do not also create a
+  // Run-at-login entry for the same account.
+  const openAtLogin = !shellLauncherMode && (configured == null
     ? app.isPackaged
-    : !['0', 'false', 'no', 'off'].includes(configured.toLowerCase());
+    : !['0', 'false', 'no', 'off'].includes(configured.toLowerCase()));
   app.setLoginItemSettings({ openAtLogin, path: process.execPath, args: ['--kiosk-autostart'] });
 }
 

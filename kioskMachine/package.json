@@ -51,9 +51,15 @@
       "createStartMenuShortcut": true,
       "allowElevation": true,
       "runAfterFinish": false
-    }
-  },
-  "dependencies": {
-    "formbar-app-boilerplate": "file:.."
+    },
+    "extraResources": [
+      {
+        "from": "scripts/windows",
+        "to": "windows",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }

@@ -22,7 +22,7 @@
         <% } %>
         <form class="inline" method="post" action="/auth/logout">
           <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
-          <button type="submit">Sign out</button>
+          <button type="submit">↰ Sign out</button>
         </form>
       </li>
     </div>
@@ -66,7 +66,6 @@
               <div class="passes-header-wrap">
                 <strong><%= pass.student_name %></strong>
               </div>
-              <p><% if (pass.active_live && pass.active_duration) { %><span data-active-pass-timer data-active-since="<%= pass.active_since %>" data-active-live="true" data-active-duration-label="<%= pass.active_duration_label %>"><%= pass.active_duration %></span><% } else if (pass.finished_at) { %><time data-finished-at="<%= pass.finished_at %>">Finished <%= pass.finished_at_display || pass.finished_at %></time><% } %></p>
               <h4 class="small-muted">🇮🇩 <%= pass.student_number %></h4>
             </div>
             <div class="pass-details">
@@ -130,10 +129,10 @@
             <div class="pass-details">
               <div class="passes-footer-wrap">
                 <div>Appointment</div>
-                <h4 class="small-muted">⌂ <span data-language-ignore><%= appointment.origin_name %></span> → <span data-language-ignore><%= appointment.destination_name %></span></h4>
+                <h4 class="small-muted">⌂ <span data-language-ignore><span data-language-ignore><%= appointment.destination_name %></span></h4>
               </div>
             </div>
-            <span class="status-label appointment-status">⏱︎ <%= appointment.status %> · <%= appointment.scheduled_at_display %></span>
+            <span class="status-label appointment-status"><%= appointment.scheduled_at_display %></span>
           </article>
         <% }) %>
       </div>

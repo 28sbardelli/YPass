@@ -13,7 +13,6 @@ export const passActionSchema = z.object({
 export const appointmentSchema = z.object({
   studentNumber,
   studentName,
-  originLocationId: id,
   destinationLocationId: id,
   scheduledAt: z.string().trim().min(1).max(40),
   notes: z.string().trim().max(500).optional(),
@@ -21,7 +20,10 @@ export const appointmentSchema = z.object({
 });
 
 export const appointmentStudentLookupSchema = z.object({
-  studentNumber,
+  studentNumber: studentNumber.optional(),
+  studentName: studentName.optional(),
+}).refine(({ studentNumber, studentName }) => studentNumber || studentName, {
+  message: 'Enter a student name or ID',
 });
 
 export const managerFilterSchema = z.object({

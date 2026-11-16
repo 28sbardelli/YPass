@@ -219,32 +219,36 @@ export async function createKioskServer(options = {}) {
         await recoverFromInvalidCredentials(res);
         return;
       }
-      sendCentralOfflinePage(res);
+      sendCentralOfflinePage(res, req.url);
     }
   }
 
-  function sendCentralOfflinePage(res) {
-    res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+  function sendCentralOfflinePage(res, requestedUrl) {
+    const retryUrl = JSON.stringify(requestedUrl || '/kiosk/pass').replaceAll('<', '\\u003c');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`<!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>YPass unavailable</title></head>
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connecting to YPass</title></head>
   <body>
     <main>
-      <h1>YPass is temporarily unavailable</h1>
-      <p>Waiting for the server to come back online...</p>
+      <h1>Connecting to YPass</h1>
+      <p>The kiosk will keep trying until the server is available.</p>
     </main>
     <script>
-      async function retryConnection() {
+      const requestedUrl = ${retryUrl};
+      let retryTimer;
+
+      async function checkConnection() {
         try {
           const response = await fetch('/api/central-status', { cache: 'no-store' });
           if (response.ok) {
-            window.location.replace('/kiosk/pass');
+            window.location.replace(requestedUrl);
             return;
           }
         } catch (_error) {}
-        window.setTimeout(retryConnection, 3000);
+        retryTimer = window.setTimeout(checkConnection, 3000);
       }
-      retryConnection();
+      retryTimer = window.setTimeout(checkConnection, 0);
     </script>
   </body>
 </html>`);
@@ -354,13 +358,7 @@ export async function createKioskServer(options = {}) {
         }
         sendJson(
           res,
-          {
-            ok: false,
-            status: 'offline',
-            message: error.message,
-            enrollmentCode: config.enrollmentCode || null,
-            enrollmentExpiresAt: state.enrollmentExpiresAt,
-          },
+          { ok: false, status: 'offline', message: error.message },
           error.status || 502,
         );
       }
