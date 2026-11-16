@@ -27,7 +27,7 @@
       </li>
     </div>
     <a class="button" href="/teacher/appointment">+ Create appointment</a>
-    <a class="button" href="https://forms.gle/z35h7mZo48aUYKgv6">Submit a ticket (teacher version)</a>
+    <a class="button" href="https://forms.gle/f3bVSKv6eMqxRERm8">Submit a ticket</a>
   </div>
 
   <% if (message) { %>
@@ -77,7 +77,7 @@
             </div>
             <div class="staff-actions pass-actions">
             <% if (!['completed', 'cancelled', 'expired'].includes(pass.status)) { %>
-              
+
                 <% if (pass.status === 'pending_approval') { %>
                   <form method="post" action="/teacher/pass">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
