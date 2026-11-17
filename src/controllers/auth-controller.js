@@ -22,7 +22,7 @@ export function createAuthController(container) {
         return;
       }
       res.render('auth/register', {
-        title: '创建账户',
+        title: 'Create Account',
         error: null,
         pageClass: 'auth-centered-page',
       });
@@ -35,7 +35,7 @@ export function createAuthController(container) {
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/register', {
-            title: '创建账户',
+            title: 'Create Account',
             error: error.message,
             pageClass: 'auth-centered-page',
           });
@@ -152,7 +152,7 @@ export function createAuthController(container) {
 
     forgotPage(req, res) {
       res.render('auth/forgot', {
-        title: '忘记密码',
+        title: 'Forgot Password',
         message: null,
         pageClass: 'auth-centered-page',
       });
@@ -162,7 +162,7 @@ export function createAuthController(container) {
       try {
         const message = await localAuth.requestPasswordReset(req.body.email, req);
         res.render('auth/forgot', {
-          title: '忘记密码',
+          title: 'Forgot Password',
           message,
           pageClass: 'auth-centered-page',
         });
@@ -172,7 +172,7 @@ export function createAuthController(container) {
     },
 
     resetPage(req, res) {
-      res.render('auth/reset', { title: '重置密码', token: req.query.token, error: null });
+      res.render('auth/reset', { title: 'Reset Password', token: req.query.token, error: null });
     },
 
     async reset(req, res, next) {
@@ -182,7 +182,7 @@ export function createAuthController(container) {
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/reset', {
-            title: '重置密码',
+            title: 'Reset Password',
             token: req.body.token,
             error: error.message,
           });
@@ -195,11 +195,11 @@ export function createAuthController(container) {
     async verify(req, res, next) {
       try {
         await localAuth.verifyEmail(req.query.token, req);
-        res.render('auth/verify', { title: '邮箱验证成功', ok: true });
+        res.render('auth/verify', { title: 'Email Verification Successful', ok: true });
       } catch (error) {
         if (error.expose) {
           res.status(error.status).render('auth/verify', {
-            title: '邮箱验证',
+            title: 'Email Verification',
             ok: false,
             error: error.message,
           });

@@ -6,7 +6,7 @@ export function createAccountController(container) {
       try {
         const identities = await userService.listIdentities(req.session.userId);
         res.render('auth/link', {
-          title: '账户',
+          title: 'Account',
           identities,
           features: config.features,
           error: req.query.error || null,
