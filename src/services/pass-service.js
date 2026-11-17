@@ -69,6 +69,20 @@ export function createPassService({
   onPassStarted = () => {},
   onPassEnded = () => {},
 }) {
+  async function addBathroomOccupancy(kiosk, destinations) {
+    for (const destination of destinations) {
+      if (!isBathroom(destination)) continue;
+      destination.bathroom_classroom_count = await passes.countCurrentPasses({
+        originLocationId: kiosk.location_id,
+        bathroomOnly: true,
+      });
+      destination.bathroom_total_count = await passes.countCurrentPasses({
+        destinationLocationId: destination.id,
+      });
+    }
+    return destinations;
+  }
+
   async function kioskOptions(kioskCode, trx, includeOccupancy = !trx) {
     const kiosk = await passes.findKioskByCode(kioskCode, trx);
     if (!kiosk) {
@@ -76,22 +90,13 @@ export function createPassService({
     }
     const destinations = await passes.listDestinations(kiosk.location_id, trx);
     if (includeOccupancy) {
-      for (const destination of destinations) {
-        if (!isBathroom(destination)) continue;
-        destination.bathroom_classroom_count = await passes.countCurrentPasses({
-          originLocationId: kiosk.location_id,
-          bathroomOnly: true,
-        });
-        destination.bathroom_total_count = await passes.countCurrentPasses({
-          destinationLocationId: destination.id,
-        });
-      }
+      await addBathroomOccupancy(kiosk, destinations);
     }
     return { kiosk, destinations };
   }
 
   async function kioskPendingPass({ kioskCode, studentNumber, passId }) {
-    return db.transaction(async (trx) => {
+    const result = await db.transaction(async (trx) => {
       const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) return null;
@@ -103,6 +108,8 @@ export function createPassService({
       );
       return { kiosk, destinations, student, destination, pass: currentPass };
     });
+    if (result) await addBathroomOccupancy(result.kiosk, result.destinations);
+    return result;
   }
 
   async function listUpcomingAppointments(studentNumber, now = clock.now()) {
@@ -230,6 +237,7 @@ export function createPassService({
         originLocationId: result.pass.origin_location_id,
       });
     }
+    if (result?.destinations) await addBathroomOccupancy(result.kiosk, result.destinations);
     return result;
   }
 
@@ -416,6 +424,7 @@ export function createPassService({
       }
       return { pass, student, destination, kiosk, destinations, autoApproved };
     });
+    if (result.destinations) await addBathroomOccupancy(result.kiosk, result.destinations);
     if (result.pass.status === 'pending_approval' && result.kiosk.location_teacher_id) {
       onPassRequested({
         teacherUserId: result.kiosk.location_teacher_id,
