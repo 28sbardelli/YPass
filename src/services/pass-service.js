@@ -69,18 +69,35 @@ export function createPassService({
   onPassStarted = () => {},
   onPassEnded = () => {},
 }) {
-  async function kioskOptions(kioskCode, trx) {
+  async function addBathroomOccupancy(kiosk, destinations) {
+    for (const destination of destinations) {
+      if (!isBathroom(destination)) continue;
+      destination.bathroom_classroom_count = await passes.countCurrentPasses({
+        originLocationId: kiosk.location_id,
+        bathroomOnly: true,
+      });
+      destination.bathroom_total_count = await passes.countCurrentPasses({
+        destinationLocationId: destination.id,
+      });
+    }
+    return destinations;
+  }
+
+  async function kioskOptions(kioskCode, trx, includeOccupancy = !trx) {
     const kiosk = await passes.findKioskByCode(kioskCode, trx);
     if (!kiosk) {
       throw new NotFoundError('Kiosk not found or inactive');
     }
     const destinations = await passes.listDestinations(kiosk.location_id, trx);
+    if (includeOccupancy) {
+      await addBathroomOccupancy(kiosk, destinations);
+    }
     return { kiosk, destinations };
   }
 
   async function kioskPendingPass({ kioskCode, studentNumber, passId }) {
-    return db.transaction(async (trx) => {
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+    const result = await db.transaction(async (trx) => {
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) return null;
       const currentPass = await passes.findCurrentPassForStudent(student.id, trx);
@@ -91,6 +108,8 @@ export function createPassService({
       );
       return { kiosk, destinations, student, destination, pass: currentPass };
     });
+    if (result) await addBathroomOccupancy(result.kiosk, result.destinations);
+    return result;
   }
 
   async function listUpcomingAppointments(studentNumber, now = clock.now()) {
@@ -106,7 +125,7 @@ export function createPassService({
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
       await passes.expireAppointmentNoShows(now, trx);
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -218,6 +237,7 @@ export function createPassService({
         originLocationId: result.pass.origin_location_id,
       });
     }
+    if (result?.destinations) await addBathroomOccupancy(result.kiosk, result.destinations);
     return result;
   }
 
@@ -229,7 +249,7 @@ export function createPassService({
   }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
-      const { kiosk } = await kioskOptions(kioskCode, trx);
+      const { kiosk } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -327,7 +347,7 @@ export function createPassService({
   }) {
     const now = clock.now();
     const result = await db.transaction(async (trx) => {
-      const { kiosk, destinations } = await kioskOptions(kioskCode, trx);
+      const { kiosk, destinations } = await kioskOptions(kioskCode, trx, false);
       const student = await passes.findStudentByNumber(studentNumber, trx);
       if (!student) {
         throw new ValidationError('Student ID was not found');
@@ -342,6 +362,7 @@ export function createPassService({
       if (await passes.findCurrentPassForStudent(student.id, trx)) {
         throw new ConflictError('This student already has a current pass');
       }
+      await ensureBathroomCapacity(kiosk.location_id, destination, trx);
 
       const appointment = await passes.findEligibleAppointment(
         student.id,
@@ -403,6 +424,7 @@ export function createPassService({
       }
       return { pass, student, destination, kiosk, destinations, autoApproved };
     });
+    if (result.destinations) await addBathroomOccupancy(result.kiosk, result.destinations);
     if (result.pass.status === 'pending_approval' && result.kiosk.location_teacher_id) {
       onPassRequested({
         teacherUserId: result.kiosk.location_teacher_id,
@@ -458,6 +480,10 @@ export function createPassService({
         throw new ConflictError('Only pending passes can be approved');
       if (action === 'cancel' && ['completed', 'cancelled', 'expired'].includes(pass.status))
         throw new ConflictError('This pass is already closed');
+      if (action === 'approve') {
+        const destination = await passesRepository.findLocationById(pass.destination_location_id, trx);
+        await ensureBathroomCapacity(pass.origin_location_id, destination, trx, pass.id);
+      }
       const patch =
         action === 'approve'
           ? {
@@ -728,6 +754,24 @@ export function createPassService({
     const user = await passesRepository.findManagerUserById(userId);
     if (!user || !user.roles.some((role) => role === 'teacher' || role === 'manager'))
       throw new ValidationError('Choose an active teacher or manager');
+  }
+
+  async function ensureBathroomCapacity(originLocationId, destination, trx, excludePassId = null) {
+    if (!destination || !isBathroom(destination)) return;
+    const bathroomCount = await passesRepository.countCurrentPasses(
+      { destinationLocationId: destination.id, excludePassId },
+      trx,
+    );
+    if (bathroomCount >= 6) {
+      throw new ConflictError('This bathroom is currently at capacity');
+    }
+    const classroomCount = await passesRepository.countCurrentPasses(
+      { originLocationId, excludePassId, bathroomOnly: true },
+      trx,
+    );
+    if (classroomCount >= 2) {
+      throw new ConflictError('This classroom already has two students out to bathrooms');
+    }
   }
 
   async function createManagerKiosk({ name, kioskCode, kioskSecret, locationId, active }) {

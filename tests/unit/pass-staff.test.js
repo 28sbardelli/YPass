@@ -130,6 +130,8 @@ describe('staff pass controls', () => {
       id: bathroom.id,
       name: 'North Hall Bathroom',
       assigned_bathroom: 1,
+      bathroom_classroom_count: 0,
+      bathroom_total_count: 0,
     });
 
     await ctx.container.passService.updateManagerLocation({
@@ -388,6 +390,83 @@ describe('staff pass controls', () => {
       room: `teacher:${mainOffice.teacher_user_id}`,
       event: 'teacher-pass-ended',
       payload: { passId: requested.pass.id, originLocationId: mainOffice.id },
+    });
+  });
+
+  it('limits each bathroom to six students and each classroom to two', async () => {
+    ctx = await createTestApp();
+    const knex = ctx.container.db.knex;
+    const bathroom = await knex('locations').where({ type: 'bathroom' }).first();
+    const secondBathroom = {
+      id: randomUUID(),
+      name: 'Capacity Second Bathroom',
+      type: 'bathroom',
+      teacher_user_id: null,
+      active: true,
+    };
+    await knex('locations').insert(secondBathroom);
+    const origins = [];
+    const students = [];
+
+    for (let index = 0; index < 4; index += 1) {
+      const locationId = randomUUID();
+      const kioskCode = `capacity-classroom-${index}`;
+      await knex('locations').insert({
+        id: locationId,
+        name: `Capacity Classroom ${index}`,
+        type: 'one_way',
+        teacher_user_id: null,
+        active: true,
+      });
+      await knex('kiosks').insert({
+        id: randomUUID(),
+        location_id: locationId,
+        name: `Capacity Classroom ${index} Kiosk`,
+        kiosk_code: kioskCode,
+        active: true,
+      });
+      origins.push({ locationId, kioskCode });
+    }
+
+    for (let index = 0; index < 9; index += 1) {
+      const student = {
+        id: randomUUID(),
+        student_number: `capacity-${index}`,
+        display_name: `Capacity Student ${index}`,
+        status: 'active',
+      };
+      await knex('students').insert(student);
+      students.push(student);
+    }
+
+    const request = (studentIndex, originIndex) =>
+      ctx.container.passService.requestPass({
+        kioskCode: origins[originIndex].kioskCode,
+        studentNumber: students[studentIndex].student_number,
+        studentName: students[studentIndex].display_name,
+        destinationLocationId: bathroom.id,
+      });
+
+    await request(0, 0);
+    const secondBathroomRequest = ctx.container.passService.requestPass({
+      kioskCode: origins[0].kioskCode,
+      studentNumber: students[1].student_number,
+      studentName: students[1].display_name,
+      destinationLocationId: secondBathroom.id,
+    });
+    await secondBathroomRequest;
+    await expect(request(2, 0)).rejects.toMatchObject({
+      status: 409,
+      message: 'This classroom already has two students out to bathrooms',
+    });
+    await request(3, 1);
+    await request(4, 1);
+    await request(5, 2);
+    await request(6, 2);
+    await request(7, 3);
+    await expect(request(8, 3)).rejects.toMatchObject({
+      status: 409,
+      message: 'This bathroom is currently at capacity',
     });
   });
 
