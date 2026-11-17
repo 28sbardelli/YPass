@@ -1,6 +1,6 @@
 [Download Kiosk Machine](https://github.com/csmith1188/YPass/raw/refs/heads/main/kioskMachine.zip)
 
-[Download Portable Kiosk](https://github.com/csmith1188/YPass/raw/refs/heads/main/kioskMachine-portable-launcher.zip)
+[Download Portable Kiosk](**https://github.com/csmith1188/YPass/raw/refs/heads/main/kioskMachine-portable-launcher.zip**)
 # YPass
 
 YPass is a server-side hall-pass system for students, teachers, managers, and physical kiosk machines. It manages students, destinations, appointments, pass state transitions, kiosk heartbeats, and audit events in one central application.
